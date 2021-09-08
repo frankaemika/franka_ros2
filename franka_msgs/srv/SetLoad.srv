@@ -4,4 +4,3 @@ float64[9] load_inertia
 ---
 bool success
 string error
-

@@ -9,4 +9,3 @@ float64[6] upper_force_thresholds_nominal
 ---
 bool success
 string error
-
