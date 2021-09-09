@@ -5,6 +5,7 @@ find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+find_package(builtin_interfaces REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "action/Grasp.action"
   "action/Homing.action"
@@ -20,7 +21,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SetSimpleCollisionBehavior.srv"
   "srv/SetTransform.srv"
   "srv/SetLoad.srv"
-  DEPENDENCIES std_msgs geometry_msgs
+  DEPENDENCIES std_msgs geometry_msgs builtin_interfaces
 )
 
 if(BUILD_TESTING)
