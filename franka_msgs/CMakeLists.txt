@@ -4,12 +4,14 @@ project(franka_msgs)
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "action/Grasp.action"
   "action/Homing.action"
   "action/Move.action"
   "action/Stop.action"
   "msg/Errors.msg"
+  "msg/ForceTorqueThresholds.msg"
   "msg/FrankaState.msg"
   "msg/GraspEpsilon.msg"
   "srv/SetCartesianImpedance.srv"
@@ -18,7 +20,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SetSimpleCollisionBehavior.srv"
   "srv/SetTransform.srv"
   "srv/SetLoad.srv"
-  DEPENDENCIES std_msgs
+  DEPENDENCIES std_msgs geometry_msgs
 )
 
 if(BUILD_TESTING)

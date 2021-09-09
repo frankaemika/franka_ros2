@@ -1,11 +1,5 @@
-float64[7] lower_torque_thresholds_acceleration
-float64[7] upper_torque_thresholds_acceleration
-float64[7] lower_torque_thresholds_nominal
-float64[7] upper_torque_thresholds_nominal
-float64[6] lower_force_thresholds_acceleration
-float64[6] upper_force_thresholds_acceleration
-float64[6] lower_force_thresholds_nominal
-float64[6] upper_force_thresholds_nominal
+ForceTorqueThresholds nominal_thresholds # Thresholds during constant velocity movement phases
+ForceTorqueThresholds acceleration_thresholds # Thresholds during acceleration/deceleration
 ---
 bool success
 string error

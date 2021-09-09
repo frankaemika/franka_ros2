@@ -1,4 +1,4 @@
-float64[16] transform
+geometry_msgs/TransformStamped transform
 ---
 bool success
 string error

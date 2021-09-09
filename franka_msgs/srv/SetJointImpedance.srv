@@ -1,4 +1,4 @@
-float64[7] joint_stiffness  # [Nm/rad, Nm/rad, Nm/rad, Nm/rad, Nm/rad, Nm/rad, Nm/rad]
+float64[7] joint_stiffness  # in [Nm/rad, Nm/rad, Nm/rad, Nm/rad, Nm/rad, Nm/rad, Nm/rad]
 ---
 bool success
 string error
