@@ -39,7 +39,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SetJointImpedance.srv"
   "srv/SetKFrame.srv"
   "srv/SetLoad.srv"
- )
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
