@@ -1,4 +1,4 @@
-float64[6] cartesian_stiffness
+float64[6] cartesian_stiffness # [N/m, N/m ,N/m, Nm/rad, Nm/rad, Nm/rad]
 ---
 bool success
 string error

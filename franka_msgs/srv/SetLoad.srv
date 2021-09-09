@@ -1,6 +1,6 @@
 float64 mass
 float64[3] f_x_center_load
-float64[9] load_inertia
+float64[9] load_inertia # column major 3x3 inertia matrix of the load in kg * m^2
 ---
 bool success
 string error
