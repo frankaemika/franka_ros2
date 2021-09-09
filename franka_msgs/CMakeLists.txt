@@ -14,11 +14,10 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/FrankaState.msg"
   "msg/GraspEpsilon.msg"
   "srv/SetCartesianImpedance.srv"
-  "srv/SetEEFrame.srv"
   "srv/SetForceTorqueCollisionBehavior.srv"
   "srv/SetFullCollisionBehavior.srv"
   "srv/SetJointImpedance.srv"
-  "srv/SetKFrame.srv"
+  "srv/SetTransform.srv"
   "srv/SetLoad.srv"
 )
 
