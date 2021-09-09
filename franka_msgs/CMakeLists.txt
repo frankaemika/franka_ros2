@@ -3,7 +3,7 @@ project(franka_msgs)
 
 find_package(ament_cmake REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
-
+find_package(std_msgs REQUIRED)
 rosidl_generate_interfaces(${PROJECT_NAME}
   "action/ErrorRecovery.action"
   "action/Grasp.action"
@@ -19,6 +19,7 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SetJointImpedance.srv"
   "srv/SetTransform.srv"
   "srv/SetLoad.srv"
+  DEPENDENCIES std_msgs
 )
 
 if(BUILD_TESTING)
