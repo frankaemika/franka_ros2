@@ -13,9 +13,9 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/FrankaState.msg"
   "msg/GraspEpsilon.msg"
   "srv/SetCartesianImpedance.srv"
-  "srv/SetForceTorqueCollisionBehavior.srv"
-  "srv/SetFullCollisionBehavior.srv"
+  "srv/SetCollisionBehavior.srv"
   "srv/SetJointImpedance.srv"
+  "srv/SetSimpleCollisionBehavior.srv"
   "srv/SetTransform.srv"
   "srv/SetLoad.srv"
   DEPENDENCIES std_msgs
