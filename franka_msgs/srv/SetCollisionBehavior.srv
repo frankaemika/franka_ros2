@@ -1,5 +1,0 @@
-ContactThresholds nominal_thresholds # Thresholds during constant velocity movement phases
-ContactThresholds acceleration_thresholds # Thresholds during acceleration/deceleration
----
-bool success
-string error

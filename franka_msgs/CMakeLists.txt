@@ -16,10 +16,10 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/FrankaState.msg"
   "msg/GraspEpsilon.msg"
   "srv/SetCartesianImpedance.srv"
-  "srv/SetCollisionBehavior.srv"
+  "srv/SetCollisionThreshold.srv"
+  "srv/SetCollisionThresholds.srv"
   "srv/SetJointImpedance.srv"
   "srv/SetLoad.srv"
-  "srv/SetSimpleCollisionBehavior.srv"
   "srv/SetTransform.srv"
   DEPENDENCIES std_msgs geometry_msgs builtin_interfaces
 )

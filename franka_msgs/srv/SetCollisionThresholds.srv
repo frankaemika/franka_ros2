@@ -1,0 +1,5 @@
+CollisionThresholds nominal_thresholds # Thresholds during constant velocity movement phases
+CollisionThresholds acceleration_thresholds # Thresholds during acceleration/deceleration
+---
+bool success
+string error
