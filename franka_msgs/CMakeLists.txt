@@ -11,16 +11,16 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/Homing.action"
   "action/Move.action"
   "action/Stop.action"
+  "msg/CollisionThresholds.msg"
   "msg/Errors.msg"
-  "msg/ForceTorqueThresholds.msg"
   "msg/FrankaState.msg"
   "msg/GraspEpsilon.msg"
   "srv/SetCartesianImpedance.srv"
   "srv/SetCollisionBehavior.srv"
   "srv/SetJointImpedance.srv"
+  "srv/SetLoad.srv"
   "srv/SetSimpleCollisionBehavior.srv"
   "srv/SetTransform.srv"
-  "srv/SetLoad.srv"
   DEPENDENCIES std_msgs geometry_msgs builtin_interfaces
 )
 
