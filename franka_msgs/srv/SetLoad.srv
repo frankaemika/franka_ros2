@@ -1,4 +1,0 @@
-geometry_msgs/InertiaStamped load_inertia # Dynamic parameters of the payload
----
-bool success
-string error

@@ -18,8 +18,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/SetCartesianImpedance.srv"
   "srv/SetCollisionThreshold.srv"
   "srv/SetCollisionThresholds.srv"
+  "srv/SetInertia.srv"
   "srv/SetJointImpedance.srv"
-  "srv/SetLoad.srv"
   "srv/SetTransform.srv"
   DEPENDENCIES std_msgs geometry_msgs builtin_interfaces
 )
