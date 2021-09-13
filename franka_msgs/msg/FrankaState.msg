@@ -66,12 +66,12 @@ float64[2] delbow_c
 # Commanded elbow acceleration.
 float64[2] ddelbow_c
 
-# Indicates which contact level is activated in which joint.
+# Indicates a contact in a joint.
 # After contact disappears, the value stays the same until a reset command is sent.
-float64[7] joint_collision
+bool[7] joint_collision
 
-# Indicates which contact level is activated in which joint. After contact disappears, value turns to zero.
-float64[7] joint_contact
+# Indicates a contact in a joint. After contact disappears, value turns to false.
+bool[7] joint_contact
 
 # Estimated external wrench acting on stiffness frame, expressed relative to the base frame.
 geometry_msgs/WrenchStamped o_f_ext_hat_k
