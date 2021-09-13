@@ -9,13 +9,13 @@ uint8 ROBOT_MODE_AUTOMATIC_ERROR_RECOVERY=6
 
 std_msgs/Header header
 
-# Indicates which contact level is activated in which Cartesian dimension (x,y,z,R,Y,P).
+# Indicates a contact in a Cartesian dimension (x,y,z,R,Y,P).
 # After contact disappears, the value stays the same until a reset command is sent.
-float64[6] cartesian_collision
+bool[6] cartesian_collision
 
-# Indicates which contact level is activated in which Cartesian dimension (x,y,z,R,Y,P).
-# After contact disappears, the value turns to zero.
-float64[6] cartesian_contact
+# Indicates a contact in a Cartesian dimension (x,y,z,R,Y,P).
+# After contact disappears, the value turns to false.
+bool[6] cartesian_contact
 
 # Measured joint position. Unit: rad.
 float64[7] q
