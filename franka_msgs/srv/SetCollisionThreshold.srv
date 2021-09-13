@@ -1,0 +1,4 @@
+CollisionThresholds thresholds # Common torque and force boundaries for acceleration/deceleration and constant velocity movement phases
+---
+bool success
+string error
