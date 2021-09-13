@@ -2,4 +2,4 @@
 
 ## [Unreleased]
 ### Added
-* Common message, service and action type definitions
+* franka_msgs package that contains common message, service and action type definitions
