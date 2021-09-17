@@ -23,12 +23,12 @@ from launch.substitutions import Command, FindExecutable, LaunchConfiguration
 def generate_launch_description():
     load_gripper = LaunchConfiguration('load_gripper', default='true')
 
-    franka_xacro_file = os.path.join(get_package_share_directory('franka_description'), 'robots/',
+    franka_xacro_file = os.path.join(get_package_share_directory('franka_description'), 'robots',
                                      'panda_arm.urdf.xacro')
     robot_description = Command(
         [FindExecutable(name="xacro"), " ", franka_xacro_file, " hand:=", load_gripper])
 
-    rviz_file = os.path.join(get_package_share_directory('franka_description'), 'rviz/',
+    rviz_file = os.path.join(get_package_share_directory('franka_description'), 'rviz',
                              'visualize_franka.rviz')
 
     return LaunchDescription([
