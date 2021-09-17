@@ -21,7 +21,8 @@ from launch.substitutions import Command, FindExecutable, LaunchConfiguration
 
 
 def generate_launch_description():
-    load_gripper = LaunchConfiguration('load_gripper', default='true')
+    load_gripper_parameter_name = 'load_gripper'
+    load_gripper = LaunchConfiguration(load_gripper_parameter_name)
 
     franka_xacro_file = os.path.join(get_package_share_directory('franka_description'), 'robots',
                                      'panda_arm.urdf.xacro')
@@ -33,7 +34,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument(
-            'load_gripper',
+            load_gripper_parameter_name,
             default_value='true',
             description='Use Franka Gripper as end-effector if true. Robot is loaded without '
                         'end-effector otherwise'),
