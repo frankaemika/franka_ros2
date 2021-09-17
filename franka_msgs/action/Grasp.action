@@ -6,3 +6,4 @@ float64 force # [N]
 bool success
 string error
 ---
+float64 current_width # [m]
