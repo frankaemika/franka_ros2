@@ -27,15 +27,15 @@ find_package(control_msgs REQUIRED)
 
 find_package(Franka REQUIRED)
 
-add_library(franka_gripper_node SHARED
+add_library(gripper_server SHARED
         src/GripperActionServer.cpp)
-target_link_libraries(franka_gripper_node Franka::Franka)
-target_include_directories(franka_gripper_node PRIVATE
+target_link_libraries(gripper_server Franka::Franka)
+target_include_directories(gripper_server PRIVATE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>)
 
 
-ament_target_dependencies(franka_gripper_node
+ament_target_dependencies(gripper_server
         franka_msgs
         rclcpp
         rclcpp_action
@@ -45,9 +45,9 @@ ament_target_dependencies(franka_gripper_node
         std_srvs
         control_msgs
         )
-rclcpp_components_register_node(franka_gripper_node PLUGIN "franka_gripper::GripperActionServer" EXECUTABLE gripper_action_server)
+rclcpp_components_register_node(gripper_server PLUGIN "franka_gripper::GripperActionServer" EXECUTABLE franka_gripper_node)
 install(TARGETS
-        franka_gripper_node
+        gripper_server
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin)
@@ -56,7 +56,6 @@ install(DIRECTORY
   launch config
   DESTINATION share/${PROJECT_NAME}/
 )
-
 
 if (BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

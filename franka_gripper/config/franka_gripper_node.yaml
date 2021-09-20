@@ -1,4 +1,4 @@
-gripper_action_server:
+franka_gripper_node:
   ros__parameters:
     state_publish_rate: 50  # [Hz]
     feedback_publish_rate: 30 # [Hz]

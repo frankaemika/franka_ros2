@@ -51,7 +51,7 @@ def generate_launch_description():
             description='Names of the gripper joints in the URDF'),
         Node(
             package='franka_gripper',
-            executable='gripper_action_server',
+            executable='franka_gripper_node',
             name='franka_gripper',
             parameters=[{'robot_ip': robot_ip, 'joint_names': joint_names}, gripper_config],
         ),
