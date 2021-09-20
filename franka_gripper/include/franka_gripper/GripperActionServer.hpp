@@ -30,11 +30,9 @@
 #include "rclcpp_components/register_node_macro.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 
-const int64_t FUTURE_STEP_TIME_MILLISECONDS = 50;
 template <typename T>
-bool result_is_ready(std::future<T>& t) {
-  return t.wait_for(std::chrono::milliseconds(FUTURE_STEP_TIME_MILLISECONDS)) ==
-         std::future_status::ready;
+bool result_is_ready(std::future<T>& t, std::chrono::nanoseconds future_wait_timeout) {
+  return t.wait_for(future_wait_timeout) == std::future_status::ready;
 }
 
 namespace franka_gripper {
@@ -82,6 +80,10 @@ class GripperActionServer : public rclcpp::Node {
   rclcpp::TimerBase::SharedPtr timer_;
 
   double default_speed_;
+  double default_epsilon_inner_;
+  double default_epsilon_outer_;
+  std::vector<std::string> joint_names_;
+  std::chrono::nanoseconds future_wait_timeout;
 
   void publish_gripper_state();
   void stop_service_callback(std::shared_ptr<Trigger::Response> response);
@@ -125,7 +127,7 @@ class GripperActionServer : public rclcpp::Node {
     std::future<std::shared_ptr<typename T::Result>> result_future =
         std::async(std::launch::async, command_execution_thread);
 
-    while (not result_is_ready(result_future)) {
+    while (not result_is_ready(result_future, future_wait_timeout)) {
       if (goal_handle->is_canceling()) {
         gripper_->stop();
         result_future.wait();

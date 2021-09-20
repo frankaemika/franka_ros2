@@ -16,14 +16,37 @@
 #include <utility>
 using namespace std::chrono_literals;
 franka_gripper::GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)
-    : Node("gripper_action_server", options) {
+    : Node("franka_gripper_node", options) {
   this->declare_parameter("robot_ip");
+  this->declare_parameter("default_epsilon_inner", 0.005);
+  this->declare_parameter("default_epsilon_outer", 0.005);
   this->declare_parameter("default_speed", 0.1);
+  this->declare_parameter("joint_names");
+  this->declare_parameter("state_publish_rate", 30);
+  this->declare_parameter("feedback_publish_rate", 10);
   std::string robot_ip;
   if (not this->get_parameter<std::string>("robot_ip", robot_ip)) {
     RCLCPP_FATAL(this->get_logger(), "Parameter 'robot_ip' not set");
   }
+
   this->default_speed_ = this->get_parameter("default_speed").as_double();
+  this->default_epsilon_inner_ = this->get_parameter("default_epsilon_inner").as_double();
+  this->default_epsilon_outer_ = this->get_parameter("default_epsilon_outer").as_double();
+  if (not this->get_parameter("joint_names", this->joint_names_)) {
+    RCLCPP_WARN(this->get_logger(), "Parameter 'joint_names' not set");
+    this->joint_names_ = {"", ""};
+  }
+
+  if (this->joint_names_.size() != 2) {
+    RCLCPP_FATAL(this->get_logger(),
+                 "Parameter 'joint_names' needs exactly two arguments, got %d instead",
+                 this->joint_names_.size());
+    throw std::invalid_argument("Parameter 'joint_names' has wrong number of arguments");
+  }
+
+  const double state_publish_rate = (double)this->get_parameter("state_publish_rate").as_int();
+  const double wait_time_rate = (double)this->get_parameter("feedback_publish_rate").as_int();
+  this->future_wait_timeout = rclcpp::WallRate(wait_time_rate).period();
 
   this->gripper_ = std::make_unique<franka::Gripper>(robot_ip);
   current_gripper_state_ = gripper_->readOnce();
@@ -67,7 +90,8 @@ franka_gripper::GripperActionServer::GripperActionServer(const rclcpp::NodeOptio
 
   this->joint_states_publisher_ = this->create_publisher<sensor_msgs::msg::JointState>(
       "gripper_state", rclcpp::SensorDataQoS());
-  this->timer_ = this->create_wall_timer(50ms, [&]() { return publish_gripper_state(); });
+  this->timer_ = this->create_wall_timer(rclcpp::WallRate(state_publish_rate).period(),
+                                         [&]() { return publish_gripper_state(); });
 }
 
 rclcpp_action::CancelResponse franka_gripper::GripperActionServer::handle_cancel(
@@ -133,7 +157,8 @@ void franka_gripper::GripperActionServer::prepare_and_execute_gripper_command(
     if (target_width >= current_width) {
       return gripper_->move(target_width, default_speed_);
     } else {
-      return gripper_->grasp(target_width, default_speed_, goal->command.max_effort);
+      return gripper_->grasp(target_width, default_speed_, goal->command.max_effort,
+                             default_epsilon_inner_, default_epsilon_outer_);
     }
   };
 
@@ -160,7 +185,7 @@ void franka_gripper::GripperActionServer::execute_gripper_command(
   std::future<std::shared_ptr<typename GripperCommand ::Result>> result_future =
       std::async(std::launch::async, command_execution_thread);
 
-  while (not result_is_ready(result_future)) {
+  while (not result_is_ready(result_future, future_wait_timeout)) {
     if (goal_handle->is_canceling()) {
       gripper_->stop();
       result_future.wait();
@@ -208,8 +233,8 @@ void franka_gripper::GripperActionServer::publish_gripper_state() {
   }
   sensor_msgs::msg::JointState joint_states;
   joint_states.header.stamp = this->now();
-  joint_states.name.emplace_back("name1");  // TODO use proper names
-  joint_states.name.emplace_back("name2");  // TODO use proper names
+  joint_states.name.push_back(this->joint_names_[0]);
+  joint_states.name.push_back(this->joint_names_[1]);
   joint_states.position.push_back(current_gripper_state_.width * 0.5);
   joint_states.position.push_back(current_gripper_state_.width * 0.5);
   joint_states.velocity.push_back(0.0);
