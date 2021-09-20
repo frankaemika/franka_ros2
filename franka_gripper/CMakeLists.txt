@@ -1,21 +1,6 @@
 cmake_minimum_required(VERSION 3.5)
 project(franka_gripper)
 
-# Default to C99
-if (NOT CMAKE_C_STANDARD)
-  set(CMAKE_C_STANDARD 99)
-endif ()
-
-# Default to C++14
-if (NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
-endif ()
-
-if (CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic)
-endif ()
-
-# find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(franka_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -34,7 +19,6 @@ target_include_directories(gripper_server PRIVATE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>)
 
-
 ament_target_dependencies(gripper_server
         franka_msgs
         rclcpp
@@ -43,8 +27,7 @@ ament_target_dependencies(gripper_server
         Franka
         sensor_msgs
         std_srvs
-        control_msgs
-        )
+        control_msgs)
 rclcpp_components_register_node(gripper_server PLUGIN "franka_gripper::GripperActionServer" EXECUTABLE franka_gripper_node)
 install(TARGETS
         gripper_server
@@ -53,13 +36,26 @@ install(TARGETS
         RUNTIME DESTINATION bin)
 
 install(DIRECTORY
-  launch config
-  DESTINATION share/${PROJECT_NAME}/
-)
+        launch config
+        DESTINATION share/${PROJECT_NAME}/)
 
-if (BUILD_TESTING)
-  find_package(ament_lint_auto REQUIRED)
-  ament_lint_auto_find_test_dependencies()
-endif ()
+if(BUILD_TESTING)
+    find_package(ament_cmake_clang_format REQUIRED)
+    find_package(ament_cmake_copyright REQUIRED)
+    find_package(ament_cmake_cppcheck REQUIRED)
+    find_package(ament_cmake_flake8 REQUIRED)
+    find_package(ament_cmake_lint_cmake REQUIRED)
+    find_package(ament_cmake_pep257 REQUIRED)
+    find_package(ament_cmake_xmllint REQUIRED)
+
+    set(CPP_DIRECTORIES src include)
+    ament_clang_format(CONFIG_FILE ../.clang-format ${CPP_DIRECTORIES})
+    ament_copyright(src ${CPP_DIRECTORIES} package.xml)
+    ament_cppcheck(${CPP_DIRECTORIES})
+    ament_lint_cmake(CMakeLists.txt)
+    ament_flake8()
+    ament_pep257()
+    ament_xmllint()
+endif()
 
 ament_package()
