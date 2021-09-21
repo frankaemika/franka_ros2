@@ -46,7 +46,7 @@ franka_gripper::GripperActionServer::GripperActionServer(const rclcpp::NodeOptio
 
   const double state_publish_rate = (double)this->get_parameter("state_publish_rate").as_int();
   const double wait_time_rate = (double)this->get_parameter("feedback_publish_rate").as_int();
-  this->future_wait_timeout = rclcpp::WallRate(wait_time_rate).period();
+  this->future_wait_timeout_ = rclcpp::WallRate(wait_time_rate).period();
 
   this->gripper_ = std::make_unique<franka::Gripper>(robot_ip);
   current_gripper_state_ = gripper_->readOnce();
@@ -185,7 +185,7 @@ void franka_gripper::GripperActionServer::execute_gripper_command(
   std::future<std::shared_ptr<typename GripperCommand ::Result>> result_future =
       std::async(std::launch::async, command_execution_thread);
 
-  while (not result_is_ready(result_future, future_wait_timeout)) {
+  while (not result_is_ready(result_future, future_wait_timeout_)) {
     if (goal_handle->is_canceling()) {
       gripper_->stop();
       result_future.wait();

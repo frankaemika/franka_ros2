@@ -83,7 +83,7 @@ class GripperActionServer : public rclcpp::Node {
   double default_epsilon_inner_;
   double default_epsilon_outer_;
   std::vector<std::string> joint_names_;
-  std::chrono::nanoseconds future_wait_timeout;
+  std::chrono::nanoseconds future_wait_timeout_;
 
   void publish_gripper_state();
   void stop_service_callback(std::shared_ptr<Trigger::Response> response);
@@ -127,7 +127,7 @@ class GripperActionServer : public rclcpp::Node {
     std::future<std::shared_ptr<typename T::Result>> result_future =
         std::async(std::launch::async, command_execution_thread);
 
-    while (not result_is_ready(result_future, future_wait_timeout)) {
+    while (not result_is_ready(result_future, future_wait_timeout_)) {
       if (goal_handle->is_canceling()) {
         gripper_->stop();
         result_future.wait();
