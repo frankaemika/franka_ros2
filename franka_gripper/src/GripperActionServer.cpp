@@ -18,8 +18,8 @@ using namespace std::chrono_literals;
 franka_gripper::GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)
     : Node("franka_gripper_node", options) {
   this->declare_parameter("robot_ip");
-  this->declare_parameter("default_epsilon.inner", 0.005);
-  this->declare_parameter("default_epsilon.outer", 0.005);
+  this->declare_parameter("default_grasp_epsilon.inner", 0.005);
+  this->declare_parameter("default_grasp_epsilon.outer", 0.005);
   this->declare_parameter("default_speed", 0.1);
   this->declare_parameter("joint_names");
   this->declare_parameter("state_publish_rate", 30);
@@ -36,8 +36,7 @@ franka_gripper::GripperActionServer::GripperActionServer(const rclcpp::NodeOptio
     RCLCPP_WARN(this->get_logger(), "Parameter 'joint_names' not set");
     this->joint_names_ = {"", ""};
   }
-  RCLCPP_WARN(this->get_logger(), "%f", default_epsilon_inner_);
-  RCLCPP_WARN(this->get_logger(), "%f", default_epsilon_outer_);
+
   if (this->joint_names_.size() != 2) {
     RCLCPP_FATAL(this->get_logger(),
                  "Parameter 'joint_names' needs exactly two arguments, got %d instead",
