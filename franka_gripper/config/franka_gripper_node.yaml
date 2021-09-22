@@ -3,5 +3,6 @@ franka_gripper_node:
     state_publish_rate: 50  # [Hz]
     feedback_publish_rate: 30 # [Hz]
     default_speed: 0.1  # [m/s]
-    default_grasp_epsilon_inner: 0.005 # [m]
-    default_grasp_epsilon_outer: 0.005 # [m]
+    default_grasp_epsilon:
+      inner: 0.005 # [m]
+      outer: 0.005 # [m]
