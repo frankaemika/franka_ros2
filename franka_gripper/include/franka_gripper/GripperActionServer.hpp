@@ -167,7 +167,7 @@ class GripperActionServer : public rclcpp::Node {
 
   void publishGripperCommandFeedback(
       const std::shared_ptr<rclcpp_action::ServerGoalHandle<GripperCommand>>& goal_handle) {
-    auto gripper_feedback = std::make_shared<GripperCommand ::Feedback>();
+    auto gripper_feedback = std::make_shared<GripperCommand::Feedback>();
     std::lock_guard<std::mutex> guard(gripper_state_mutex_);
     gripper_feedback->position =
         current_gripper_state_.width / 2;  // todo this was not done in franka_ros
