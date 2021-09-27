@@ -99,6 +99,7 @@ rclcpp_action::CancelResponse GripperActionServer::handleCancel(Task task) {
   RCLCPP_INFO(this->get_logger(), "Received request to handleCancel %s", getTaskName(task).c_str());
   return rclcpp_action::CancelResponse::ACCEPT;
 }
+
 rclcpp_action::GoalResponse GripperActionServer::handleGoal(Task task) {
   RCLCPP_INFO(this->get_logger(), "Received %s request", getTaskName(task).c_str());
   return rclcpp_action::GoalResponse::ACCEPT_AND_EXECUTE;
@@ -108,6 +109,7 @@ void GripperActionServer::executeHoming(const std::shared_ptr<GoalHandleHoming>&
   const auto kCommand = [=]() { return gripper_->homing(); };
   executeCommand(goal_handle, Task::kHoming, kCommand);
 }
+
 void GripperActionServer::executeMove(const std::shared_ptr<GoalHandleMove>& goal_handle) {
   auto command = [=]() {
     const auto kGoal = goal_handle->get_goal();
@@ -115,6 +117,7 @@ void GripperActionServer::executeMove(const std::shared_ptr<GoalHandleMove>& goa
   };
   executeCommand(goal_handle, Task::kMove, command);
 }
+
 void GripperActionServer::executeGrasp(const std::shared_ptr<GoalHandleGrasp>& goal_handle) {
   auto command = [=]() {
     const auto kGoal = goal_handle->get_goal();
@@ -203,6 +206,7 @@ void GripperActionServer::executeGripperCommand(
     goal_handle->abort(kResult);
   }
 }
+
 void GripperActionServer::stopServiceCallback(const std::shared_ptr<Trigger::Response>& response) {
   RCLCPP_INFO(this->get_logger(), "Stopping gripper_...");
   auto action_result = generateCommandExecutionThread<Homing>([=]() { return gripper_->stop(); })();
@@ -217,6 +221,7 @@ void GripperActionServer::stopServiceCallback(const std::shared_ptr<Trigger::Res
     RCLCPP_ERROR(this->get_logger(), response->message.c_str());
   }
 }
+
 void GripperActionServer::publishGripperState() {
   std::lock_guard<std::mutex> lock(gripper_state_mutex_);
   try {
