@@ -12,20 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <functional>
+#include <memory>
+#include <thread>
+
 #include <franka/exception.h>
 #include <franka/gripper.h>
 #include <franka/gripper_state.h>
 #include <control_msgs/action/gripper_command.hpp>
-#include <franka_gripper/GripperActionServer.hpp>
-#include <functional>
-#include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <std_srvs/srv/trigger.hpp>
-#include <thread>
-#include <utility>
+
+#include <franka_gripper/GripperActionServer.hpp>
 
 namespace franka_gripper {
 GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)
@@ -66,7 +67,7 @@ GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)
   const auto kHomingTask = Task::kHoming;
   this->stop_service_ =  // NOLINTNEXTLINE
       create_service<Trigger>("stop",
-                              [this](std::shared_ptr<Trigger::Request> /*request*/,
+                              [this](std::shared_ptr<Trigger::Request> /*request*/,  // NOLINT
                                      std::shared_ptr<Trigger::Response> response) {  // NOLINT
                                 return stopServiceCallback(std::move(response));     // NOLINT
                               });

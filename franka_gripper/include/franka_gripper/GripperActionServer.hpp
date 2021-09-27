@@ -14,6 +14,10 @@
 
 #pragma once
 
+#include <functional>
+#include <memory>
+#include <thread>
+
 #include <franka/exception.h>
 #include <franka/gripper.h>
 #include <franka/gripper_state.h>
@@ -21,13 +25,10 @@
 #include <franka_msgs/action/grasp.hpp>
 #include <franka_msgs/action/homing.hpp>
 #include <franka_msgs/action/move.hpp>
-#include <functional>
-#include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <std_srvs/srv/trigger.hpp>
-#include <thread>
 
 namespace franka_gripper {
 
