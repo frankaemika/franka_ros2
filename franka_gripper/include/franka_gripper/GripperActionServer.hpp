@@ -64,6 +64,8 @@ class GripperActionServer : public rclcpp::Node {
         return {"Grasping"};
       case Task::kGripperCommand:
         return {"GripperCommand"};
+      default:
+        throw std::invalid_argument("getTaskName is not implemented for this case");
     }
   };
 
