@@ -111,7 +111,7 @@ class GripperActionServer : public rclcpp::Node {
   template <typename T>
   auto generateCommandExecutionThread(const std::function<bool()>& command_lambda)
       -> std::function<std::shared_ptr<typename T::Result>()> {
-    return [=]() {
+    return [command_lambda, this]() {
       auto result = std::make_shared<typename T::Result>();
       try {
         result->success = command_lambda();
