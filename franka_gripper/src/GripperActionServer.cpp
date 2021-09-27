@@ -89,8 +89,8 @@ GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)
         return std::thread{[=]() { prepareAndExecuteGripperCommand(goal_handle); }}.detach();
       });
 
-  this->joint_states_publisher_ = this->create_publisher<sensor_msgs::msg::JointState>(
-      "gripper_state", rclcpp::SensorDataQoS());  // todo rename to joint_states
+  this->joint_states_publisher_ =
+      this->create_publisher<sensor_msgs::msg::JointState>("joint_states", rclcpp::SensorDataQoS());
   this->timer_ = this->create_wall_timer(rclcpp::WallRate(kStatePublishRate).period(),
                                          [&]() { return publishGripperState(); });
 }
