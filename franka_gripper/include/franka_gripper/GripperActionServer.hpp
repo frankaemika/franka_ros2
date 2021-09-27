@@ -14,26 +14,28 @@
 
 #pragma once
 
+#include <franka/exception.h>
+#include <franka/gripper.h>
+#include <franka/gripper_state.h>
+#include <control_msgs/action/gripper_command.hpp>
+#include <franka_msgs/action/grasp.hpp>
+#include <franka_msgs/action/homing.hpp>
+#include <franka_msgs/action/move.hpp>
 #include <functional>
 #include <memory>
+#include <rclcpp/rclcpp.hpp>
+#include <rclcpp_action/rclcpp_action.hpp>
+#include <sensor_msgs/msg/joint_state.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <thread>
-#include "control_msgs/action/gripper_command.hpp"
-#include "franka/exception.h"
-#include "franka/gripper.h"
-#include "franka_msgs/action/grasp.hpp"
-#include "franka_msgs/action/homing.hpp"
-#include "franka_msgs/action/move.hpp"
-#include "rclcpp/rclcpp.hpp"
-#include "rclcpp_action/rclcpp_action.hpp"
-#include "rclcpp_components/register_node_macro.hpp"
-#include "sensor_msgs/msg/joint_state.hpp"
 
 namespace franka_gripper {
+
 template <typename T>
 bool resultIsReady(std::future<T>& t, std::chrono::nanoseconds future_wait_timeout) {
   return t.wait_for(future_wait_timeout) == std::future_status::ready;
 }
+
 class GripperActionServer : public rclcpp::Node {
  public:
   using Homing = franka_msgs::action::Homing;
