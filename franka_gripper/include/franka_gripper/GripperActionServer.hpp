@@ -14,8 +14,11 @@
 
 #pragma once
 
+#include <chrono>
 #include <functional>
+#include <future>
 #include <memory>
+#include <string>
 #include <thread>
 
 #include <franka/exception.h>
