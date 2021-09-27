@@ -28,7 +28,7 @@
 #include <sensor_msgs/msg/joint_state.hpp>
 #include <std_srvs/srv/trigger.hpp>
 
-#include <franka_gripper/GripperActionServer.hpp>
+#include <franka_gripper/gripper_action_server.hpp>
 
 namespace franka_gripper {
 GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)

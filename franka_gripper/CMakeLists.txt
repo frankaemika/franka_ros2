@@ -13,7 +13,7 @@ find_package(control_msgs REQUIRED)
 find_package(Franka REQUIRED)
 
 add_library(gripper_server SHARED
-        src/GripperActionServer.cpp)
+        src/gripper_action_server.cpp)
 target_link_libraries(gripper_server Franka::Franka)
 target_include_directories(gripper_server PRIVATE
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
