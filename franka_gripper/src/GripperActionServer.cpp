@@ -46,8 +46,8 @@ GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)
   }
 
   const double kStatePublishRate = this->get_parameter("state_publish_rate").as_double();
-  const double kWaitTimeRate = this->get_parameter("feedback_publish_rate").as_double();
-  this->future_wait_timeout_ = rclcpp::WallRate(kWaitTimeRate).period();
+  const double kFeedbackPublishRate = this->get_parameter("feedback_publish_rate").as_double();
+  this->future_wait_timeout_ = rclcpp::WallRate(kFeedbackPublishRate).period();
 
   this->gripper_ = std::make_unique<franka::Gripper>(robot_ip);
   current_gripper_state_ = gripper_->readOnce();
