@@ -43,6 +43,7 @@ GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)
   std::string robot_ip;
   if (not this->get_parameter<std::string>("robot_ip", robot_ip)) {
     RCLCPP_FATAL(this->get_logger(), "Parameter 'robot_ip' not set");
+    throw std::invalid_argument("Parameter 'robot_ip' not set");
   }
 
   this->default_speed_ = this->get_parameter("default_speed").as_double();
