@@ -65,7 +65,14 @@ GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)
   const double kFeedbackPublishRate = this->get_parameter("feedback_publish_rate").as_double();
   this->future_wait_timeout_ = rclcpp::WallRate(kFeedbackPublishRate).period();
 
-  this->gripper_ = std::make_unique<franka::Gripper>(robot_ip);
+  RCLCPP_INFO(this->get_logger(), "Trying to establish a connection with the gripper");
+  try {
+    this->gripper_ = std::make_unique<franka::Gripper>(robot_ip);
+  } catch (const franka::Exception& exception) {
+    RCLCPP_FATAL(this->get_logger(), exception.what());
+    throw exception;
+  }
+  RCLCPP_INFO(this->get_logger(), "Connected to gripper");
   current_gripper_state_ = gripper_->readOnce();
   const auto kHomingTask = Task::kHoming;
   this->stop_service_ =  // NOLINTNEXTLINE
