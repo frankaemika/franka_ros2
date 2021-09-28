@@ -211,7 +211,6 @@ void GripperActionServer::executeGripperCommand(
   while (not resultIsReady(result_future, future_wait_timeout_)) {
     if (goal_handle->is_canceling()) {
       gripper_->stop();
-      result_future.wait();
       auto result = result_future.get();
       RCLCPP_INFO(get_logger(), "Gripper %s canceled", kTaskName.c_str());
       goal_handle->canceled(result);
