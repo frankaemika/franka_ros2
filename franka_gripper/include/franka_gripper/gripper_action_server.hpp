@@ -102,9 +102,9 @@ class GripperActionServer : public rclcpp::Node {
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_states_publisher_;
   rclcpp::TimerBase::SharedPtr timer_;
 
-  double default_speed_;
-  double default_epsilon_inner_;
-  double default_epsilon_outer_;
+  double default_speed_;          // default gripper speed parameter value in m/s
+  double default_epsilon_inner_;  // default gripper inner epsilon parameter value in m
+  double default_epsilon_outer_;  //  default gripper outer epsilon parameter value in m
   std::vector<std::string> joint_names_;
   std::chrono::nanoseconds future_wait_timeout_{0};
 
