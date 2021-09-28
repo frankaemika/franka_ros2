@@ -158,7 +158,7 @@ class GripperActionServer : public rclcpp::Node {
     std::future<std::shared_ptr<typename T::Result>> result_future =
         std::async(std::launch::async, command_execution_thread);
 
-    while (not resultIsReady(result_future, future_wait_timeout_)) {
+    while (not resultIsReady(result_future, future_wait_timeout_) and rclcpp::ok()) {
       if (goal_handle->is_canceling()) {
         gripper_->stop();
         auto result = result_future.get();
@@ -168,13 +168,15 @@ class GripperActionServer : public rclcpp::Node {
       }
       publishGripperWidthFeedback(goal_handle);
     }
-    const auto kResult = result_future.get();
-    if (kResult->success) {
-      RCLCPP_INFO(get_logger(), "Gripper %s succeeded", kTaskName.c_str());
-      goal_handle->succeed(kResult);
-    } else {
-      RCLCPP_INFO(get_logger(), "Gripper %s failed", kTaskName.c_str());
-      goal_handle->abort(kResult);
+    if (rclcpp::ok()) {
+      const auto kResult = result_future.get();
+      if (kResult->success) {
+        RCLCPP_INFO(get_logger(), "Gripper %s succeeded", kTaskName.c_str());
+        goal_handle->succeed(kResult);
+      } else {
+        RCLCPP_INFO(get_logger(), "Gripper %s failed", kTaskName.c_str());
+        goal_handle->abort(kResult);
+      }
     }
   }
 

@@ -208,7 +208,7 @@ void GripperActionServer::executeGripperCommand(
   std::future<std::shared_ptr<typename GripperCommand ::Result>> result_future =
       std::async(std::launch::async, command_execution_thread);
 
-  while (not resultIsReady(result_future, future_wait_timeout_)) {
+  while (not resultIsReady(result_future, future_wait_timeout_) and rclcpp::ok()) {
     if (goal_handle->is_canceling()) {
       gripper_->stop();
       auto result = result_future.get();
@@ -218,16 +218,18 @@ void GripperActionServer::executeGripperCommand(
     }
     publishGripperCommandFeedback(goal_handle);
   }
-  const auto kResult = result_future.get();
-  std::lock_guard<std::mutex> guard(gripper_state_mutex_);
-  kResult->position = current_gripper_state_.width / 2;  // todo this was not done in franka_ros
-  kResult->effort = 0.;
-  if (kResult->reached_goal) {
-    RCLCPP_INFO(get_logger(), "Gripper %s succeeded", kTaskName.c_str());
-    goal_handle->succeed(kResult);
-  } else {
-    RCLCPP_INFO(get_logger(), "Gripper %s failed", kTaskName.c_str());
-    goal_handle->abort(kResult);
+  if (rclcpp::ok()) {
+    const auto kResult = result_future.get();
+    std::lock_guard<std::mutex> guard(gripper_state_mutex_);
+    kResult->position = current_gripper_state_.width / 2;  // todo this was not done in franka_ros
+    kResult->effort = 0.;
+    if (kResult->reached_goal) {
+      RCLCPP_INFO(get_logger(), "Gripper %s succeeded", kTaskName.c_str());
+      goal_handle->succeed(kResult);
+    } else {
+      RCLCPP_INFO(get_logger(), "Gripper %s failed", kTaskName.c_str());
+      goal_handle->abort(kResult);
+    }
   }
 }
 
