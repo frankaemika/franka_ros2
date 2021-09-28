@@ -109,7 +109,7 @@ GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)
         return handleCancel(kGripperCommandTask);
       },
       [this](const auto& goal_handle) {
-        return std::thread{[goal_handle, this]() { prepareAndExecuteGripperCommand(goal_handle); }}
+        return std::thread{[goal_handle, this]() { onExecuteGripperCommand(goal_handle); }}
             .detach();
       });
 
@@ -151,7 +151,7 @@ void GripperActionServer::executeGrasp(const std::shared_ptr<GoalHandleGrasp>& g
   executeCommand(goal_handle, Task::kGrasp, command);
 }
 
-void GripperActionServer::prepareAndExecuteGripperCommand(
+void GripperActionServer::onExecuteGripperCommand(
     const std::shared_ptr<GoalHandleGripperCommand>& goal_handle) {
   const auto kGoal = goal_handle->get_goal();
   const double kTargetWidth = 2 * kGoal->command.position;
@@ -189,14 +189,14 @@ void GripperActionServer::prepareAndExecuteGripperCommand(
 
 void GripperActionServer::executeGripperCommand(
     const std::shared_ptr<GoalHandleGripperCommand>& goal_handle,
-    const std::function<bool()>& command_lambda) {
+    const std::function<bool()>& command_handler) {
   const auto kTaskName = getTaskName(Task::kGripperCommand);
   RCLCPP_INFO(this->get_logger(), "Gripper %s...", kTaskName.c_str());
 
-  auto command_execution_thread = [command_lambda, this]() {
+  auto command_execution_thread = [command_handler, this]() {
     auto result = std::make_shared<GripperCommand::Result>();
     try {
-      result->reached_goal = command_lambda();
+      result->reached_goal = command_handler();
     } catch (const franka::Exception& e) {
       result->reached_goal = false;
       RCLCPP_ERROR(this->get_logger(), e.what());
@@ -233,8 +233,7 @@ void GripperActionServer::executeGripperCommand(
 
 void GripperActionServer::stopServiceCallback(const std::shared_ptr<Trigger::Response>& response) {
   RCLCPP_INFO(this->get_logger(), "Stopping gripper_...");
-  auto action_result =
-      generateCommandExecutionThread<Homing>([this]() { return gripper_->stop(); })();
+  auto action_result = withResultGenerator<Homing>([this]() { return gripper_->stop(); })();
   response->success = action_result->success;
   response->message = action_result->error;
   if (response->success) {
@@ -265,6 +264,16 @@ void GripperActionServer::publishGripperState() {
   joint_states.effort.push_back(0.0);
   joint_states.effort.push_back(0.0);
   joint_states_publisher_->publish(joint_states);
+}
+
+void GripperActionServer::publishGripperCommandFeedback(
+    const std::shared_ptr<rclcpp_action::ServerGoalHandle<GripperCommand>>& goal_handle) {
+  auto gripper_feedback = std::make_shared<GripperCommand::Feedback>();
+  std::lock_guard<std::mutex> guard(gripper_state_mutex_);
+  gripper_feedback->position =
+      current_gripper_state_.width / 2;  // todo this was not done in franka_ros
+  gripper_feedback->effort = 0.;
+  goal_handle->publish_feedback(gripper_feedback);
 }
 }  // namespace franka_gripper
 
