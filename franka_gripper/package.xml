@@ -16,6 +16,7 @@
   <depend>sensor_msgs</depend>
   <depend>std_srvs</depend>
   <depend>control_msgs</depend>
+  <depend>libfranka</depend>
 
   <test_depend>ament_cmake_clang_format</test_depend>
   <test_depend>ament_cmake_lint_copyright</test_depend>
