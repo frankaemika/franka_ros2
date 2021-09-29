@@ -3,3 +3,4 @@
 *.pyc
 COLCON_IGNORE
 AMENT_IGNORE
+cmake-build-*/
