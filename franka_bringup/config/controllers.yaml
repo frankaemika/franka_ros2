@@ -1,0 +1,9 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 100  # Hz
+
+    torque_controller:
+      type: franka_example_controllers/TorqueTestController
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
