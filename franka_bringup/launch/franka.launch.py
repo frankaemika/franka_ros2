@@ -29,11 +29,13 @@ def generate_launch_description():
     load_gripper_parameter_name = 'load_gripper'
     use_fake_hardware_parameter_name = 'use_fake_hardware'
     fake_sensor_commands_parameter_name = 'fake_sensor_commands'
+    use_gui_parameter_name = "use_gui"
 
     robot_ip = LaunchConfiguration(robot_parameter_name)
     load_gripper = LaunchConfiguration(load_gripper_parameter_name)
-    use_fake_hardware = LaunchConfiguration("use_fake_hardware")
-    fake_sensor_commands = LaunchConfiguration("fake_sensor_commands")
+    use_fake_hardware = LaunchConfiguration(use_fake_hardware_parameter_name)
+    fake_sensor_commands = LaunchConfiguration(fake_sensor_commands_parameter_name)
+    use_gui = LaunchConfiguration(use_gui_parameter_name)
 
     franka_xacro_file = os.path.join(get_package_share_directory('franka_description'), 'robots',
                                      'panda_arm.urdf.xacro')
@@ -58,6 +60,10 @@ def generate_launch_description():
             robot_parameter_name,
             description='Hostname or IP address of the robot.'),
         DeclareLaunchArgument(
+            use_gui_parameter_name,
+            default_value='false',
+            description='Visualize the robot in Rviz'),
+        DeclareLaunchArgument(
             use_fake_hardware_parameter_name,
             default_value='false',
             description='Use fake hardware'),
@@ -78,15 +84,17 @@ def generate_launch_description():
             output='screen',
             parameters=[{'robot_description': robot_description}],
         ),
-        # Node(
-        #     package='joint_state_publisher',
-        #     executable='joint_state_publisher',
-        #     name='joint_state_publisher'
-        # ),
+        Node(
+            package='joint_state_publisher',
+            executable='joint_state_publisher',
+            name='joint_state_publisher',
+            parameters=[{'source_list': ["franka/joint_states", "panda_gripper/joint_states"]}],
+        ),
         Node(
             package="controller_manager",
             executable="ros2_control_node",
             parameters=[{'robot_description': robot_description}, franka_controllers],
+            remappings=[('joint_states', 'franka/joint_states')],
             output={
                 "stdout": "screen",
                 "stderr": "screen",
@@ -112,9 +120,11 @@ def generate_launch_description():
 
         ),
 
-        # Node(package='rviz2',
-        #      executable="rviz2",
-        #      name="rviz2",
-        #      arguments=['--display-config', rviz_file])
+        Node(package='rviz2',
+             executable="rviz2",
+             name="rviz2",
+             arguments=['--display-config', rviz_file],
+             condition=IfCondition(use_gui)
+             )
 
     ])

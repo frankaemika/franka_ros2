@@ -122,7 +122,7 @@ GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)
       });
 
   this->joint_states_publisher_ =
-      this->create_publisher<sensor_msgs::msg::JointState>("joint_states", rclcpp::SensorDataQoS());
+      this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 1);
   this->timer_ = this->create_wall_timer(rclcpp::WallRate(kStatePublishRate).period(),
                                          [this]() { return publishGripperState(); });
 }
