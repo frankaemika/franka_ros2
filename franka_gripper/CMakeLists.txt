@@ -50,7 +50,7 @@ if(BUILD_TESTING)
 
     set(CPP_DIRECTORIES src include)
     ament_clang_format(CONFIG_FILE ../.clang-format ${CPP_DIRECTORIES})
-    ament_copyright(src ${CPP_DIRECTORIES} package.xml)
+    ament_copyright(launch ${CPP_DIRECTORIES} package.xml)
     ament_cppcheck(${CPP_DIRECTORIES})
     ament_lint_cmake(CMakeLists.txt)
     ament_flake8()
