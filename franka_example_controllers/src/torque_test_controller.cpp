@@ -40,7 +40,7 @@ controller_interface::return_type TorqueTestController::update() {
   for (auto& command_interface : command_interfaces_) {
     command_interface.set_value(0);
   }
-  return controller_interface::return_type::ERROR;
+  return controller_interface::return_type::OK;
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
