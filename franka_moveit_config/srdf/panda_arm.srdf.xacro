@@ -2,7 +2,7 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="panda">
 
   <xacro:arg name="arm_id" default="panda"/> <!-- Name of this panda -->
-  <xacro:arg name="hand" default="true"/> <!-- Should a franka_gripper be mounted at the flange?" -->
+  <xacro:arg name="hand" default="true"/> <!-- Should a franka_gripper be mounted at the flange? (Currently does not work without it) -->
 
   <xacro:property name="arm_id" value="$(arg arm_id)"/>
 
