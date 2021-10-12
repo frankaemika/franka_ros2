@@ -14,6 +14,8 @@
 
 #include "joint_impedance_example_controller.hpp"
 
+#include <string>
+
 namespace franka_example_controllers {
 
 controller_interface::InterfaceConfiguration
@@ -107,6 +109,6 @@ JointImpedanceExampleController::on_configure(const rclcpp_lifecycle::State& pre
 
 }  // namespace franka_example_controllers
 #include "pluginlib/class_list_macros.hpp"
-
+//NOLINTNEXTLINE
 PLUGINLIB_EXPORT_CLASS(franka_example_controllers::JointImpedanceExampleController,
                        controller_interface::ControllerInterface)

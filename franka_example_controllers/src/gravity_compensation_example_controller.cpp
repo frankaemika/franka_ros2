@@ -13,6 +13,9 @@
 // limitations under the License.
 
 #include "gravity_compensation_example_controller.hpp"
+
+#include <string>
+
 namespace franka_example_controllers {
 
 controller_interface::InterfaceConfiguration
@@ -67,6 +70,6 @@ controller_interface::return_type GravityCompensationExampleController::init(
 }
 }  // namespace franka_example_controllers
 #include "pluginlib/class_list_macros.hpp"
-
+//NOLINTNEXTLINE
 PLUGINLIB_EXPORT_CLASS(franka_example_controllers::GravityCompensationExampleController,
                        controller_interface::ControllerInterface)

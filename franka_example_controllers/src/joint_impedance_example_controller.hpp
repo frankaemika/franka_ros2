@@ -14,9 +14,12 @@
 
 #pragma once
 
+#include <string>
+
 #include <Eigen/Eigen>
 #include <controller_interface/controller_interface.hpp>
 #include <rclcpp/rclcpp.hpp>
+
 namespace franka_example_controllers {
 class JointImpedanceExampleController : public controller_interface::ControllerInterface {
  public:
