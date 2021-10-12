@@ -21,7 +21,7 @@ Robot::Robot(const std::string& robot_ip) {
   robot_ = std::make_unique<franka::Robot>(robot_ip);
 }
 
-void Robot::write(const std::array<double, 7>& efforts) {  // NOLINT(readability-magic-numbers)
+void Robot::write(const std::array<double, 7>& efforts) {
   std::lock_guard<std::mutex> lock(write_mutex_);
   tau_command_ = efforts;
 }

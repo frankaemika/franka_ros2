@@ -28,12 +28,13 @@ class Robot {
   Robot& operator=(const Robot& other) = delete;
   Robot& operator=(Robot&& other) = delete;
   Robot(Robot&& other) = delete;
+  virtual ~Robot();
 
   void initializeTorqueControl();
   void stopTorqueControl();
   franka::RobotState read();
 
-  void write(const std::array<double, 7>& efforts);  // NOLINT(readability-magic-numbers)
+  void write(const std::array<double, 7>& efforts);
 
  private:
   std::unique_ptr<std::thread> control_thread_;
@@ -42,8 +43,6 @@ class Robot {
   std::mutex write_mutex_;
   bool finish_ = false;
   franka::RobotState current_state_;
-  std::array<double, 7> tau_command_{};  // NOLINT(readability-magic-numbers)
- public:
-  virtual ~Robot();
+  std::array<double, 7> tau_command_{};
 };
 }  // namespace franka_hardware

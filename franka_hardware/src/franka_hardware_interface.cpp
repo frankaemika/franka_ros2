@@ -15,14 +15,14 @@
 #include <franka_hardware/franka_hardware_interface.hpp>
 
 #include <franka/exception.h>
+#include <hardware_interface/base_interface.hpp>
+#include <hardware_interface/handle.hpp>
+#include <hardware_interface/hardware_info.hpp>
+#include <hardware_interface/system_interface.hpp>
+#include <hardware_interface/types/hardware_interface_return_values.hpp>
+#include <hardware_interface/types/hardware_interface_type_values.hpp>
+#include <rclcpp/macros.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include "hardware_interface/base_interface.hpp"
-#include "hardware_interface/handle.hpp"
-#include "hardware_interface/hardware_info.hpp"
-#include "hardware_interface/system_interface.hpp"
-#include "hardware_interface/types/hardware_interface_return_values.hpp"
-#include "hardware_interface/types/hardware_interface_type_values.hpp"
-#include "rclcpp/macros.hpp"
 
 namespace franka_hardware {
 using StateInterface = hardware_interface::StateInterface;
@@ -42,6 +42,7 @@ std::vector<StateInterface> FrankaHardwareInterface::export_state_interfaces() {
 
   return state_interfaces;
 }
+
 std::vector<CommandInterface> FrankaHardwareInterface::export_command_interfaces() {
   std::vector<hardware_interface::CommandInterface> command_interfaces;
   command_interfaces.reserve(info_.joints.size());
@@ -51,6 +52,7 @@ std::vector<CommandInterface> FrankaHardwareInterface::export_command_interfaces
   }
   return command_interfaces;
 }
+
 hardware_interface::return_type FrankaHardwareInterface::start() {
   robot_->initializeTorqueControl();
   for (auto i = 0U; i < kNumberOfJoints; i++) {
@@ -66,6 +68,7 @@ hardware_interface::return_type FrankaHardwareInterface::start() {
 
   return hardware_interface::return_type::OK;
 }
+
 hardware_interface::return_type FrankaHardwareInterface::stop() {
   RCLCPP_INFO(getLogger(), "trying to Stop...");
   robot_->stopTorqueControl();
@@ -73,6 +76,7 @@ hardware_interface::return_type FrankaHardwareInterface::stop() {
   RCLCPP_INFO(getLogger(), "Stopped...");
   return hardware_interface::return_type::OK;
 }
+
 hardware_interface::return_type FrankaHardwareInterface::read() {
   const auto kState = robot_->read();
   for (auto i = 0U; i < hw_commands_.size(); i++) {
@@ -90,6 +94,7 @@ hardware_interface::return_type FrankaHardwareInterface::write() {
   robot_->write(command);
   return hardware_interface::return_type::OK;
 }
+
 hardware_interface::return_type FrankaHardwareInterface::configure(
     const hardware_interface::HardwareInfo& info) {
   if (configure_default(info) != hardware_interface::return_type::OK) {
@@ -167,5 +172,6 @@ rclcpp::Logger FrankaHardwareInterface::getLogger() {
 }  // namespace franka_hardware
 
 #include "pluginlib/class_list_macros.hpp"
+// NOLINTNEXTLINE
 PLUGINLIB_EXPORT_CLASS(franka_hardware::FrankaHardwareInterface,
                        hardware_interface::SystemInterface)

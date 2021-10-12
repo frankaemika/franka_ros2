@@ -49,7 +49,6 @@ class FrankaHardwareInterface
   std::vector<double> hw_positions_;
   std::vector<double> hw_velocities_;
   std::vector<double> hw_efforts_;
-  rclcpp::Clock clock_;
   static rclcpp::Logger getLogger();
 };
 }  // namespace franka_hardware
