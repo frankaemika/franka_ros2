@@ -21,11 +21,9 @@
 #include <rclcpp/time.hpp>
 
 namespace franka_example_controllers {
-class TorqueTestController : public controller_interface::ControllerInterface {
+class GravityCompensationExampleController : public controller_interface::ControllerInterface {
  public:
   CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
-  CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
-  CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
   controller_interface::return_type init(const std::string& controller_name) override;
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;

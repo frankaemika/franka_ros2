@@ -3,7 +3,7 @@ controller_manager:
     update_rate: 100  # Hz
 
     gravity_compensation_example_controller:
-      type: franka_example_controllers/TorqueTestController
+      type: franka_example_controllers/GravityCompensationExampleController
 
     joint_impedance_example_controller:
       type: franka_example_controllers/JointImpedanceExampleController

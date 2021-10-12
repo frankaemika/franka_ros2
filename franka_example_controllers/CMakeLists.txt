@@ -24,19 +24,19 @@ find_package(franka_msgs REQUIRED)
 
 find_package(Eigen3 REQUIRED)
 add_library(
-        torque_test_controller
+        ${PROJECT_NAME}
         SHARED
-        src/torque_test_controller.cpp
+        src/gravity_compensation_example_controller.cpp
         src/joint_impedance_example_controller.cpp
 )
 target_include_directories(
-        torque_test_controller
+        ${PROJECT_NAME}
         PUBLIC
         include
         ${EIGEN3_INCLUDE_DIRS}
 )
 ament_target_dependencies(
-        torque_test_controller
+        ${PROJECT_NAME}
         geometry_msgs
         controller_interface
         hardware_interface
@@ -50,7 +50,7 @@ pluginlib_export_plugin_description_file(
 
 install(
         TARGETS
-        torque_test_controller
+        ${PROJECT_NAME}
         RUNTIME DESTINATION bin
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
@@ -93,7 +93,7 @@ ament_export_include_directories(
         include
 )
 ament_export_libraries(
-        torque_test_controller
+        ${PROJECT_NAME}
 )
 ament_export_dependencies(
         controller_interface

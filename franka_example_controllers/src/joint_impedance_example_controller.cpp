@@ -79,6 +79,7 @@ controller_interface::return_type JointImpedanceExampleController::update() {
   }
   return controller_interface::return_type::OK;
 }
+
 controller_interface::return_type JointImpedanceExampleController::init(
     const std::string& controller_name) {
   auto ret = ControllerInterface::init(controller_name);
@@ -96,6 +97,7 @@ controller_interface::return_type JointImpedanceExampleController::init(
 
   return controller_interface::return_type::OK;
 }
+
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 JointImpedanceExampleController::on_configure(const rclcpp_lifecycle::State& previous_state) {
   arm_id_ = node_->get_parameter("arm_id").as_string();
