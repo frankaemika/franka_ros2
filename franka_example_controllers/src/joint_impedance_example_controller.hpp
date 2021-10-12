@@ -14,25 +14,30 @@
 
 #pragma once
 
-#include <string>
-
+#include <Eigen/Eigen>
 #include <controller_interface/controller_interface.hpp>
-#include <rclcpp/duration.hpp>
-#include <rclcpp/time.hpp>
-
+#include <rclcpp/rclcpp.hpp>
 namespace franka_example_controllers {
-class TorqueTestController : public controller_interface::ControllerInterface {
+class JointImpedanceExampleController : public controller_interface::ControllerInterface {
  public:
-  CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
-  CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
-  CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
-  controller_interface::return_type init(const std::string& controller_name) override;
+  using Vector7 = Eigen::Matrix<double, 7, 1>;
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
   controller_interface::return_type update() override;
+  controller_interface::return_type init(const std::string& controller_name) override;
+  CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
 
  private:
   std::string arm_id_;
   const int num_joints = 7;
+  Vector7 q_;
+  Vector7 initial_q_;
+  Vector7 dq_;
+  Vector7 dq_filtered_;
+  Vector7 k_gains_;
+  Vector7 d_gains_;
+  bool first_time_ = true;
+  rclcpp::Time start_time_;
 };
+
 }  // namespace franka_example_controllers

@@ -52,23 +52,6 @@ std::vector<CommandInterface> FrankaHardwareInterface::export_command_interfaces
   return command_interfaces;
 }
 hardware_interface::return_type FrankaHardwareInterface::start() {
-  RCLCPP_INFO(getLogger(), "Starting...");
-  std::string robot_ip;
-  try {
-    robot_ip = info_.hardware_parameters.at("robot_ip");
-
-  } catch (const std::out_of_range& ex) {
-    RCLCPP_FATAL(getLogger(), "Parameter 'robot_ip' not set");
-    return hardware_interface::return_type::ERROR;
-  }
-  try {
-    robot_ = std::make_unique<Robot>(robot_ip);
-  } catch (const franka::Exception& e) {
-    RCLCPP_FATAL(getLogger(), "Could not connect to robot");
-    RCLCPP_FATAL(getLogger(), e.what());
-    return hardware_interface::return_type::ERROR;
-  }
-
   robot_->initializeTorqueControl();
   for (auto i = 0U; i < kNumberOfJoints; i++) {
     if (std::isnan(hw_positions_[i])) {
@@ -153,14 +136,31 @@ hardware_interface::return_type FrankaHardwareInterface::configure(
       RCLCPP_FATAL(getLogger(), "Joint '%s' have %s state interfaces found. '%s' expected.",
                    joint.name.c_str(), joint.state_interfaces[0].name.c_str(),
                    hardware_interface::HW_IF_EFFORT);
-      return hardware_interface::return_type::ERROR;
     }
+  }
+
+  RCLCPP_INFO(getLogger(), "Connecting to robot...");
+  std::string robot_ip;
+  try {
+    robot_ip = info_.hardware_parameters.at("robot_ip");
+
+  } catch (const std::out_of_range& ex) {
+    RCLCPP_FATAL(getLogger(), "Parameter 'robot_ip' not set");
+    return hardware_interface::return_type::ERROR;
+  }
+  try {
+    robot_ = std::make_unique<Robot>(robot_ip);
+  } catch (const franka::Exception& e) {
+    RCLCPP_FATAL(getLogger(), "Could not connect to robot");
+    RCLCPP_FATAL(getLogger(), e.what());
+    return hardware_interface::return_type::ERROR;
   }
   status_ = hardware_interface::status::CONFIGURED;
   RCLCPP_INFO(getLogger(), "Configuring succeeded");
 
   return hardware_interface::return_type::OK;
 }
+
 rclcpp::Logger FrankaHardwareInterface::getLogger() {
   return rclcpp::get_logger("FrankaHardwareInterface");
 }

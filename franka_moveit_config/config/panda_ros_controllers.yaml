@@ -2,20 +2,23 @@ controller_manager:
   ros__parameters:
     update_rate: 100  # Hz
 
-    gravity_compensation_example_controller:
-      type: franka_example_controllers/TorqueTestController
-
-    joint_impedance_example_controller:
-      type: franka_example_controllers/JointImpedanceExampleController
-
-    joint_trajectory_controller:
+    panda_arm_controller:
       type: joint_trajectory_controller/JointTrajectoryController
+
+    panda_hand_controller:
+      type: position_controllers/GripperActionController
 
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
-joint_trajectory_controller:
+
+panda_arm_controller:
   ros__parameters:
+    command_interfaces:
+      - effort
+    state_interfaces:
+      - position
+      - velocity
     joints:
       - panda_joint1
       - panda_joint2
@@ -24,11 +27,6 @@ joint_trajectory_controller:
       - panda_joint5
       - panda_joint6
       - panda_joint7
-    command_interfaces:
-      - effort
-    state_interfaces:
-      - position
-      - velocity
     gains:
       panda_joint1: { p: 600., d: 30., i: 0., i_clamp: 1. }
       panda_joint2: { p: 600., d: 30., i: 0., i_clamp: 1. }
@@ -37,3 +35,7 @@ joint_trajectory_controller:
       panda_joint5: { p: 250., d: 10., i: 0., i_clamp: 1. }
       panda_joint6: { p: 150., d: 10., i: 0., i_clamp: 1. }
       panda_joint7: { p: 50., d: 5., i: 0., i_clamp: 1. }
+
+panda_hand_controller:
+  ros__parameters:
+    joint: panda_finger_joint1

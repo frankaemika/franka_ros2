@@ -20,15 +20,20 @@ find_package(pluginlib REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(franka_msgs REQUIRED)
+
+
+find_package(Eigen3 REQUIRED)
 add_library(
         torque_test_controller
         SHARED
         src/torque_test_controller.cpp
-        src/torque_test_controller.cpp src/torque_test_controller.hpp)
+        src/joint_impedance_example_controller.cpp
+)
 target_include_directories(
         torque_test_controller
         PUBLIC
         include
+        ${EIGEN3_INCLUDE_DIRS}
 )
 ament_target_dependencies(
         torque_test_controller

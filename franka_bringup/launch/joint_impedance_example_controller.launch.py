@@ -109,7 +109,7 @@ def generate_launch_description():
         Node(
             package="controller_manager",
             executable="spawner.py",
-            arguments=["torque_controller"],
+            arguments=["joint_impedance_example_controller"],
             output="screen",
         ),
         IncludeLaunchDescription(

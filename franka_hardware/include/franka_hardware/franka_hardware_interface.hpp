@@ -19,6 +19,7 @@
 
 #include <hardware_interface/visibility_control.h>
 #include <franka_hardware/robot.hpp>
+#include <franka_msgs/msg/franka_state.hpp>
 #include <hardware_interface/base_interface.hpp>
 #include <hardware_interface/hardware_info.hpp>
 #include <hardware_interface/system_interface.hpp>
@@ -26,6 +27,7 @@
 #include <hardware_interface/types/hardware_interface_status_values.hpp>
 #include <rclcpp/logger.hpp>
 #include <rclcpp/macros.hpp>
+#include <rclcpp/rclcpp.hpp>
 
 namespace franka_hardware {
 
@@ -47,6 +49,7 @@ class FrankaHardwareInterface
   std::vector<double> hw_positions_;
   std::vector<double> hw_velocities_;
   std::vector<double> hw_efforts_;
+  rclcpp::Clock clock_;
   static rclcpp::Logger getLogger();
 };
 }  // namespace franka_hardware

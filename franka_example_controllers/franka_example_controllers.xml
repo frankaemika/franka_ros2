@@ -5,4 +5,10 @@
             The torque_test_controller only sends zero torques so that the robot does gravity compensation
         </description>
     </class>
+    <class name="franka_example_controllers/JointImpedanceExampleController"
+           type="franka_example_controllers::JointImpedanceExampleController" base_class_type="controller_interface::ControllerInterface">
+        <description>
+            The torque_test_controller only sends zero torques so that the robot does gravity compensation
+        </description>
+    </class>
 </library>

@@ -1,0 +1,50 @@
+<?xml version="1.0" ?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="panda">
+  <xacro:macro name="panda_arm" params="arm_id:='panda' ">
+
+    <group name="${arm_id}_arm">
+      <chain base_link="${arm_id}_link0" tip_link="${arm_id}_link8"/>
+    </group>
+    <group_state name="ready" group="${arm_id}_arm">
+      <joint name="${arm_id}_joint1" value="0"/>
+      <joint name="${arm_id}_joint2" value="-0.785"/>
+      <joint name="${arm_id}_joint3" value="0"/>
+      <joint name="${arm_id}_joint4" value="-2.356"/>
+      <joint name="${arm_id}_joint5" value="0"/>
+      <joint name="${arm_id}_joint6" value="1.571"/>
+      <joint name="${arm_id}_joint7" value="0.785"/>
+    </group_state>
+    <group_state name="extended" group="${arm_id}_arm">
+      <joint name="${arm_id}_joint1" value="0"/>
+      <joint name="${arm_id}_joint2" value="0"/>
+      <joint name="${arm_id}_joint3" value="0"/>
+      <joint name="${arm_id}_joint4" value="0"/>
+      <joint name="${arm_id}_joint5" value="0"/>
+      <joint name="${arm_id}_joint6" value="1.571"/>
+      <joint name="${arm_id}_joint7" value="0.785"/>
+    </group_state>
+    <virtual_joint name="virtual_joint" type="fixed" parent_frame="world" child_link="${arm_id}_link0"/>
+    <disable_collisions link1="${arm_id}_link0" link2="${arm_id}_link1" reason="Adjacent"/>
+    <disable_collisions link1="${arm_id}_link0" link2="${arm_id}_link2" reason="Never"/>
+    <disable_collisions link1="${arm_id}_link0" link2="${arm_id}_link3" reason="Never"/>
+    <disable_collisions link1="${arm_id}_link0" link2="${arm_id}_link4" reason="Never"/>
+    <disable_collisions link1="${arm_id}_link1" link2="${arm_id}_link2" reason="Adjacent"/>
+    <disable_collisions link1="${arm_id}_link1" link2="${arm_id}_link3" reason="Never"/>
+    <disable_collisions link1="${arm_id}_link1" link2="${arm_id}_link4" reason="Never"/>
+    <disable_collisions link1="${arm_id}_link2" link2="${arm_id}_link3" reason="Adjacent"/>
+    <disable_collisions link1="${arm_id}_link2" link2="${arm_id}_link4" reason="Never"/>
+    <disable_collisions link1="${arm_id}_link2" link2="${arm_id}_link6" reason="Never"/>
+    <disable_collisions link1="${arm_id}_link3" link2="${arm_id}_link4" reason="Adjacent"/>
+    <disable_collisions link1="${arm_id}_link3" link2="${arm_id}_link5" reason="Never"/>
+    <disable_collisions link1="${arm_id}_link3" link2="${arm_id}_link6" reason="Never"/>
+    <disable_collisions link1="${arm_id}_link3" link2="${arm_id}_link7" reason="Never"/>
+    <disable_collisions link1="${arm_id}_link4" link2="${arm_id}_link5" reason="Adjacent"/>
+    <disable_collisions link1="${arm_id}_link4" link2="${arm_id}_link6" reason="Never"/>
+    <disable_collisions link1="${arm_id}_link4" link2="${arm_id}_link7" reason="Never"/>
+    <disable_collisions link1="${arm_id}_link4" link2="${arm_id}_link8" reason="Never"/>
+    <disable_collisions link1="${arm_id}_link5" link2="${arm_id}_link6" reason="Adjacent"/>
+    <disable_collisions link1="${arm_id}_link6" link2="${arm_id}_link7" reason="Adjacent"/>
+    <disable_collisions link1="${arm_id}_link6" link2="${arm_id}_link8" reason="Default"/>
+    <disable_collisions link1="${arm_id}_link7" link2="${arm_id}_link8" reason="Adjacent"/>
+  </xacro:macro>
+</robot>

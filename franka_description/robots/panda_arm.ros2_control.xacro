@@ -15,6 +15,7 @@
         </xacro:unless>
       </hardware>
       <joint name="${ns}_joint1">
+        <param name="initial_position">0.0</param>
         <command_interface name="effort">
         </command_interface>
         <state_interface name="position"/>
@@ -22,6 +23,7 @@
         <state_interface name="effort"/>
       </joint>
       <joint name="${ns}_joint2">
+        <param name="initial_position">-0.785</param>
         <command_interface name="effort">
         </command_interface>
         <state_interface name="position"/>
@@ -29,6 +31,7 @@
         <state_interface name="effort"/>
       </joint>
       <joint name="${ns}_joint3">
+        <param name="initial_position">0.0</param>
         <command_interface name="effort">
         </command_interface>
         <state_interface name="position"/>
@@ -36,6 +39,7 @@
         <state_interface name="effort"/>
       </joint>
       <joint name="${ns}_joint4">
+        <param name="initial_position">-2.356</param>
         <command_interface name="effort">
         </command_interface>
         <state_interface name="position"/>
@@ -43,6 +47,7 @@
         <state_interface name="effort"/>
       </joint>
       <joint name="${ns}_joint5">
+        <param name="initial_position">0.0</param>
         <command_interface name="effort">
         </command_interface>
         <state_interface name="position"/>
@@ -50,6 +55,7 @@
         <state_interface name="effort"/>
       </joint>
       <joint name="${ns}_joint6">
+        <param name="initial_position">1.571</param>
         <command_interface name="effort">
         </command_interface>
         <state_interface name="position"/>
@@ -57,6 +63,7 @@
         <state_interface name="effort"/>
       </joint>
       <joint name="${ns}_joint7">
+        <param name="initial_position">0.785</param>
         <command_interface name="effort">
         </command_interface>
         <state_interface name="position"/>
