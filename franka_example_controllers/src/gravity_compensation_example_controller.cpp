@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "gravity_compensation_example_controller.hpp"
+#include <franka_example_controllers/gravity_compensation_example_controller.hpp>
 
 #include <string>
 
