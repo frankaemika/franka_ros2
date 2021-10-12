@@ -32,7 +32,7 @@ from franka_msgs.msg import FrankaState
 position_limits = [[-0.6, 0.6], [-0.6, 0.6], [0.05, 0.9]]
 
 
-class EquialibriumPosePublisher(Node):
+class EquilibriumPosePublisher(Node):
 
     def __init__(self):
         super().__init__("equilibrium_pose_node")
@@ -163,7 +163,7 @@ class EquialibriumPosePublisher(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    pose_publisher = EquialibriumPosePublisher()
+    pose_publisher = EquilibriumPosePublisher()
 
     rclpy.spin(pose_publisher)
     pose_publisher.destroy_node()
