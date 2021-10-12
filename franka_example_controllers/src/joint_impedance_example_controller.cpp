@@ -109,6 +109,6 @@ JointImpedanceExampleController::on_configure(const rclcpp_lifecycle::State& pre
 
 }  // namespace franka_example_controllers
 #include "pluginlib/class_list_macros.hpp"
-//NOLINTNEXTLINE
+// NOLINTNEXTLINE
 PLUGINLIB_EXPORT_CLASS(franka_example_controllers::JointImpedanceExampleController,
                        controller_interface::ControllerInterface)

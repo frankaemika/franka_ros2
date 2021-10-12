@@ -70,6 +70,6 @@ controller_interface::return_type GravityCompensationExampleController::init(
 }
 }  // namespace franka_example_controllers
 #include "pluginlib/class_list_macros.hpp"
-//NOLINTNEXTLINE
+// NOLINTNEXTLINE
 PLUGINLIB_EXPORT_CLASS(franka_example_controllers::GravityCompensationExampleController,
                        controller_interface::ControllerInterface)
