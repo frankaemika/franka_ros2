@@ -27,7 +27,8 @@ add_library(
         SHARED
         src/gravity_compensation_example_controller.cpp
         src/joint_impedance_example_controller.cpp
-)
+        src/move_to_start_example_controller.cpp
+        src/motion_generator.cpp)
 target_include_directories(
         ${PROJECT_NAME}
         PUBLIC
