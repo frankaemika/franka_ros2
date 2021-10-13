@@ -75,7 +75,7 @@ controller_interface::return_type JointImpedanceExampleController::update() {
   const double kAlpha = 0.99;
   dq_filtered_ = (1 - kAlpha) * dq_filtered_ + kAlpha * dq_;
   Vector7 tau_d_calculated =
-      0.04 * k_gains_.cwiseProduct(q_goal - q_) + 0.04 * d_gains_.cwiseProduct(-dq_filtered_);
+      k_gains_.cwiseProduct(q_goal - q_) + d_gains_.cwiseProduct(-dq_filtered_);
   for (int i = 0; i < 7; ++i) {
     command_interfaces_[i].set_value(tau_d_calculated(i));
   }
@@ -89,7 +89,9 @@ controller_interface::return_type JointImpedanceExampleController::init(
     return ret;
   }
   k_gains_ << 600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0;
+  k_gains_ *= 0.04;
   d_gains_ << 50.0, 50.0, 50.0, 50.0, 30.0, 25.0, 15.0;
+  d_gains_ *= 0.04;
   try {
     auto_declare<std::string>("arm_id", "panda");
   } catch (const std::exception& e) {
