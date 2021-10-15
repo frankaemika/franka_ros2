@@ -49,5 +49,14 @@ def test_load_with_arm_id():
     assert urdf.find("totally_different_arm_joint1") != -1
 
 
+def test_check_interfaces():
+    urdf = xacro.process_file(panda_xacro_file_name).toxml()
+    assert urdf.find("state_interface") != -1
+    assert urdf.find("command_interface") != -1
+    assert urdf.find("position") != -1
+    assert urdf.find("velocity") != -1
+    assert urdf.find("effort") != -1
+
+
 if __name__ == '__main__':
     pass
