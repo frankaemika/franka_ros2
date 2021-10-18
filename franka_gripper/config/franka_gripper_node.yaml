@@ -1,4 +1,4 @@
-panda_gripper/franka_gripper:
+panda_gripper:
   ros__parameters:
     state_publish_rate: 50  # [Hz]
     feedback_publish_rate: 30 # [Hz]

@@ -78,14 +78,14 @@ GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)
   current_gripper_state_ = gripper_->readOnce();
   const auto kHomingTask = Task::kHoming;
   this->stop_service_ =  // NOLINTNEXTLINE
-      create_service<Trigger>("stop",
+      create_service<Trigger>("~/stop",
                               [this](std::shared_ptr<Trigger::Request> /*request*/,  // NOLINT
                                      std::shared_ptr<Trigger::Response> response) {  // NOLINT
                                 return stopServiceCallback(std::move(response));     // NOLINT
                               });
 
   this->homing_server_ = rclcpp_action::create_server<Homing>(
-      this, "homing",
+      this, "~/homing",
       [kHomingTask, this](auto /*uuid*/, auto /*goal*/) { return handleGoal(kHomingTask); },
       [kHomingTask, this](const auto& /*goal_handle*/) { return handleCancel(kHomingTask); },
       [this](const auto& goal_handle) {
@@ -93,7 +93,7 @@ GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)
       });
   const auto kMoveTask = Task::kMove;
   this->move_server_ = rclcpp_action::create_server<Move>(
-      this, "move",
+      this, "~/move",
       [kMoveTask, this](auto /*uuid*/, auto /*goal*/) { return handleGoal(kMoveTask); },
       [kMoveTask, this](const auto& /*goal_handle*/) { return handleCancel(kMoveTask); },
       [this](const auto& goal_handle) {
@@ -102,7 +102,7 @@ GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)
 
   const auto kGraspTask = Task::kGrasp;
   this->grasp_server_ = rclcpp_action::create_server<Grasp>(
-      this, "grasp",
+      this, "~/grasp",
       [kGraspTask, this](auto /*uuid*/, auto /*goal*/) { return handleGoal(kGraspTask); },
       [kGraspTask, this](const auto& /*goal_handle*/) { return handleCancel(kGraspTask); },
       [this](const auto& goal_handle) {
@@ -111,7 +111,7 @@ GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)
 
   const auto kGripperCommandTask = Task::kGripperCommand;
   this->gripper_command_server_ = rclcpp_action::create_server<GripperCommand>(
-      this, "gripper_action",
+      this, "~/gripper_action",
       [kGripperCommandTask, this](auto /*uuid*/, auto /*goal*/) {
         return handleGoal(kGripperCommandTask);
       },
@@ -124,7 +124,7 @@ GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)
       });
 
   this->joint_states_publisher_ =
-      this->create_publisher<sensor_msgs::msg::JointState>("joint_states", 1);
+      this->create_publisher<sensor_msgs::msg::JointState>("~/joint_states", 1);
   this->timer_ = this->create_wall_timer(rclcpp::WallRate(kStatePublishRate).period(),
                                          [this]() { return publishGripperState(); });
 }

@@ -23,7 +23,7 @@ class FakeGripperStatePublisher(Node):
 
     def __init__(self):
         super().__init__('fake_gripper_state_publisher')
-        self.publisher_ = self.create_publisher(JointState, 'joint_states', 1)
+        self.publisher_ = self.create_publisher(JointState, '~/joint_states', 1)
         timer_period = 0.1  # seconds
         self.declare_parameter("joint_names")
         self.joint_names = self.get_parameter(

@@ -59,16 +59,14 @@ def generate_launch_description():
         Node(
             package='franka_gripper',
             executable='franka_gripper_node',
-            name='franka_gripper',
-            namespace=[arm_id, "_gripper"],
+            name=[arm_id, "_gripper"],
             parameters=[{'robot_ip': robot_ip, 'joint_names': joint_names}, gripper_config],
             condition=UnlessCondition(use_fake_hardware)
         ),
         Node(
             package='franka_gripper',
             executable='fake_gripper_state_publisher.py',
-            name='franka_gripper',
-            namespace=[arm_id, "_gripper"],
+            name=[arm_id, "_gripper"],
             parameters=[{'robot_ip': robot_ip, 'joint_names': joint_names}, gripper_config],
             condition=IfCondition(use_fake_hardware)
         ),
