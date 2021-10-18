@@ -61,8 +61,10 @@ GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)
     throw std::invalid_argument("Parameter 'joint_names' has wrong number of arguments");
   }
 
-  const double kStatePublishRate = this->get_parameter("state_publish_rate").as_double();
-  const double kFeedbackPublishRate = this->get_parameter("feedback_publish_rate").as_double();
+  const double kStatePublishRate =
+      static_cast<double>(this->get_parameter("state_publish_rate").as_int());
+  const double kFeedbackPublishRate =
+      static_cast<double>(this->get_parameter("feedback_publish_rate").as_int());
   this->future_wait_timeout_ = rclcpp::WallRate(kFeedbackPublishRate).period();
 
   RCLCPP_INFO(this->get_logger(), "Trying to establish a connection with the gripper");
