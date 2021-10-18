@@ -21,6 +21,7 @@
 #include <rclcpp/time.hpp>
 
 namespace franka_example_controllers {
+
 class GravityCompensationExampleController : public controller_interface::ControllerInterface {
  public:
   CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;

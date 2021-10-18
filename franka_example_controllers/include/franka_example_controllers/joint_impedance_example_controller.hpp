@@ -21,6 +21,7 @@
 #include <rclcpp/rclcpp.hpp>
 
 namespace franka_example_controllers {
+
 class JointImpedanceExampleController : public controller_interface::ControllerInterface {
  public:
   using Vector7 = Eigen::Matrix<double, 7, 1>;
