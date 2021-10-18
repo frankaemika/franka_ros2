@@ -31,12 +31,7 @@ GravityCompensationExampleController::command_interface_configuration() const {
 
 controller_interface::InterfaceConfiguration
 GravityCompensationExampleController::state_interface_configuration() const {
-  controller_interface::InterfaceConfiguration config;
-  config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-  for (int i = 1; i <= num_joints; ++i) {
-    config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/position");
-  }
-  return config;
+  return {};
 }
 
 controller_interface::return_type GravityCompensationExampleController::update() {
