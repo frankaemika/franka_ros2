@@ -109,7 +109,8 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([PathJoinSubstitution(
                 [FindPackageShare("franka_gripper"), "launch", "gripper.launch.py"])]),
-            launch_arguments={'robot_ip': robot_ip}.items(),
+            launch_arguments={robot_parameter_name: robot_ip,
+                              use_fake_hardware_parameter_name: use_fake_hardware}.items(),
             condition=IfCondition(load_gripper)
 
         ),
