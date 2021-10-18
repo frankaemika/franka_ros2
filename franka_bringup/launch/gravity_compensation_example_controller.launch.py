@@ -12,16 +12,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-
-import os
-from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch_ros.actions import Node
-from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
-from launch.conditions import IfCondition
 
 
 def generate_launch_description():
@@ -36,24 +32,6 @@ def generate_launch_description():
     use_fake_hardware = LaunchConfiguration(use_fake_hardware_parameter_name)
     fake_sensor_commands = LaunchConfiguration(fake_sensor_commands_parameter_name)
     use_gui = LaunchConfiguration(use_gui_parameter_name)
-
-    franka_xacro_file = os.path.join(get_package_share_directory('franka_description'), 'robots',
-                                     'panda_arm.urdf.xacro')
-    robot_description = Command(
-        [FindExecutable(name="xacro"), " ", franka_xacro_file, " hand:=", load_gripper,
-         " robot_ip:=", robot_ip, " use_fake_hardware:=", use_fake_hardware,
-         " fake_sensor_commands:=", fake_sensor_commands])
-
-    rviz_file = os.path.join(get_package_share_directory('franka_description'), 'rviz',
-                             'visualize_franka.rviz')
-
-    franka_controllers = PathJoinSubstitution(
-        [
-            FindPackageShare("franka_bringup"),
-            "config",
-            "controllers.yaml",
-        ]
-    )
 
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -77,54 +55,22 @@ def generate_launch_description():
             default_value='true',
             description='Use Franka Gripper as end-effector if true. Robot is loaded without '
                         'end-effector otherwise'),
-        Node(
-            package='robot_state_publisher',
-            executable='robot_state_publisher',
-            name='robot_state_publisher',
-            output='screen',
-            parameters=[{'robot_description': robot_description}],
+
+        IncludeLaunchDescription(
+            PythonLaunchDescriptionSource([PathJoinSubstitution(
+                [FindPackageShare("franka_bringup"), "launch", "franka.launch.py"])]),
+            launch_arguments={robot_parameter_name: robot_ip,
+                              load_gripper_parameter_name: load_gripper,
+                              use_fake_hardware_parameter_name: use_fake_hardware,
+                              fake_sensor_commands_parameter_name: fake_sensor_commands,
+                              use_gui_parameter_name: use_gui
+                              }.items(),
         ),
-        Node(
-            package='joint_state_publisher',
-            executable='joint_state_publisher',
-            name='joint_state_publisher',
-            parameters=[{'source_list': ["franka/joint_states", "panda_gripper/joint_states"]}],
-        ),
-        Node(
-            package="controller_manager",
-            executable="ros2_control_node",
-            parameters=[{'robot_description': robot_description}, franka_controllers],
-            remappings=[('joint_states', 'franka/joint_states')],
-            output={
-                "stdout": "screen",
-                "stderr": "screen",
-            },
-        ),
-        Node(
-            package="controller_manager",
-            executable="spawner.py",
-            arguments=["joint_state_broadcaster"],
-            output="screen",
-        ),
+
         Node(
             package="controller_manager",
             executable="spawner.py",
             arguments=["gravity_compensation_example_controller"],
             output="screen",
         ),
-        IncludeLaunchDescription(
-            PythonLaunchDescriptionSource([PathJoinSubstitution(
-                [FindPackageShare("franka_gripper"), "launch", "gripper.launch.py"])]),
-            launch_arguments={'robot_ip': robot_ip}.items(),
-            condition=IfCondition(load_gripper)
-
-        ),
-
-        Node(package='rviz2',
-             executable="rviz2",
-             name="rviz2",
-             arguments=['--display-config', rviz_file],
-             condition=IfCondition(use_gui)
-             )
-
     ])
