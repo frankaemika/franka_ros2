@@ -47,9 +47,10 @@ controller_interface::return_type GravityCompensationExampleController::update()
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-GravityCompensationExampleController::on_configure(const rclcpp_lifecycle::State& previous_state) {
+GravityCompensationExampleController::on_configure(
+    const rclcpp_lifecycle::State& /*previous_state*/) {
   arm_id_ = node_->get_parameter("arm_id").as_string();
-  return LifecycleNodeInterface::on_configure(previous_state);
+  return CallbackReturn::SUCCESS;
 }
 
 controller_interface::return_type GravityCompensationExampleController::init(
@@ -65,7 +66,6 @@ controller_interface::return_type GravityCompensationExampleController::init(
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::return_type::ERROR;
   }
-
   return controller_interface::return_type::OK;
 }
 }  // namespace franka_example_controllers
