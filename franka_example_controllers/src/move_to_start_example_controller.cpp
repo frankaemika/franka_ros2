@@ -15,6 +15,7 @@
 #include <franka_example_controllers/move_to_start_example_controller.hpp>
 
 #include <cassert>
+#include <cmath>
 #include <exception>
 
 #include <Eigen/Eigen>
