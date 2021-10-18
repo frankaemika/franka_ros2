@@ -34,8 +34,6 @@ class MoveToStartExampleController : public controller_interface::ControllerInte
   CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
   CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
 
-  void updateJointStates();
-
  private:
   std::string arm_id_;
   const int num_joints = 7;
@@ -47,5 +45,7 @@ class MoveToStartExampleController : public controller_interface::ControllerInte
   Vector7 d_gains_;
   rclcpp::Time start_time_;
   std::unique_ptr<MotionGenerator> motion_generator_;
+
+  void updateJointStates();
 };
 }  // namespace franka_example_controllers
