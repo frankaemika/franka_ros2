@@ -15,7 +15,7 @@
 import os
 import yaml
 from launch import LaunchDescription
-from launch.conditions import IfCondition, UnlessCondition
+from launch.conditions import IfCondition
 from launch_ros.actions import Node
 from launch.actions import ExecuteProcess
 from ament_index_python.packages import get_package_share_directory
@@ -201,13 +201,6 @@ def generate_launch_description():
         condition=IfCondition(db_config)
     )
 
-    fake_griper_state_publisher = Node(
-        package='joint_state_publisher',
-        executable='joint_state_publisher',
-        name='joint_state_publisher',
-        remappings=[("joint_states", "panda_gripper/joint_states")],
-        condition=IfCondition(use_fake_hardware)
-    )
     joint_state_publisher = Node(
         package='joint_state_publisher',
         executable='joint_state_publisher',
@@ -230,8 +223,8 @@ def generate_launch_description():
     gripper_launch_file = IncludeLaunchDescription(
         PythonLaunchDescriptionSource([PathJoinSubstitution(
             [FindPackageShare("franka_gripper"), "launch", "gripper.launch.py"])]),
-        launch_arguments={'robot_ip': robot_ip}.items(),
-        condition=UnlessCondition(use_fake_hardware)
+        launch_arguments={'robot_ip': robot_ip,
+                          use_fake_hardware_parameter_name: use_fake_hardware}.items(),
     )
     return LaunchDescription(
         [robot_arg,
@@ -243,7 +236,6 @@ def generate_launch_description():
          run_move_group_node,
          ros2_control_node,
          mongodb_server_node,
-         fake_griper_state_publisher,
          joint_state_publisher,
          gripper_launch_file
          ]
