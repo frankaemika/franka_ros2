@@ -29,7 +29,7 @@ class MotionGenerator {
   /**
    * Creates a new MotionGenerator instance for a target q.
    *
-   * @param[in] speed_factor General speed factor in range [0, 1].
+   * @param[in] speed_factor General speed factor in range (0, 1].
    * @param[in] q_start Start joint positions.
    * @param[in] q_goal Target joint positions.
    */

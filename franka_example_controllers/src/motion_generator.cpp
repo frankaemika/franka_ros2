@@ -14,12 +14,14 @@
 
 #include <franka_example_controllers/motion_generator.hpp>
 
-#include <iostream>
+#include <cassert>
 
 MotionGenerator::MotionGenerator(double speed_factor,
                                  const Vector7d& q_start,
                                  const Vector7d& q_goal)
     : q_start_(q_start) {
+  assert(speed_factor > 0);
+  assert(speed_factor <= 1);
   delta_q_ = q_goal - q_start;
   dq_max_ *= speed_factor;
   ddq_max_start_ *= speed_factor;
