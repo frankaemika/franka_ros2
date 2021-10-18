@@ -30,20 +30,21 @@ class MotionGenerator {
    * Creates a new MotionGenerator instance for a target q.
    *
    * @param[in] speed_factor General speed factor in range [0, 1].
+   * @param[in] q_start Start joint positions.
    * @param[in] q_goal Target joint positions.
    */
-  MotionGenerator(double speed_factor, const Vector7d& q_goal);
+  MotionGenerator(double speed_factor, const Vector7d& q_start, const Vector7d& q_goal);
 
   /**
    * Sends joint position calculations
    *
    * @param[in] robot_state Current state of the robot.
-   * @param[in] period Duration of execution.
+   * @param[in] trajectory_time amount of time, that has passed since the start of the trajectory
    *
    * @return Joint positions for use inside a control loop and a boolean indicating whether the
    * motion is finished.
    */
-  std::pair<Vector7d, bool> operator()(const Vector7d& q, const rclcpp::Duration& period);
+  std::pair<Vector7d, bool> getDesiredJointPositions(const rclcpp::Duration& trajectory_time);
 
  private:
   using Vector7i = Eigen::Matrix<int, 7, 1, Eigen::ColMajor>;
@@ -52,7 +53,6 @@ class MotionGenerator {
   void calculateSynchronizedValues();
 
   static constexpr double kDeltaQMotionFinished = 1e-6;
-  Vector7d q_goal_;
 
   Vector7d q_start_;
   Vector7d delta_q_;

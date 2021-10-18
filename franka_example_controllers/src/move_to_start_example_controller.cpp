@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cassert>
 #include <franka_example_controllers/move_to_start_example_controller.hpp>
 
 namespace franka_example_controllers {
@@ -34,38 +35,14 @@ MoveToStartExampleController::state_interface_configuration() const {
   for (int i = 1; i <= num_joints; ++i) {
     config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/position");
     config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/velocity");
-    config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/effort");
   }
   return config;
 }
 
 controller_interface::return_type MoveToStartExampleController::update() {
-  std::vector<double> joint_positions;
-  std::vector<double> joint_velocities;
-  std::vector<double> joint_torques;
-  for (auto& state_interface : state_interfaces_) {
-    if (state_interface.get_interface_name() == "position") {
-      joint_positions.push_back(state_interface.get_value());
-    }
-    if (state_interface.get_interface_name() == "velocity") {
-      joint_velocities.push_back(state_interface.get_value());
-    }
-    if (state_interface.get_interface_name() == "effort") {
-      joint_torques.push_back(state_interface.get_value());
-    }
-  }
-
-  q_ = Vector7(joint_positions.data());
-  dq_ = Vector7(joint_velocities.data());
-
-  if (first_time_) {
-    first_time_ = false;
-    last_time_ = this->node_->now();
-    (*motion_generator_)(q_, rclcpp::Duration(0));
-  }
-  auto period = this->node_->now() - last_time_;
-  last_time_ = this->node_->now();
-  auto motion_generator_output = (*motion_generator_)(q_, period);
+  updateJointStates();
+  auto trajectory_time = this->node_->now() - start_time_;
+  auto motion_generator_output = motion_generator_->getDesiredJointPositions(trajectory_time);
   Vector7 q_desired = motion_generator_output.first;
   bool finished = motion_generator_output.second;
   if (not finished) {
@@ -93,22 +70,41 @@ controller_interface::return_type MoveToStartExampleController::init(
   k_gains_ << 600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0;
   d_gains_ << 25.0, 25.0, 25.0, 25.0, 15.0, 12.5, 7.5;
   q_goal_ << 0, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4;
-  motion_generator_ = std::make_unique<MotionGenerator>(0.2, q_goal_);
   try {
     auto_declare<std::string>("arm_id", "panda");
   } catch (const std::exception& e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::return_type::ERROR;
   }
-
   return controller_interface::return_type::OK;
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-MoveToStartExampleController::on_configure(const rclcpp_lifecycle::State& previous_state) {
+MoveToStartExampleController::on_configure(const rclcpp_lifecycle::State& /*previous_state*/) {
   arm_id_ = node_->get_parameter("arm_id").as_string();
   dq_filtered_.setZero();
-  return LifecycleNodeInterface::on_configure(previous_state);
+  return CallbackReturn::SUCCESS;
+}
+
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+MoveToStartExampleController::on_activate(const rclcpp_lifecycle::State& /*previous_state*/) {
+  updateJointStates();
+  motion_generator_ = std::make_unique<MotionGenerator>(0.2, q_, q_goal_);
+  start_time_ = this->node_->now();
+  return CallbackReturn::SUCCESS;
+}
+
+void MoveToStartExampleController::updateJointStates() {
+  for (auto i = 0; i < num_joints; ++i) {
+    const auto& position_interface = state_interfaces_.at(2 * i);
+    const auto& velocity_interface = state_interfaces_.at(2 * i + 1);
+
+    assert(position_interface.get_interface_name() == "position");
+    assert(velocity_interface.get_interface_name() == "velocity");
+
+    q_(i) = position_interface.get_value();
+    dq_(i) = velocity_interface.get_value();
+  }
 }
 }  // namespace franka_example_controllers
 #include "pluginlib/class_list_macros.hpp"

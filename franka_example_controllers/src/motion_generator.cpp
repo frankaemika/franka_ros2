@@ -16,17 +16,15 @@
 
 #include <iostream>
 
-MotionGenerator::MotionGenerator(double speed_factor, const Vector7d& q_goal) : q_goal_(q_goal) {
+MotionGenerator::MotionGenerator(double speed_factor,
+                                 const Vector7d& q_start,
+                                 const Vector7d& q_goal)
+    : q_start_(q_start) {
+  delta_q_ = q_goal - q_start;
   dq_max_ *= speed_factor;
   ddq_max_start_ *= speed_factor;
   ddq_max_goal_ *= speed_factor;
-  dq_max_sync_.setZero();
-  q_start_.setZero();
-  delta_q_.setZero();
-  t_1_sync_.setZero();
-  t_2_sync_.setZero();
-  t_f_sync_.setZero();
-  q_1_.setZero();
+  calculateSynchronizedValues();
 }
 
 bool MotionGenerator::calculateDesiredValues(double t, Vector7d* delta_q_d) const {
@@ -107,16 +105,9 @@ void MotionGenerator::calculateSynchronizedValues() {
   }
 }
 
-std::pair<MotionGenerator::Vector7d, bool> MotionGenerator::operator()(
-    const MotionGenerator::Vector7d& q,
-    const rclcpp::Duration& period) {
-  time_ += period.seconds();
-
-  if (time_ == 0.0) {
-    q_start_ = q;
-    delta_q_ = q_goal_ - q_start_;
-    calculateSynchronizedValues();
-  }
+std::pair<MotionGenerator::Vector7d, bool> MotionGenerator::getDesiredJointPositions(
+    const rclcpp::Duration& trajectory_time) {
+  time_ = trajectory_time.seconds();
 
   Vector7d delta_q_d;
   bool motion_finished = calculateDesiredValues(time_, &delta_q_d);

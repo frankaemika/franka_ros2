@@ -14,6 +14,7 @@
 
 #include <franka_example_controllers/joint_impedance_example_controller.hpp>
 
+#include <cassert>
 #include <string>
 
 namespace franka_example_controllers {
@@ -36,35 +37,13 @@ JointImpedanceExampleController::state_interface_configuration() const {
   for (int i = 1; i <= num_joints; ++i) {
     config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/position");
     config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/velocity");
-    config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/effort");
   }
   return config;
 }
 
 controller_interface::return_type JointImpedanceExampleController::update() {
-  std::vector<double> joint_positions;
-  std::vector<double> joint_velocities;
-  std::vector<double> joint_torques;
-  for (auto& state_interface : state_interfaces_) {
-    if (state_interface.get_interface_name() == "position") {
-      joint_positions.push_back(state_interface.get_value());
-    }
-    if (state_interface.get_interface_name() == "velocity") {
-      joint_velocities.push_back(state_interface.get_value());
-    }
-    if (state_interface.get_interface_name() == "effort") {
-      joint_torques.push_back(state_interface.get_value());
-    }
-  }
+  updateJointStates();
   Vector7 q_goal;
-  q_ = Vector7(joint_positions.data());
-  dq_ = Vector7(joint_velocities.data());
-
-  if (first_time_) {
-    first_time_ = false;
-    initial_q_ = q_;
-    start_time_ = this->node_->now();
-  }
   auto time = this->node_->now() - start_time_;
   double delta_angle = M_PI / 8.0 * (1 - std::cos(M_PI / 2.5 * time.seconds()));
   q_goal = initial_q_;
@@ -98,15 +77,35 @@ controller_interface::return_type JointImpedanceExampleController::init(
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::return_type::ERROR;
   }
-
   return controller_interface::return_type::OK;
 }
 
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-JointImpedanceExampleController::on_configure(const rclcpp_lifecycle::State& previous_state) {
+JointImpedanceExampleController::on_configure(const rclcpp_lifecycle::State& /*previous_state*/) {
   arm_id_ = node_->get_parameter("arm_id").as_string();
   dq_filtered_.setZero();
-  return LifecycleNodeInterface::on_configure(previous_state);
+  return CallbackReturn::SUCCESS;
+}
+
+rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
+JointImpedanceExampleController::on_activate(const rclcpp_lifecycle::State& /*previous_state*/) {
+  updateJointStates();
+  initial_q_ = q_;
+  start_time_ = this->node_->now();
+  return CallbackReturn::SUCCESS;
+}
+
+void JointImpedanceExampleController::updateJointStates() {
+  for (auto i = 0; i < num_joints; ++i) {
+    const auto& position_interface = state_interfaces_.at(2 * i);
+    const auto& velocity_interface = state_interfaces_.at(2 * i + 1);
+
+    assert(position_interface.get_interface_name() == "position");
+    assert(velocity_interface.get_interface_name() == "velocity");
+
+    q_(i) = position_interface.get_value();
+    dq_(i) = velocity_interface.get_value();
+  }
 }
 
 }  // namespace franka_example_controllers

@@ -29,6 +29,7 @@ class JointImpedanceExampleController : public controller_interface::ControllerI
   controller_interface::return_type update() override;
   controller_interface::return_type init(const std::string& controller_name) override;
   CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
+  CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
 
  private:
   std::string arm_id_;
@@ -39,8 +40,8 @@ class JointImpedanceExampleController : public controller_interface::ControllerI
   Vector7 dq_filtered_;
   Vector7 k_gains_;
   Vector7 d_gains_;
-  bool first_time_ = true;
   rclcpp::Time start_time_;
+  void updateJointStates();
 };
 
 }  // namespace franka_example_controllers
