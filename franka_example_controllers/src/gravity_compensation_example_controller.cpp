@@ -14,6 +14,7 @@
 
 #include <franka_example_controllers/gravity_compensation_example_controller.hpp>
 
+#include <exception>
 #include <string>
 
 namespace franka_example_controllers {

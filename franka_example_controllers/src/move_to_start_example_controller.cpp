@@ -12,8 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <cassert>
 #include <franka_example_controllers/move_to_start_example_controller.hpp>
+
+#include <cassert>
+#include <exception>
+
+#include <Eigen/Eigen>
+#include <controller_interface/controller_interface.hpp>
 
 namespace franka_example_controllers {
 

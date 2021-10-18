@@ -15,7 +15,11 @@
 #include <franka_example_controllers/joint_impedance_example_controller.hpp>
 
 #include <cassert>
+#include <cmath>
+#include <exception>
 #include <string>
+
+#include <Eigen/Eigen>
 
 namespace franka_example_controllers {
 
