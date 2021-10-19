@@ -5,9 +5,6 @@ controller_manager:
     panda_arm_controller:
       type: joint_trajectory_controller/JointTrajectoryController
 
-    panda_hand_controller:
-      type: position_controllers/GripperActionController
-
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
@@ -35,7 +32,3 @@ panda_arm_controller:
       panda_joint5: { p: 250., d: 10., i: 0., i_clamp: 1. }
       panda_joint6: { p: 150., d: 10., i: 0., i_clamp: 1. }
       panda_joint7: { p: 50., d: 5., i: 0., i_clamp: 1. }
-
-panda_hand_controller:
-  ros__parameters:
-    joint: panda_finger_joint1
