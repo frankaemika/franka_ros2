@@ -190,7 +190,7 @@ class GripperActionServer : public rclcpp::Node {
   template <typename T>
   auto withResultGenerator(const std::function<bool()>& command_handler)
       -> std::function<std::shared_ptr<typename T::Result>()> {
-    return [command_handler, this]() {
+    return [command_handler]() {
       auto result = std::make_shared<typename T::Result>();
       try {
         result->success = command_handler();

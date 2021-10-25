@@ -85,26 +85,23 @@ GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)
                               });
 
   this->homing_server_ = rclcpp_action::create_server<Homing>(
-      this, "~/homing",
-      [kHomingTask, this](auto /*uuid*/, auto /*goal*/) { return handleGoal(kHomingTask); },
-      [kHomingTask, this](const auto& /*goal_handle*/) { return handleCancel(kHomingTask); },
+      this, "~/homing", [this](auto /*uuid*/, auto /*goal*/) { return handleGoal(kHomingTask); },
+      [this](const auto& /*goal_handle*/) { return handleCancel(kHomingTask); },
       [this](const auto& goal_handle) {
         return std::thread{[goal_handle, this]() { executeHoming(goal_handle); }}.detach();
       });
   const auto kMoveTask = Task::kMove;
   this->move_server_ = rclcpp_action::create_server<Move>(
-      this, "~/move",
-      [kMoveTask, this](auto /*uuid*/, auto /*goal*/) { return handleGoal(kMoveTask); },
-      [kMoveTask, this](const auto& /*goal_handle*/) { return handleCancel(kMoveTask); },
+      this, "~/move", [this](auto /*uuid*/, auto /*goal*/) { return handleGoal(kMoveTask); },
+      [this](const auto& /*goal_handle*/) { return handleCancel(kMoveTask); },
       [this](const auto& goal_handle) {
         return std::thread{[goal_handle, this]() { executeMove(goal_handle); }}.detach();
       });
 
   const auto kGraspTask = Task::kGrasp;
   this->grasp_server_ = rclcpp_action::create_server<Grasp>(
-      this, "~/grasp",
-      [kGraspTask, this](auto /*uuid*/, auto /*goal*/) { return handleGoal(kGraspTask); },
-      [kGraspTask, this](const auto& /*goal_handle*/) { return handleCancel(kGraspTask); },
+      this, "~/grasp", [this](auto /*uuid*/, auto /*goal*/) { return handleGoal(kGraspTask); },
+      [this](const auto& /*goal_handle*/) { return handleCancel(kGraspTask); },
       [this](const auto& goal_handle) {
         return std::thread{[goal_handle, this]() { executeGrasp(goal_handle); }}.detach();
       });
@@ -112,12 +109,8 @@ GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)
   const auto kGripperCommandTask = Task::kGripperCommand;
   this->gripper_command_server_ = rclcpp_action::create_server<GripperCommand>(
       this, "~/gripper_action",
-      [kGripperCommandTask, this](auto /*uuid*/, auto /*goal*/) {
-        return handleGoal(kGripperCommandTask);
-      },
-      [kGripperCommandTask, this](const auto& /*goal_handle*/) {
-        return handleCancel(kGripperCommandTask);
-      },
+      [this](auto /*uuid*/, auto /*goal*/) { return handleGoal(kGripperCommandTask); },
+      [this](const auto& /*goal_handle*/) { return handleCancel(kGripperCommandTask); },
       [this](const auto& goal_handle) {
         return std::thread{[goal_handle, this]() { onExecuteGripperCommand(goal_handle); }}
             .detach();
