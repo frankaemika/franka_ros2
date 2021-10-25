@@ -14,6 +14,9 @@
 
 #include <franka_hardware/robot.hpp>
 
+#include <cassert>
+#include <mutex>
+
 namespace franka_hardware {
 
 Robot::Robot(const std::string& robot_ip) {
@@ -31,15 +34,21 @@ franka::RobotState Robot::read() {
   return {current_state_};
 }
 
-void Robot::stopTorqueControl() {
-  {
-    std::lock_guard<std::mutex> lock(write_mutex_);
-    finish_ = true;
+void Robot::stopRobot() {
+  if (not stopped_) {
+    {
+      std::lock_guard<std::mutex> lock(write_mutex_);
+      finish_ = true;
+    }
+    control_thread_->join();
+    finish_ = false;
+    stopped_ = true;
   }
-  control_thread_->join();
 }
 
 void Robot::initializeTorqueControl() {
+  assert(isStopped());
+  stopped_ = false;
   const auto kTorqueControl = [this]() {
     robot_->control([this](const franka::RobotState& state, const franka::Duration& /*period*/) {
       {
@@ -55,7 +64,28 @@ void Robot::initializeTorqueControl() {
   control_thread_ = std::make_unique<std::thread>(kTorqueControl);
 }
 
+void Robot::initializeContinuousReading() {
+  assert(isStopped());
+  stopped_ = false;
+  const auto kReading = [this]() {
+    robot_->read([this](const franka::RobotState& state) {
+      {
+        std::lock_guard<std::mutex> lock(read_mutex_);
+        current_state_ = state;
+      }
+      std::lock_guard<std::mutex> lock(write_mutex_);
+      franka::Torques out(tau_command_);
+      return not finish_;
+    });
+  };
+  control_thread_ = std::make_unique<std::thread>(kReading);
+}
+
 Robot::~Robot() {
-  stopTorqueControl();
+  stopRobot();
+}
+
+bool Robot::isStopped() const {
+  return stopped_;
 }
 }  // namespace franka_hardware

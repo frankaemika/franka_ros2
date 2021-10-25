@@ -54,7 +54,7 @@ std::vector<CommandInterface> FrankaHardwareInterface::export_command_interfaces
 }
 
 hardware_interface::return_type FrankaHardwareInterface::start() {
-  robot_->initializeTorqueControl();
+  robot_->initializeContinuousReading();
   for (auto i = 0U; i < kNumberOfJoints; i++) {
     if (std::isnan(hw_positions_[i])) {
       hw_positions_[i] = 0;
@@ -71,7 +71,7 @@ hardware_interface::return_type FrankaHardwareInterface::start() {
 
 hardware_interface::return_type FrankaHardwareInterface::stop() {
   RCLCPP_INFO(getLogger(), "trying to Stop...");
-  robot_->stopTorqueControl();
+  robot_->stopRobot();
   status_ = hardware_interface::status::STOPPED;
   RCLCPP_INFO(getLogger(), "Stopped...");
   return hardware_interface::return_type::OK;
@@ -168,6 +168,51 @@ hardware_interface::return_type FrankaHardwareInterface::configure(
 
 rclcpp::Logger FrankaHardwareInterface::getLogger() {
   return rclcpp::get_logger("FrankaHardwareInterface");
+}
+
+hardware_interface::return_type FrankaHardwareInterface::perform_command_mode_switch(
+    const std::vector<std::string>& /*start_interfaces*/,
+    const std::vector<std::string>& /*stop_interfaces*/) {
+  if (not effort_interface_running_ and effort_interface_claimed_) {
+    robot_->stopRobot();
+    robot_->initializeTorqueControl();
+    effort_interface_running_ = true;
+  } else if (effort_interface_running_ and not effort_interface_claimed_) {
+    robot_->stopRobot();
+    robot_->initializeContinuousReading();
+    effort_interface_running_ = false;
+  }
+  return hardware_interface::return_type::OK;
+}
+
+hardware_interface::return_type FrankaHardwareInterface::prepare_command_mode_switch(
+    const std::vector<std::string>& start_interfaces,
+    const std::vector<std::string>& stop_interfaces) {
+  auto is_effort_interface = [](const std::string& interface) {
+    return interface.find(hardware_interface::HW_IF_EFFORT) != std::string::npos;
+  };
+  int64_t num_start_effort_interfaces =
+      std::count_if(start_interfaces.begin(), start_interfaces.end(), is_effort_interface);
+  if (num_start_effort_interfaces == kNumberOfJoints) {
+    effort_interface_claimed_ = true;
+  } else if (num_start_effort_interfaces == 0) {
+  } else {
+    RCLCPP_FATAL(this->getLogger(), "Expected %d effort interfaces to start, but got %d instead.",
+                 kNumberOfJoints, num_start_effort_interfaces);
+    throw std::invalid_argument("Invalid number of effort interfaces to start");
+  }
+
+  int64_t num_stop_effort_interfaces =
+      std::count_if(stop_interfaces.begin(), stop_interfaces.end(), is_effort_interface);
+  if (num_stop_effort_interfaces == kNumberOfJoints) {
+    effort_interface_claimed_ = false;
+  } else if (num_stop_effort_interfaces == 0) {
+  } else {
+    RCLCPP_FATAL(this->getLogger(), "Expected %d effort interfaces to stop, but got %d instead.",
+                 kNumberOfJoints, num_stop_effort_interfaces);
+    throw std::invalid_argument("Invalid number of effort interfaces to stop");
+  }
+  return hardware_interface::return_type::OK;
 }
 }  // namespace franka_hardware
 

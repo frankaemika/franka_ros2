@@ -34,6 +34,12 @@ namespace franka_hardware {
 class FrankaHardwareInterface
     : public hardware_interface::BaseInterface<hardware_interface::SystemInterface> {
  public:
+  hardware_interface::return_type prepare_command_mode_switch(
+      const std::vector<std::string>& start_interfaces,
+      const std::vector<std::string>& stop_interfaces) override;
+  hardware_interface::return_type perform_command_mode_switch(
+      const std::vector<std::string>& start_interfaces,
+      const std::vector<std::string>& stop_interfaces) override;
   std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
   std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
   hardware_interface::return_type start() override;
@@ -49,6 +55,8 @@ class FrankaHardwareInterface
   std::vector<double> hw_positions_;
   std::vector<double> hw_velocities_;
   std::vector<double> hw_efforts_;
+  bool effort_interface_claimed_ = false;
+  bool effort_interface_running_ = false;
   static rclcpp::Logger getLogger();
 };
 }  // namespace franka_hardware

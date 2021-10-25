@@ -31,10 +31,11 @@ class Robot {
   virtual ~Robot();
 
   void initializeTorqueControl();
-  void stopTorqueControl();
+  void initializeContinuousReading();
+  void stopRobot();
   franka::RobotState read();
-
   void write(const std::array<double, 7>& efforts);
+  bool isStopped() const;
 
  private:
   std::unique_ptr<std::thread> control_thread_;
@@ -42,6 +43,7 @@ class Robot {
   std::mutex read_mutex_;
   std::mutex write_mutex_;
   bool finish_ = false;
+  bool stopped_ = true;
   franka::RobotState current_state_;
   std::array<double, 7> tau_command_{};
 };
