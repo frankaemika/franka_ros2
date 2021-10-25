@@ -26,7 +26,7 @@
       </xacro:macro>
 
       <xacro:configure_joint joint_name="${ns}_joint1" initial_position="0.0"/>
-      <xacro:configure_joint joint_name="${ns}_joint2" initial_position="-${pi/4}"/>
+      <xacro:configure_joint joint_name="${ns}_joint2" initial_position="${-pi/4}"/>
       <xacro:configure_joint joint_name="${ns}_joint3" initial_position="0.0"/>
       <xacro:configure_joint joint_name="${ns}_joint4" initial_position="${-3*pi/4}"/>
       <xacro:configure_joint joint_name="${ns}_joint5" initial_position="0.0"/>
