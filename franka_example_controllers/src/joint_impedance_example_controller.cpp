@@ -47,7 +47,7 @@ JointImpedanceExampleController::state_interface_configuration() const {
 
 controller_interface::return_type JointImpedanceExampleController::update() {
   updateJointStates();
-  Vector7 q_goal = initial_q_;
+  Vector7d q_goal = initial_q_;
   auto time = this->node_->now() - start_time_;
   double delta_angle = M_PI / 8.0 * (1 - std::cos(M_PI / 2.5 * time.seconds()));
   q_goal(3) += delta_angle;
@@ -55,7 +55,7 @@ controller_interface::return_type JointImpedanceExampleController::update() {
 
   const double kAlpha = 0.99;
   dq_filtered_ = (1 - kAlpha) * dq_filtered_ + kAlpha * dq_;
-  Vector7 tau_d_calculated =
+  Vector7d tau_d_calculated =
       k_gains_.cwiseProduct(q_goal - q_) + d_gains_.cwiseProduct(-dq_filtered_);
   for (int i = 0; i < 7; ++i) {
     command_interfaces_[i].set_value(tau_d_calculated(i));

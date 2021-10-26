@@ -24,7 +24,7 @@ namespace franka_example_controllers {
 
 class JointImpedanceExampleController : public controller_interface::ControllerInterface {
  public:
-  using Vector7 = Eigen::Matrix<double, 7, 1>;
+  using Vector7d = Eigen::Matrix<double, 7, 1>;
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;
   controller_interface::return_type update() override;
@@ -35,12 +35,12 @@ class JointImpedanceExampleController : public controller_interface::ControllerI
  private:
   std::string arm_id_;
   const int num_joints = 7;
-  Vector7 q_;
-  Vector7 initial_q_;
-  Vector7 dq_;
-  Vector7 dq_filtered_;
-  Vector7 k_gains_;
-  Vector7 d_gains_;
+  Vector7d q_;
+  Vector7d initial_q_;
+  Vector7d dq_;
+  Vector7d dq_filtered_;
+  Vector7d k_gains_;
+  Vector7d d_gains_;
   rclcpp::Time start_time_;
   void updateJointStates();
 };
