@@ -73,11 +73,11 @@ controller_interface::return_type MoveToStartExampleController::init(
   if (ret != controller_interface::return_type::OK) {
     return ret;
   }
-  k_gains_ << 600.0, 600.0, 600.0, 600.0, 250.0, 150.0, 50.0;
-  d_gains_ << 25.0, 25.0, 25.0, 25.0, 15.0, 12.5, 7.5;
   q_goal_ << 0, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4;
   try {
     auto_declare<std::string>("arm_id", "panda");
+    auto_declare<std::vector<double>>("k_gains", {});
+    auto_declare<std::vector<double>>("d_gains", {});
   } catch (const std::exception& e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
     return controller_interface::return_type::ERROR;
@@ -88,6 +88,30 @@ controller_interface::return_type MoveToStartExampleController::init(
 rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
 MoveToStartExampleController::on_configure(const rclcpp_lifecycle::State& /*previous_state*/) {
   arm_id_ = node_->get_parameter("arm_id").as_string();
+  auto k_gains = node_->get_parameter("k_gains").as_double_array();
+  auto d_gains = node_->get_parameter("d_gains").as_double_array();
+  if (k_gains.empty()) {
+    RCLCPP_FATAL(node_->get_logger(), "k_gains parameter not set");
+    return CallbackReturn::FAILURE;
+  }
+  if (k_gains.size() != static_cast<uint>(num_joints)) {
+    RCLCPP_FATAL(node_->get_logger(), "k_gains should be of size %d but is of size %d", num_joints,
+                 k_gains.size());
+    return CallbackReturn::FAILURE;
+  }
+  if (d_gains.empty()) {
+    RCLCPP_FATAL(node_->get_logger(), "d_gains parameter not set");
+    return CallbackReturn::FAILURE;
+  }
+  if (d_gains.size() != static_cast<uint>(num_joints)) {
+    RCLCPP_FATAL(node_->get_logger(), "d_gains should be of size %d but is of size %d", num_joints,
+                 d_gains.size());
+    return CallbackReturn::FAILURE;
+  }
+  for (int i = 0; i < num_joints; ++i) {
+    d_gains_(i) = d_gains.at(i);
+    k_gains_(i) = k_gains.at(i);
+  }
   dq_filtered_.setZero();
   return CallbackReturn::SUCCESS;
 }
