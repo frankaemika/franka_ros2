@@ -40,3 +40,42 @@ joint_trajectory_controller:
       panda_joint5: { p: 250., d: 10., i: 0., i_clamp: 1. }
       panda_joint6: { p: 150., d: 10., i: 0., i_clamp: 1. }
       panda_joint7: { p: 50., d: 5., i: 0., i_clamp: 1. }
+
+joint_impedance_example_controller:
+  ros__parameters:
+    arm_id: panda
+    k_gains:
+      - 24.0
+      - 24.0
+      - 24.0
+      - 24.0
+      - 10.0
+      - 6.0
+      - 2.0
+    d_gains:
+      - 2.0
+      - 2.0
+      - 2.0
+      - 1.0
+      - 1.0
+      - 1.0
+      - 0.5
+move_to_start_example_controller:
+  ros__parameters:
+    arm_id: panda
+    k_gains:
+      - 600.0
+      - 600.0
+      - 600.0
+      - 600.0
+      - 250.0
+      - 150.0
+      - 50.0
+    d_gains:
+      - 30.0
+      - 30.0
+      - 30.0
+      - 30.0
+      - 10.0
+      - 10.0
+      - 5.

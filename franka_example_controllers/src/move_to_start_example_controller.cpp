@@ -60,8 +60,8 @@ controller_interface::return_type MoveToStartExampleController::update() {
       command_interfaces_[i].set_value(tau_d_calculated(i));
     }
   } else {
-    for (int i = 0; i < 7; ++i) {
-      command_interfaces_[i].set_value(0);
+    for (auto& command_interface : command_interfaces_) {
+      command_interface.set_value(0);
     }
   }
   return controller_interface::return_type::OK;
