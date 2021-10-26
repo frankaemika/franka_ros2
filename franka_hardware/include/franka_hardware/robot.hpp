@@ -23,18 +23,50 @@ namespace franka_hardware {
 
 class Robot {
  public:
+  /**
+   * Connects to the robot. This method can block for up to one minute if the robot is not
+   * responding. An exception will be thrown if the connection cannot be established.
+   *
+   * @param[in] robot_ip IP address or hostname of the robot.
+   */
   explicit Robot(const std::string& robot_ip);
   Robot(const Robot&) = delete;
   Robot& operator=(const Robot& other) = delete;
   Robot& operator=(Robot&& other) = delete;
   Robot(Robot&& other) = delete;
+
+  /// Stops the currently running loop and closes the connection with the robot.
   virtual ~Robot();
 
+  /**
+   * Starts a torque control loop. Before using this method make sure that no other
+   * control or reading loop is currently active.
+   */
   void initializeTorqueControl();
+
+  /**
+   * Starts a reading loop of the robot state. Before using this method make sure that no other
+   * control or reading loop is currently active.
+   */
   void initializeContinuousReading();
+
+  /// stops the control or reading loop of the robot.
   void stopRobot();
+
+  /**
+   * Get the current robot state in a thread-safe way.
+   * @return current robot state.
+   */
   franka::RobotState read();
+
+  /**
+   * Sends new desired torque commands to the control loop in a thread-safe way.
+   * The robot will use these torques until a different set of torques are commanded.
+   * @param[in] efforts torque command for each joint.
+   */
   void write(const std::array<double, 7>& efforts);
+
+  /// @return true if there is no control or reading loop running.
   bool isStopped() const;
 
  private:
