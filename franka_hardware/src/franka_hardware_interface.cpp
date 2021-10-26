@@ -73,7 +73,7 @@ hardware_interface::return_type FrankaHardwareInterface::stop() {
   RCLCPP_INFO(getLogger(), "trying to Stop...");
   robot_->stopRobot();
   status_ = hardware_interface::status::STOPPED;
-  RCLCPP_INFO(getLogger(), "Stopped...");
+  RCLCPP_INFO(getLogger(), "Stopped");
   return hardware_interface::return_type::OK;
 }
 
@@ -101,7 +101,7 @@ hardware_interface::return_type FrankaHardwareInterface::configure(
     return hardware_interface::return_type::ERROR;
   }
   if (info_.joints.size() != kNumberOfJoints) {
-    RCLCPP_FATAL(getLogger(), "Got %d joints. Expected 7.", info_.joints.size(), kNumberOfJoints);
+    RCLCPP_FATAL(getLogger(), "Got %d joints. Expected %d.", info_.joints.size(), kNumberOfJoints);
     return hardware_interface::return_type::ERROR;
   }
   hw_positions_.resize(kNumberOfJoints, std::numeric_limits<double>::quiet_NaN());
@@ -117,7 +117,7 @@ hardware_interface::return_type FrankaHardwareInterface::configure(
       return hardware_interface::return_type::ERROR;
     }
     if (joint.command_interfaces[0].name != hardware_interface::HW_IF_EFFORT) {
-      RCLCPP_FATAL(getLogger(), "Joint '%s' have %s command interfaces found. '%s' expected.",
+      RCLCPP_FATAL(getLogger(), "Joint '%s' has unexpected command interface '%s'. Expected '%s'",
                    joint.name.c_str(), joint.command_interfaces[0].name.c_str(),
                    hardware_interface::HW_IF_EFFORT);
       return hardware_interface::return_type::ERROR;
@@ -128,23 +128,21 @@ hardware_interface::return_type FrankaHardwareInterface::configure(
       return hardware_interface::return_type::ERROR;
     }
     if (joint.state_interfaces[0].name != hardware_interface::HW_IF_POSITION) {
-      RCLCPP_FATAL(getLogger(), "Joint '%s' have %s state interfaces found. '%s' expected.",
+      RCLCPP_FATAL(getLogger(), "Joint '%s' has unexpected state interface '%s'. Expected '%s'",
                    joint.name.c_str(), joint.state_interfaces[0].name.c_str(),
                    hardware_interface::HW_IF_POSITION);
     }
     if (joint.state_interfaces[1].name != hardware_interface::HW_IF_VELOCITY) {
-      RCLCPP_FATAL(getLogger(), "Joint '%s' have %s state interfaces found. '%s' expected.",
+      RCLCPP_FATAL(getLogger(), "Joint '%s' has unexpected state interface '%s'. Expected '%s'",
                    joint.name.c_str(), joint.state_interfaces[0].name.c_str(),
                    hardware_interface::HW_IF_VELOCITY);
     }
     if (joint.state_interfaces[2].name != hardware_interface::HW_IF_EFFORT) {
-      RCLCPP_FATAL(getLogger(), "Joint '%s' have %s state interfaces found. '%s' expected.",
+      RCLCPP_FATAL(getLogger(), "Joint '%s' has unexpected state interface '%s'. Expected '%s'",
                    joint.name.c_str(), joint.state_interfaces[0].name.c_str(),
                    hardware_interface::HW_IF_EFFORT);
     }
   }
-
-  RCLCPP_INFO(getLogger(), "Connecting to robot...");
   std::string robot_ip;
   try {
     robot_ip = info_.hardware_parameters.at("robot_ip");
@@ -154,6 +152,7 @@ hardware_interface::return_type FrankaHardwareInterface::configure(
     return hardware_interface::return_type::ERROR;
   }
   try {
+    RCLCPP_INFO(getLogger(), "Connecting to robot at \"%s\" ...", robot_ip.c_str());
     robot_ = std::make_unique<Robot>(robot_ip);
   } catch (const franka::Exception& e) {
     RCLCPP_FATAL(getLogger(), "Could not connect to robot");
@@ -161,7 +160,7 @@ hardware_interface::return_type FrankaHardwareInterface::configure(
     return hardware_interface::return_type::ERROR;
   }
   status_ = hardware_interface::status::CONFIGURED;
-  RCLCPP_INFO(getLogger(), "Configuring succeeded");
+  RCLCPP_INFO(getLogger(), "Successfully connected to robot");
 
   return hardware_interface::return_type::OK;
 }
