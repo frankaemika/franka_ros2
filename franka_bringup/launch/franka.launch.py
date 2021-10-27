@@ -25,13 +25,13 @@ from launch.conditions import IfCondition
 
 
 def generate_launch_description():
-    robot_parameter_name = 'robot_ip'
+    robot_ip_parameter_name = 'robot_ip'
     load_gripper_parameter_name = 'load_gripper'
     use_fake_hardware_parameter_name = 'use_fake_hardware'
     fake_sensor_commands_parameter_name = 'fake_sensor_commands'
     use_gui_parameter_name = "use_gui"
 
-    robot_ip = LaunchConfiguration(robot_parameter_name)
+    robot_ip = LaunchConfiguration(robot_ip_parameter_name)
     load_gripper = LaunchConfiguration(load_gripper_parameter_name)
     use_fake_hardware = LaunchConfiguration(use_fake_hardware_parameter_name)
     fake_sensor_commands = LaunchConfiguration(fake_sensor_commands_parameter_name)
@@ -57,7 +57,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument(
-            robot_parameter_name,
+            robot_ip_parameter_name,
             description='Hostname or IP address of the robot.'),
         DeclareLaunchArgument(
             use_gui_parameter_name,
@@ -109,7 +109,7 @@ def generate_launch_description():
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([PathJoinSubstitution(
                 [FindPackageShare("franka_gripper"), "launch", "gripper.launch.py"])]),
-            launch_arguments={robot_parameter_name: robot_ip,
+            launch_arguments={robot_ip_parameter_name: robot_ip,
                               use_fake_hardware_parameter_name: use_fake_hardware}.items(),
             condition=IfCondition(load_gripper)
 

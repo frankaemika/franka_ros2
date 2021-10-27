@@ -22,11 +22,11 @@ from launch.conditions import IfCondition, UnlessCondition
 
 
 def generate_launch_description():
-    robot_parameter_name = 'robot_ip'
+    robot_ip_parameter_name = 'robot_ip'
     use_fake_hardware_parameter_name = 'use_fake_hardware'
     arm_parameter_name = 'arm_id'
     joint_names_parameter_name = 'joint_names'
-    robot_ip = LaunchConfiguration(robot_parameter_name)
+    robot_ip = LaunchConfiguration(robot_ip_parameter_name)
     use_fake_hardware = LaunchConfiguration(use_fake_hardware_parameter_name)
     arm_id = LaunchConfiguration(arm_parameter_name)
     joint_names = LaunchConfiguration(joint_names_parameter_name)
@@ -40,7 +40,7 @@ def generate_launch_description():
 
     return LaunchDescription([
         DeclareLaunchArgument(
-            robot_parameter_name,
+            robot_ip_parameter_name,
             description='Use Franka Gripper as end-effector if true. Robot is loaded without '
                         'end-effector otherwise'),
         DeclareLaunchArgument(

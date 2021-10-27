@@ -40,11 +40,11 @@ def load_yaml(package_name, file_path):
 
 
 def generate_launch_description():
-    robot_parameter_name = 'robot_ip'
+    robot_ip_parameter_name = 'robot_ip'
     use_fake_hardware_parameter_name = 'use_fake_hardware'
     fake_sensor_commands_parameter_name = 'fake_sensor_commands'
 
-    robot_ip = LaunchConfiguration(robot_parameter_name)
+    robot_ip = LaunchConfiguration(robot_ip_parameter_name)
     use_fake_hardware = LaunchConfiguration(use_fake_hardware_parameter_name)
     fake_sensor_commands = LaunchConfiguration(fake_sensor_commands_parameter_name)
 
@@ -211,7 +211,7 @@ def generate_launch_description():
         parameters=[{'source_list': ["franka/joint_states", "panda_gripper/joint_states"]}],
     )
     robot_arg = DeclareLaunchArgument(
-        robot_parameter_name,
+        robot_ip_parameter_name,
         description='Hostname or IP address of the robot.')
 
     use_fake_hardware_arg = DeclareLaunchArgument(
