@@ -145,7 +145,6 @@ hardware_interface::return_type FrankaHardwareInterface::configure(
   std::string robot_ip;
   try {
     robot_ip = info_.hardware_parameters.at("robot_ip");
-
   } catch (const std::out_of_range& ex) {
     RCLCPP_FATAL(getLogger(), "Parameter 'robot_ip' not set");
     return hardware_interface::return_type::ERROR;

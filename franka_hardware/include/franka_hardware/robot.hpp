@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <iostream>
 #include <thread>
 
@@ -74,7 +75,7 @@ class Robot {
   std::unique_ptr<franka::Robot> robot_;
   std::mutex read_mutex_;
   std::mutex write_mutex_;
-  bool finish_ = false;
+  std::atomic_bool finish_{false};
   bool stopped_ = true;
   franka::RobotState current_state_;
   std::array<double, 7> tau_command_{};

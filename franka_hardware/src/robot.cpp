@@ -36,10 +36,7 @@ franka::RobotState Robot::read() {
 
 void Robot::stopRobot() {
   if (not stopped_) {
-    {
-      std::lock_guard<std::mutex> lock(write_mutex_);
-      finish_ = true;
-    }
+    finish_ = true;
     control_thread_->join();
     finish_ = false;
     stopped_ = true;
@@ -73,8 +70,6 @@ void Robot::initializeContinuousReading() {
         std::lock_guard<std::mutex> lock(read_mutex_);
         current_state_ = state;
       }
-      std::lock_guard<std::mutex> lock(write_mutex_);
-      franka::Torques out(tau_command_);
       return not finish_;
     });
   };
