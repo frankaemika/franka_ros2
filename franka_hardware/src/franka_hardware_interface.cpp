@@ -33,11 +33,11 @@ std::vector<StateInterface> FrankaHardwareInterface::export_state_interfaces() {
   std::vector<StateInterface> state_interfaces;
   for (auto i = 0U; i < info_.joints.size(); i++) {
     state_interfaces.emplace_back(StateInterface(
-        info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_positions_[i]));
+        info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_positions_.at(i)));
     state_interfaces.emplace_back(StateInterface(
-        info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_velocities_[i]));
+        info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_velocities_.at(i)));
     state_interfaces.emplace_back(
-        StateInterface(info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &hw_efforts_[i]));
+        StateInterface(info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &hw_efforts_.at(i)));
   }
   return state_interfaces;
 }
@@ -46,25 +46,20 @@ std::vector<CommandInterface> FrankaHardwareInterface::export_command_interfaces
   std::vector<CommandInterface> command_interfaces;
   command_interfaces.reserve(info_.joints.size());
   for (auto i = 0U; i < info_.joints.size(); i++) {
-    command_interfaces.emplace_back(
-        CommandInterface(info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &hw_commands_[i]));
+    command_interfaces.emplace_back(CommandInterface(
+        info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &hw_commands_.at(i)));
   }
   return command_interfaces;
 }
 
 hardware_interface::return_type FrankaHardwareInterface::start() {
   robot_->initializeContinuousReading();
-  for (auto i = 0U; i < kNumberOfJoints; i++) {
-    if (std::isnan(hw_positions_[i])) {
-      hw_positions_[i] = 0;
-      hw_velocities_[i] = 0;
-      hw_efforts_[i] = 0;
-      hw_commands_[i] = 0;
-    }
-  }
+  hw_commands_.fill(0);
+  hw_positions_.fill(0);
+  hw_velocities_.fill(0);
+  hw_efforts_.fill(0);
   status_ = hardware_interface::status::STARTED;
   RCLCPP_INFO(getLogger(), "Started");
-
   return hardware_interface::return_type::OK;
 }
 
@@ -78,19 +73,13 @@ hardware_interface::return_type FrankaHardwareInterface::stop() {
 
 hardware_interface::return_type FrankaHardwareInterface::read() {
   const auto kState = robot_->read();
-  for (auto i = 0U; i < hw_commands_.size(); i++) {
-    hw_positions_[i] = kState.q.at(i);
-    hw_velocities_[i] = kState.dq.at(i);
-    hw_efforts_[i] = kState.tau_J.at(i);
-  }
+  hw_positions_ = kState.q;
+  hw_velocities_ = kState.dq;
+  hw_efforts_ = kState.tau_J;
   return hardware_interface::return_type::OK;
 }
 hardware_interface::return_type FrankaHardwareInterface::write() {
-  std::array<double, kNumberOfJoints> command{};
-  for (auto i = 0U; i < command.size(); ++i) {
-    command.at(i) = hw_commands_[i];
-  }
-  robot_->write(command);
+  robot_->write(hw_commands_);
   return hardware_interface::return_type::OK;
 }
 
@@ -103,10 +92,6 @@ hardware_interface::return_type FrankaHardwareInterface::configure(
     RCLCPP_FATAL(getLogger(), "Got %d joints. Expected %d.", info_.joints.size(), kNumberOfJoints);
     return hardware_interface::return_type::ERROR;
   }
-  hw_positions_.resize(kNumberOfJoints, std::numeric_limits<double>::quiet_NaN());
-  hw_velocities_.resize(kNumberOfJoints, std::numeric_limits<double>::quiet_NaN());
-  hw_efforts_.resize(kNumberOfJoints, std::numeric_limits<double>::quiet_NaN());
-  hw_commands_.resize(kNumberOfJoints, std::numeric_limits<double>::quiet_NaN());
 
   for (const auto& joint : info_.joints) {
     RCLCPP_INFO(getLogger(), "Joint name: '%s' ", joint.name.c_str());
@@ -159,7 +144,6 @@ hardware_interface::return_type FrankaHardwareInterface::configure(
   }
   status_ = hardware_interface::status::CONFIGURED;
   RCLCPP_INFO(getLogger(), "Successfully connected to robot");
-
   return hardware_interface::return_type::OK;
 }
 
