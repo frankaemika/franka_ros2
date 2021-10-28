@@ -48,7 +48,7 @@ class FrankaHardwareInterface
   hardware_interface::return_type read() override;
   hardware_interface::return_type write() override;
   hardware_interface::return_type configure(const hardware_interface::HardwareInfo& info) override;
-  static const int kNumberOfJoints = 7;
+  static const size_t kNumberOfJoints = 7;
 
  private:
   std::unique_ptr<Robot> robot_;
