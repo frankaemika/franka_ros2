@@ -15,6 +15,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include <hardware_interface/visibility_control.h>

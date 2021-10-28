@@ -14,6 +14,9 @@
 
 #include <franka_hardware/franka_hardware_interface.hpp>
 
+#include <algorithm>
+#include <exception>
+
 #include <franka/exception.h>
 #include <hardware_interface/base_interface.hpp>
 #include <hardware_interface/handle.hpp>

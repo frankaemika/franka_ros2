@@ -14,8 +14,11 @@
 
 #pragma once
 
+#include <array>
 #include <atomic>
 #include <iostream>
+#include <memory>
+#include <mutex>
 #include <thread>
 
 #include <franka/robot.h>
