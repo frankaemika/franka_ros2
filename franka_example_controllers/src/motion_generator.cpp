@@ -14,7 +14,12 @@
 
 #include <franka_example_controllers/motion_generator.hpp>
 
+#include <algorithm>
+#include <array>
 #include <cassert>
+#include <utility>
+
+#include <Eigen/Core>
 
 MotionGenerator::MotionGenerator(double speed_factor,
                                  const Vector7d& q_start,
