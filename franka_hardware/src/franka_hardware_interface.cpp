@@ -78,6 +78,7 @@ hardware_interface::return_type FrankaHardwareInterface::read() {
   hw_efforts_ = kState.tau_J;
   return hardware_interface::return_type::OK;
 }
+
 hardware_interface::return_type FrankaHardwareInterface::write() {
   robot_->write(hw_commands_);
   return hardware_interface::return_type::OK;
@@ -94,7 +95,6 @@ hardware_interface::return_type FrankaHardwareInterface::configure(
   }
 
   for (const auto& joint : info_.joints) {
-    RCLCPP_INFO(getLogger(), "Joint name: '%s' ", joint.name.c_str());
     if (joint.command_interfaces.size() != 1) {
       RCLCPP_FATAL(getLogger(), "Joint '%s' has %zu command interfaces found. 1 expected.",
                    joint.name.c_str(), joint.command_interfaces.size());
