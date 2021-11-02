@@ -26,7 +26,7 @@
  */
 class MotionGenerator {
  public:
-  using Vector7d = Eigen::Matrix<double, 7, 1, Eigen::ColMajor>;
+  using Vector7d = Eigen::Matrix<double, 7, 1>;
   /**
    * Creates a new MotionGenerator instance for a target q.
    *
@@ -48,7 +48,7 @@ class MotionGenerator {
   std::pair<Vector7d, bool> getDesiredJointPositions(const rclcpp::Duration& trajectory_time);
 
  private:
-  using Vector7i = Eigen::Matrix<int, 7, 1, Eigen::ColMajor>;
+  using Vector7i = Eigen::Matrix<int, 7, 1>;
 
   bool calculateDesiredValues(double t, Vector7d* delta_q_d) const;
   void calculateSynchronizedValues();
