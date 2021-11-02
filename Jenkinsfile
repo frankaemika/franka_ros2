@@ -16,4 +16,11 @@ pipeline {
             }
         }
     }
+    post {
+        always {
+            script {
+                notifyBitbucket()
+            }
+        }
+    }
 }
