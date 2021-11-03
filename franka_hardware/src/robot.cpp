@@ -47,16 +47,18 @@ void Robot::initializeTorqueControl() {
   assert(isStopped());
   stopped_ = false;
   const auto kTorqueControl = [this]() {
-    robot_->control([this](const franka::RobotState& state, const franka::Duration& /*period*/) {
-      {
-        std::lock_guard<std::mutex> lock(read_mutex_);
-        current_state_ = state;
-      }
-      std::lock_guard<std::mutex> lock(write_mutex_);
-      franka::Torques out(tau_command_);
-      out.motion_finished = finish_;
-      return out;
-    });
+    robot_->control(
+        [this](const franka::RobotState& state, const franka::Duration& /*period*/) {
+          {
+            std::lock_guard<std::mutex> lock(read_mutex_);
+            current_state_ = state;
+          }
+          std::lock_guard<std::mutex> lock(write_mutex_);
+          franka::Torques out(tau_command_);
+          out.motion_finished = finish_;
+          return out;
+        },
+        true, franka::kMaxCutoffFrequency);
   };
   control_thread_ = std::make_unique<std::thread>(kTorqueControl);
 }
