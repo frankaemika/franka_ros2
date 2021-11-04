@@ -41,8 +41,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             robot_ip_parameter_name,
-            description='Use Franka Gripper as end-effector if true. Robot is loaded without '
-                        'end-effector otherwise'),
+            description='Hostname or IP address of the robot.'),
         DeclareLaunchArgument(
             use_fake_hardware_parameter_name,
             default_value="false",
