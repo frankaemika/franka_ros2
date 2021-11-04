@@ -54,8 +54,8 @@ def generate_launch_description():
         DeclareLaunchArgument(
             load_gripper_parameter_name,
             default_value='true',
-            description='Use Franka Gripper as end-effector if true. Robot is loaded without '
-                        'end-effector otherwise'),
+            description='Use Franka Gripper as an end-effector, otherwise, the robot is loaded '
+                        'without an end-effector.'),
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([PathJoinSubstitution(
