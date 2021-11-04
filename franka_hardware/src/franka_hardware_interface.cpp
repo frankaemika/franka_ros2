@@ -58,9 +58,7 @@ std::vector<CommandInterface> FrankaHardwareInterface::export_command_interfaces
 hardware_interface::return_type FrankaHardwareInterface::start() {
   robot_->initializeContinuousReading();
   hw_commands_.fill(0);
-  hw_positions_.fill(0);
-  hw_velocities_.fill(0);
-  hw_efforts_.fill(0);
+  read();  // makes sure that the robot state is properly initialized.
   status_ = hardware_interface::status::STARTED;
   RCLCPP_INFO(getLogger(), "Started");
   return hardware_interface::return_type::OK;
