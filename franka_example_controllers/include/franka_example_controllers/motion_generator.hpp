@@ -54,6 +54,7 @@ class MotionGenerator {
   void calculateSynchronizedValues();
 
   static constexpr double kDeltaQMotionFinished = 1e-6;
+  static const int kJoints = 7;
 
   Vector7d q_start_;
   Vector7d delta_q_;

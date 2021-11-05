@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
+#include <cmath>
 #include <utility>
 
 #include <Eigen/Core>
@@ -39,9 +40,9 @@ bool MotionGenerator::calculateDesiredValues(double t, Vector7d* delta_q_d) cons
   sign_delta_q << delta_q_.cwiseSign().cast<int>();
   Vector7d t_d = t_2_sync_ - t_1_sync_;
   Vector7d delta_t_2_sync = t_f_sync_ - t_2_sync_;
-  std::array<bool, 7> joint_motion_finished{};
+  std::array<bool, kJoints> joint_motion_finished{};
 
-  for (auto i = 0; i < 7; i++) {
+  for (auto i = 0; i < kJoints; i++) {
     if (std::abs(delta_q_[i]) < kDeltaQMotionFinished) {
       (*delta_q_d)[i] = 0;
       joint_motion_finished.at(i) = true;
@@ -78,7 +79,7 @@ void MotionGenerator::calculateSynchronizedValues() {
   Vector7i sign_delta_q;
   sign_delta_q << delta_q_.cwiseSign().cast<int>();
 
-  for (auto i = 0; i < 7; i++) {
+  for (auto i = 0; i < kJoints; i++) {
     if (std::abs(delta_q_[i]) > kDeltaQMotionFinished) {
       if (std::abs(delta_q_[i]) < (3.0 / 4.0 * (std::pow(dq_max_[i], 2.0) / ddq_max_start_[i]) +
                                    3.0 / 4.0 * (std::pow(dq_max_[i], 2.0) / ddq_max_goal_[i]))) {
@@ -92,7 +93,7 @@ void MotionGenerator::calculateSynchronizedValues() {
     }
   }
   double max_t_f = t_f.maxCoeff();
-  for (auto i = 0; i < 7; i++) {
+  for (auto i = 0; i < kJoints; i++) {
     if (std::abs(delta_q_[i]) > kDeltaQMotionFinished) {
       double a = 1.5 / 2.0 * (ddq_max_goal_[i] + ddq_max_start_[i]);
       double b = -1.0 * max_t_f * ddq_max_goal_[i] * ddq_max_start_[i];
@@ -119,7 +120,7 @@ std::pair<MotionGenerator::Vector7d, bool> MotionGenerator::getDesiredJointPosit
   Vector7d delta_q_d;
   bool motion_finished = calculateDesiredValues(time_, &delta_q_d);
 
-  std::array<double, 7> joint_positions{};
-  Eigen::VectorXd::Map(&joint_positions[0], 7) = (q_start_ + delta_q_d);
+  std::array<double, kJoints> joint_positions{};
+  Eigen::VectorXd::Map(&joint_positions[0], kJoints) = (q_start_ + delta_q_d);
   return std::make_pair(q_start_ + delta_q_d, motion_finished);
 }
