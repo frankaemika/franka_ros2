@@ -40,9 +40,9 @@ class MotionGenerator {
    * Sends joint position calculations
    *
    * @param[in] robot_state Current state of the robot.
-   * @param[in] trajectory_time amount of time, that has passed since the start of the trajectory
+   * @param[in] trajectory_time Amount of time, that has passed since the start of the trajectory.
    *
-   * @return Joint positions for use inside a control loop and a boolean indicating whether the
+   * @return Joint positions to use inside a control loop and a boolean indicating whether the
    * motion is finished.
    */
   std::pair<Vector7d, bool> getDesiredJointPositions(const rclcpp::Duration& trajectory_time);
@@ -66,7 +66,7 @@ class MotionGenerator {
 
   double time_ = 0.0;
 
-  Vector7d dq_max_ = (Vector7d() << 2.0, 2.0, 2.0, 2.0, 2.5, 2.5, 2.5).finished();
-  Vector7d ddq_max_start_ = (Vector7d() << 5, 5, 5, 5, 5, 5, 5).finished();
-  Vector7d ddq_max_goal_ = (Vector7d() << 5, 5, 5, 5, 5, 5, 5).finished();
+  Vector7d dq_max_ = (Vector7d() << 2.0, 2.0, 2.0, 2.0, 2.5, 2.5, 2.5).finished();  // in m/s
+  Vector7d ddq_max_start_ = (Vector7d() << 5, 5, 5, 5, 5, 5, 5).finished();         // in m/s^2
+  Vector7d ddq_max_goal_ = (Vector7d() << 5, 5, 5, 5, 5, 5, 5).finished();          // in m/s^2
 };
