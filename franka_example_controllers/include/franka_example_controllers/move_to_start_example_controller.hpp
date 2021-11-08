@@ -25,6 +25,7 @@
 
 namespace franka_example_controllers {
 
+/// The move to start example controller moves the robot into default pose.
 class MoveToStartExampleController : public controller_interface::ControllerInterface {
  public:
   using Vector7d = Eigen::Matrix<double, 7, 1>;

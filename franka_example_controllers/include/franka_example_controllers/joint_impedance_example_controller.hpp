@@ -22,6 +22,9 @@
 
 namespace franka_example_controllers {
 
+/**
+ * The joint impedance example controller moves joint 4 and 5 in a very compliant periodic movement.
+ */
 class JointImpedanceExampleController : public controller_interface::ControllerInterface {
  public:
   using Vector7d = Eigen::Matrix<double, 7, 1>;
