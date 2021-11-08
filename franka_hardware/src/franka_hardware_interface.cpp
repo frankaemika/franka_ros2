@@ -178,8 +178,7 @@ hardware_interface::return_type FrankaHardwareInterface::prepare_command_mode_sw
       std::count_if(stop_interfaces.begin(), stop_interfaces.end(), is_effort_interface);
   if (num_stop_effort_interfaces == kNumberOfJoints) {
     effort_interface_claimed_ = false;
-  } else if (num_stop_effort_interfaces == 0) {
-  } else {
+  } else if (num_stop_effort_interfaces != 0) {
     RCLCPP_FATAL(this->getLogger(), "Expected %d effort interfaces to stop, but got %d instead.",
                  kNumberOfJoints, num_stop_effort_interfaces);
     throw std::invalid_argument("Invalid number of effort interfaces to stop. Expected 7");
@@ -189,8 +188,7 @@ hardware_interface::return_type FrankaHardwareInterface::prepare_command_mode_sw
       std::count_if(start_interfaces.begin(), start_interfaces.end(), is_effort_interface);
   if (num_start_effort_interfaces == kNumberOfJoints) {
     effort_interface_claimed_ = true;
-  } else if (num_start_effort_interfaces == 0) {
-  } else {
+  } else if (num_start_effort_interfaces != 0) {
     RCLCPP_FATAL(this->getLogger(), "Expected %d effort interfaces to start, but got %d instead.",
                  kNumberOfJoints, num_start_effort_interfaces);
     throw std::invalid_argument("Invalid number of effort interfaces to start. Expected 7");
