@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='utf-8'?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="panda">
+
+  <xacro:arg name="arm_id" default="panda"/> <!-- Name of this panda -->
+  <xacro:arg name="hand" default="true"/> <!-- Should a franka_gripper be mounted at the flange? (Currently does not work without it) -->
+
+  <xacro:property name="arm_id" value="$(arg arm_id)"/>
+
+  <xacro:include filename="$(find franka_moveit_config)/srdf/panda_arm.xacro"/>
+  <xacro:panda_arm arm_id="${arm_id}"/>
+
+  <xacro:if value="$(arg hand)">
+    <xacro:include filename="$(find franka_moveit_config)/srdf/hand.xacro"/>
+    <xacro:hand arm_id="${arm_id}"/>
+
+    <xacro:include filename="$(find franka_moveit_config)/srdf/panda_arm_hand.xacro"/>
+    <xacro:panda_arm_hand arm_id="${arm_id}"/>
+  </xacro:if>
+</robot>

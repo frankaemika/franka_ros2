@@ -1,0 +1,10 @@
+<library path="franka_hardware">
+    <class name="franka_hardware/FrankaHardwareInterface"
+           type="franka_hardware::FrankaHardwareInterface"
+           base_class_type="hardware_interface::SystemInterface">
+
+        <description>
+            Hardware interface for Franka Emika research robots
+        </description>
+    </class>
+</library>

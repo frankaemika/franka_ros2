@@ -1,0 +1,20 @@
+<library path="franka_example_controllers">
+    <class name="franka_example_controllers/GravityCompensationExampleController"
+           type="franka_example_controllers::GravityCompensationExampleController" base_class_type="controller_interface::ControllerInterface">
+        <description>
+            The gravity compensation controller only sends zero torques so that the robot does gravity compensation
+        </description>
+    </class>
+    <class name="franka_example_controllers/JointImpedanceExampleController"
+           type="franka_example_controllers::JointImpedanceExampleController" base_class_type="controller_interface::ControllerInterface">
+        <description>
+            The joint impedance example controller moves joint 4 and 5 in a very compliant periodic movement.
+        </description>
+    </class>
+    <class name="franka_example_controllers/MoveToStartExampleController"
+           type="franka_example_controllers::MoveToStartExampleController" base_class_type="controller_interface::ControllerInterface">
+        <description>
+            The move to start example controller moves the robot into default pose.
+        </description>
+    </class>
+</library>

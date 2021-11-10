@@ -1,7 +1,17 @@
 cmake_minimum_required(VERSION 3.5)
 project(franka_gripper)
 
+# Default to C++14
+if(NOT CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 14)
+endif()
+
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
 find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
 find_package(franka_msgs REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclcpp_action REQUIRED)
@@ -39,6 +49,12 @@ install(DIRECTORY
         launch config
         DESTINATION share/${PROJECT_NAME}/)
 
+ament_python_install_package(${PROJECT_NAME})
+
+install(PROGRAMS
+        scripts/fake_gripper_state_publisher.py
+        DESTINATION lib/${PROJECT_NAME})
+
 if(BUILD_TESTING)
     find_package(ament_cmake_clang_format REQUIRED)
     find_package(ament_cmake_copyright REQUIRED)
@@ -50,7 +66,7 @@ if(BUILD_TESTING)
 
     set(CPP_DIRECTORIES src include)
     ament_clang_format(CONFIG_FILE ../.clang-format ${CPP_DIRECTORIES})
-    ament_copyright(src ${CPP_DIRECTORIES} package.xml)
+    ament_copyright(launch ${CPP_DIRECTORIES} package.xml)
     ament_cppcheck(${CPP_DIRECTORIES})
     ament_lint_cmake(CMakeLists.txt)
     ament_flake8()

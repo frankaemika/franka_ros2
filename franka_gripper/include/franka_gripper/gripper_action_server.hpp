@@ -86,10 +86,10 @@ class GripperActionServer : public rclcpp::Node {
     }
   };
 
-  const double k_default_grasp_epsilon = 0.005;  // default inner and outer grasp epsilon in meter
-  const double k_default_speed = 0.1;            // default gripper speed in m/s
-  const double k_default_state_publish_rate = 30.;     // default gripper state publish rate
-  const double k_default_feedback_publish_rate = 10.;  // default action feedback publish rate
+  const double k_default_grasp_epsilon = 0.005;    // default inner and outer grasp epsilon in meter
+  const double k_default_speed = 0.1;              // default gripper speed in m/s
+  const int k_default_state_publish_rate = 30;     // default gripper state publish rate
+  const int k_default_feedback_publish_rate = 10;  // default action feedback publish rate
 
   std::unique_ptr<franka::Gripper> gripper_;
   rclcpp_action::Server<Homing>::SharedPtr homing_server_;
@@ -190,7 +190,7 @@ class GripperActionServer : public rclcpp::Node {
   template <typename T>
   auto withResultGenerator(const std::function<bool()>& command_handler)
       -> std::function<std::shared_ptr<typename T::Result>()> {
-    return [command_handler, this]() {
+    return [command_handler]() {
       auto result = std::make_shared<typename T::Result>();
       try {
         result->success = command_handler();
