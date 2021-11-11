@@ -1,5 +1,0 @@
-geometry_msgs/Vector3 translational_stiffness # (x,y,z) in N/m 
-geometry_msgs/Vector3 rotational_stiffness # (R,P,Y) in Nm/rad
----
-bool success
-string error

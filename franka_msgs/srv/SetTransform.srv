@@ -1,4 +1,0 @@
-geometry_msgs/TransformStamped transform
----
-bool success
-string error

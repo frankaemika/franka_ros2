@@ -1,4 +1,0 @@
-geometry_msgs/InertiaStamped inertia
----
-bool success
-string error
