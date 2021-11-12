@@ -3,7 +3,7 @@
 <package format="3">
   <name>franka_msgs</name>
   <version>0.0.0</version>
-  <description>franka_msgs provides messages, actions and services specific to Franka Emika research robots</description>
+  <description>franka_msgs provides messages and actions specific to Franka Emika research robots</description>
   <maintainer email="support@franka.de">Franka Emika GmbH</maintainer>
   <license>Apache 2.0</license>
 
@@ -16,7 +16,6 @@
 
   <depend>builtin_interfaces</depend>
   <depend>std_msgs</depend>
-  <depend>geometry_msgs</depend>
   <depend>action_msgs</depend>
   <exec_depend>rosidl_default_runtime</exec_depend>
 
