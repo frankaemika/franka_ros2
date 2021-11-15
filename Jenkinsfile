@@ -3,7 +3,13 @@ pipeline {
          dockerfile true 
     }
     stages {
-        
+        stage('Init') {
+            steps {
+                script {
+                    notifyBitbucket()
+                }
+            }
+        }
         stage('Build') {
             steps {
                 sh '. /opt/ros/foxy/setup.sh && colcon build '
