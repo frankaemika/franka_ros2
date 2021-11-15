@@ -12,8 +12,7 @@ pipeline {
         }
         stage('Build') {
             steps {
-                sh '. /opt/ros/foxy/setup.sh && colcon build '
-              
+                sh '. /opt/ros/foxy/setup.sh && colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCHECK_TIDY=ON'
             }
         }
         stage('Test') {
