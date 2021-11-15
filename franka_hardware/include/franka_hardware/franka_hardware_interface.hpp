@@ -20,7 +20,6 @@
 
 #include <hardware_interface/visibility_control.h>
 #include <franka_hardware/robot.hpp>
-#include <franka_msgs/msg/franka_state.hpp>
 #include <hardware_interface/base_interface.hpp>
 #include <hardware_interface/hardware_info.hpp>
 #include <hardware_interface/system_interface.hpp>
