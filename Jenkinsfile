@@ -8,6 +8,7 @@ pipeline {
                 script {
                     notifyBitbucket()
                 }
+                sh 'rm -r build log install'
             }
         }
         stage('Build') {
