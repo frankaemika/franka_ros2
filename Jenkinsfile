@@ -8,7 +8,7 @@ pipeline {
                 script {
                     notifyBitbucket()
                 }
-                sh 'rm -r build log install'
+                sh 'rm -rf build log install'
             }
         }
         stage('Build') {
