@@ -18,6 +18,19 @@ RUN apt-get update -y && apt-get install -y --allow-unauthenticated \
     ros-foxy-control-toolbox \
     && rm -rf /var/lib/apt/lists/*
 
+RUN python3 -m pip install -U \
+    argcomplete \
+    flake8-blind-except \
+    flake8-builtins \
+    flake8-class-newline \
+    flake8-comprehensions \
+    flake8-deprecated \
+    flake8-docstrings \
+    flake8-import-order \
+    flake8-quotes \
+    pytest-repeat \
+    pytest-rerunfailures \
+    pytest
 
 RUN mkdir ~/source_code    
 RUN cd ~/source_code && git clone https://github.com/frankaemika/libfranka.git \

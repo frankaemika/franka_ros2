@@ -12,29 +12,30 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import xacro
-from ament_index_python.packages import get_package_share_directory
 from os import path
 
-panda_xacro_file_name = path.join(get_package_share_directory("franka_moveit_config"), "srdf",
-                                  "panda_arm.srdf.xacro")
+from ament_index_python.packages import get_package_share_directory
+import xacro
+
+panda_xacro_file_name = path.join(get_package_share_directory('franka_moveit_config'), 'srdf',
+                                  'panda_arm.srdf.xacro')
 
 
 def test_load():
     urdf = xacro.process_file(panda_xacro_file_name).toxml()
-    assert urdf.find("panda_rightfinger") != -1
+    assert urdf.find('panda_rightfinger') != -1
 
 
 def test_load_without_gripper():
     urdf = xacro.process_file(panda_xacro_file_name,
-                              mappings={"hand": 'false'}).toxml()
-    assert urdf.find("panda_rightfinger") == -1
+                              mappings={'hand': 'false'}).toxml()
+    assert urdf.find('panda_rightfinger') == -1
 
 
 def test_load_with_arm_id():
     urdf = xacro.process_file(panda_xacro_file_name,
-                              mappings={"arm_id": 'totally_different_arm'}).toxml()
-    assert urdf.find("totally_different_arm_joint1") != -1
+                              mappings={'arm_id': 'totally_different_arm'}).toxml()
+    assert urdf.find('totally_different_arm_joint1') != -1
 
 
 if __name__ == '__main__':
