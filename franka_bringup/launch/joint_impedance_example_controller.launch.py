@@ -26,7 +26,7 @@ def generate_launch_description():
     load_gripper_parameter_name = 'load_gripper'
     use_fake_hardware_parameter_name = 'use_fake_hardware'
     fake_sensor_commands_parameter_name = 'fake_sensor_commands'
-    use_rviz_parameter_name = "use_rviz"
+    use_rviz_parameter_name = 'use_rviz'
 
     robot_ip = LaunchConfiguration(robot_ip_parameter_name)
     load_gripper = LaunchConfiguration(load_gripper_parameter_name)
@@ -49,7 +49,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             fake_sensor_commands_parameter_name,
             default_value='false',
-            description='Fake sensor commands. Only valid when \'{}\' is true'.format(
+            description="Fake sensor commands. Only valid when '{}' is true".format(
                 use_fake_hardware_parameter_name)),
         DeclareLaunchArgument(
             load_gripper_parameter_name,
@@ -59,7 +59,7 @@ def generate_launch_description():
 
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([PathJoinSubstitution(
-                [FindPackageShare("franka_bringup"), "launch", "franka.launch.py"])]),
+                [FindPackageShare('franka_bringup'), 'launch', 'franka.launch.py'])]),
             launch_arguments={robot_ip_parameter_name: robot_ip,
                               load_gripper_parameter_name: load_gripper,
                               use_fake_hardware_parameter_name: use_fake_hardware,
@@ -69,9 +69,9 @@ def generate_launch_description():
         ),
 
         Node(
-            package="controller_manager",
-            executable="spawner.py",
-            arguments=["joint_impedance_example_controller"],
-            output="screen",
+            package='controller_manager',
+            executable='spawner.py',
+            arguments=['joint_impedance_example_controller'],
+            output='screen',
         ),
     ])
