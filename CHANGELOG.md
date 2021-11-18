@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 ### Added
+* CI tests in Jenkins
 * joint\_effort\_trajectory\_controller package that contains a version of the
  joint\_trajectory\_controller that can use the torque interface.
  [See this PR](https://github.com/ros-controls/ros2_controllers/pull/225)
