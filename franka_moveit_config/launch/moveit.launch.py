@@ -208,7 +208,8 @@ def generate_launch_description():
         package='joint_state_publisher',
         executable='joint_state_publisher',
         name='joint_state_publisher',
-        parameters=[{'source_list': ['franka/joint_states', 'panda_gripper/joint_states']}],
+        parameters=[
+            {'source_list': ['franka/joint_states', 'panda_gripper/joint_states'], 'rate': 30}],
     )
     robot_arg = DeclareLaunchArgument(
         robot_ip_parameter_name,
