@@ -330,6 +330,9 @@ controller_interface::return_type JointTrajectoryController::update()
         }
       }
     }
+  } else {
+    // TODO temporary solution to keep the initial position before the first trajectory goal arrives
+    set_hold_position();
   }
 
   publish_state(state_desired, state_current, state_error);
@@ -1218,10 +1221,18 @@ void JointTrajectoryController::preempt_active_goal()
 
 void JointTrajectoryController::set_hold_position()
 {
-  trajectory_msgs::msg::JointTrajectory empty_msg;
-  empty_msg.header.stamp = rclcpp::Time(0);
+  trajectory_msgs::msg::JointTrajectory msg;
+  msg.header.stamp = rclcpp::Time(0);
+  msg.joint_names = joint_names_;
+  trajectory_msgs::msg::JointTrajectoryPoint point;
+  for (const auto& joint_position : last_commanded_state_.positions) {
+    point.velocities.push_back(0);
+    point.accelerations.push_back(0);
+    point.positions.push_back(joint_position);
+  }
+  msg.points.push_back(point);
 
-  auto traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>(empty_msg);
+  auto traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>(msg);
   add_new_trajectory_msg(traj_msg);
 }
 
