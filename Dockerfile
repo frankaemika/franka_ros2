@@ -1,8 +1,8 @@
 FROM ros:foxy
 RUN apt-get update -y && apt-get install -y --allow-unauthenticated \
-    clang-10 \
-    clang-format-10 \
-    clang-tidy-10 \
+    clang-6.0 \
+    clang-format-6.0 \
+    clang-tidy-6.0 \
     python3-pip \
     libpoco-dev \
     libeigen3-dev \
