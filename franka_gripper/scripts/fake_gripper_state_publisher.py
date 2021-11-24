@@ -25,9 +25,9 @@ class FakeGripperStatePublisher(Node):
         super().__init__('fake_gripper_state_publisher')
         self.publisher_ = self.create_publisher(JointState, '~/joint_states', 1)
         timer_period = 0.1  # seconds
-        self.declare_parameter("joint_names")
+        self.declare_parameter('joint_names')
         self.joint_names = self.get_parameter(
-            "joint_names").get_parameter_value().string_array_value
+            'joint_names').get_parameter_value().string_array_value
         assert len(self.joint_names) == 2
         self.timer = self.create_timer(timer_period, self.publish_state)
 

@@ -13,11 +13,12 @@
 #  limitations under the License.
 
 import os
+
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument
-from launch_ros.actions import Node
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration
+from launch_ros.actions import Node
 
 
 def generate_launch_description():
@@ -27,7 +28,7 @@ def generate_launch_description():
     franka_xacro_file = os.path.join(get_package_share_directory('franka_description'), 'robots',
                                      'panda_arm.urdf.xacro')
     robot_description = Command(
-        [FindExecutable(name="xacro"), " ", franka_xacro_file, " hand:=", load_gripper])
+        [FindExecutable(name='xacro'), ' ', franka_xacro_file, ' hand:=', load_gripper])
 
     rviz_file = os.path.join(get_package_share_directory('franka_description'), 'rviz',
                              'visualize_franka.rviz')
@@ -51,7 +52,7 @@ def generate_launch_description():
             name='joint_state_publisher_gui'
         ),
         Node(package='rviz2',
-             executable="rviz2",
-             name="rviz2",
+             executable='rviz2',
+             name='rviz2',
              arguments=['--display-config', rviz_file])
     ])

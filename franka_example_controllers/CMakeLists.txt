@@ -10,6 +10,8 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+option(CHECK_TIDY "Adds clang-tidy tests" OFF)
+
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -75,6 +77,12 @@ if(BUILD_TESTING)
     ament_flake8()
     ament_pep257()
     ament_xmllint()
+
+    if(CHECK_TIDY)
+        find_package(ament_cmake_clang_tidy REQUIRED)
+        set(ament_cmake_clang_tidy_CONFIG_FILE ../.clang-tidy)
+        ament_clang_tidy(${CMAKE_BINARY_DIR})
+    endif()
 endif()
 ament_export_include_directories(
         include

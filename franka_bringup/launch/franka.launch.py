@@ -14,14 +14,15 @@
 
 
 import os
+
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch_ros.actions import Node
-from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
-from launch_ros.substitutions import FindPackageShare
 from launch.conditions import IfCondition
+from launch.launch_description_sources import PythonLaunchDescriptionSource
+from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
+from launch_ros.actions import Node
+from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
@@ -29,7 +30,7 @@ def generate_launch_description():
     load_gripper_parameter_name = 'load_gripper'
     use_fake_hardware_parameter_name = 'use_fake_hardware'
     fake_sensor_commands_parameter_name = 'fake_sensor_commands'
-    use_rviz_parameter_name = "use_rviz"
+    use_rviz_parameter_name = 'use_rviz'
 
     robot_ip = LaunchConfiguration(robot_ip_parameter_name)
     load_gripper = LaunchConfiguration(load_gripper_parameter_name)
@@ -40,18 +41,18 @@ def generate_launch_description():
     franka_xacro_file = os.path.join(get_package_share_directory('franka_description'), 'robots',
                                      'panda_arm.urdf.xacro')
     robot_description = Command(
-        [FindExecutable(name="xacro"), " ", franka_xacro_file, " hand:=", load_gripper,
-         " robot_ip:=", robot_ip, " use_fake_hardware:=", use_fake_hardware,
-         " fake_sensor_commands:=", fake_sensor_commands])
+        [FindExecutable(name='xacro'), ' ', franka_xacro_file, ' hand:=', load_gripper,
+         ' robot_ip:=', robot_ip, ' use_fake_hardware:=', use_fake_hardware,
+         ' fake_sensor_commands:=', fake_sensor_commands])
 
     rviz_file = os.path.join(get_package_share_directory('franka_description'), 'rviz',
                              'visualize_franka.rviz')
 
     franka_controllers = PathJoinSubstitution(
         [
-            FindPackageShare("franka_bringup"),
-            "config",
-            "controllers.yaml",
+            FindPackageShare('franka_bringup'),
+            'config',
+            'controllers.yaml',
         ]
     )
 
@@ -70,7 +71,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             fake_sensor_commands_parameter_name,
             default_value='false',
-            description='Fake sensor commands. Only valid when \'{}\' is true'.format(
+            description="Fake sensor commands. Only valid when '{}' is true".format(
                 use_fake_hardware_parameter_name)),
         DeclareLaunchArgument(
             load_gripper_parameter_name,
@@ -88,27 +89,29 @@ def generate_launch_description():
             package='joint_state_publisher',
             executable='joint_state_publisher',
             name='joint_state_publisher',
-            parameters=[{'source_list': ["franka/joint_states", "panda_gripper/joint_states"]}],
+            parameters=[
+                {'source_list': ['franka/joint_states', 'panda_gripper/joint_states'],
+                 'rate': 30}],
         ),
         Node(
-            package="controller_manager",
-            executable="ros2_control_node",
+            package='controller_manager',
+            executable='ros2_control_node',
             parameters=[{'robot_description': robot_description}, franka_controllers],
             remappings=[('joint_states', 'franka/joint_states')],
             output={
-                "stdout": "screen",
-                "stderr": "screen",
+                'stdout': 'screen',
+                'stderr': 'screen',
             },
         ),
         Node(
-            package="controller_manager",
-            executable="spawner.py",
-            arguments=["joint_state_broadcaster"],
-            output="screen",
+            package='controller_manager',
+            executable='spawner.py',
+            arguments=['joint_state_broadcaster'],
+            output='screen',
         ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([PathJoinSubstitution(
-                [FindPackageShare("franka_gripper"), "launch", "gripper.launch.py"])]),
+                [FindPackageShare('franka_gripper'), 'launch', 'gripper.launch.py'])]),
             launch_arguments={robot_ip_parameter_name: robot_ip,
                               use_fake_hardware_parameter_name: use_fake_hardware}.items(),
             condition=IfCondition(load_gripper)
@@ -116,8 +119,8 @@ def generate_launch_description():
         ),
 
         Node(package='rviz2',
-             executable="rviz2",
-             name="rviz2",
+             executable='rviz2',
+             name='rviz2',
              arguments=['--display-config', rviz_file],
              condition=IfCondition(use_rviz)
              )
