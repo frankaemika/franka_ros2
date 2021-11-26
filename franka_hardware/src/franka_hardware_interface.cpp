@@ -137,7 +137,7 @@ hardware_interface::return_type FrankaHardwareInterface::configure(
   }
   try {
     RCLCPP_INFO(getLogger(), "Connecting to robot at \"%s\" ...", robot_ip.c_str());
-    robot_ = std::make_unique<Robot>(robot_ip);
+    robot_ = std::make_unique<Robot>(robot_ip, getLogger());
   } catch (const franka::Exception& e) {
     RCLCPP_FATAL(getLogger(), "Could not connect to robot");
     RCLCPP_FATAL(getLogger(), e.what());
