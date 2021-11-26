@@ -2,9 +2,9 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="panda">
   <xacro:macro name="panda_arm" params="arm_id:='panda' ">
 
-    <xacro:include filename="$(find franka_moveit_config)/srdf/arm.xacro"/>
-    <xacro:arm arm_id="${arm_id}" group_name="${arm_id}_manipulator" tip_link="${arm_id}_hand_tcp"/>
-    <xacro:arm arm_id="${arm_id}" group_name="${arm_id}_arm" tip_link="${arm_id}_link8"/>
+    <xacro:include filename="$(find franka_moveit_config)/srdf/group_definition.xacro"/>
+    <xacro:group_definition arm_id="${arm_id}" group_name="${arm_id}_manipulator" tip_link="${arm_id}_hand_tcp"/>
+    <xacro:group_definition arm_id="${arm_id}" group_name="${arm_id}_arm" tip_link="${arm_id}_link8"/>
 
     <virtual_joint name="virtual_joint" type="fixed" parent_frame="world" child_link="${arm_id}_link0"/>
     <disable_collisions link1="${arm_id}_link0" link2="${arm_id}_link1" reason="Adjacent"/>

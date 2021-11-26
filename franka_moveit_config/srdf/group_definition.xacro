@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="panda">
-  <xacro:macro name="arm" params="group_name arm_id tip_link">
+  <xacro:macro name="group_definition" params="group_name arm_id tip_link">
     <group name="${group_name}">
       <chain base_link="${arm_id}_link0" tip_link="${tip_link}"/>
     </group>
