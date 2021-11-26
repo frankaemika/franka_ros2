@@ -24,13 +24,14 @@ namespace franka_hardware {
 
 Robot::Robot(const std::string& robot_ip, const rclcpp::Logger& logger) {
   tau_command_.fill(0.);
+  franka::RealtimeConfig rt_config = franka::RealtimeConfig::kEnforce;
   if (not franka::hasRealtimeKernel()) {
-    rt_config_ = franka::RealtimeConfig::kIgnore;
+    rt_config = franka::RealtimeConfig::kIgnore;
     RCLCPP_WARN(
         logger,
         "You are not using a real-time kernel. Using a real-time kernel is strongly recommended!");
   }
-  robot_ = std::make_unique<franka::Robot>(robot_ip, rt_config_);
+  robot_ = std::make_unique<franka::Robot>(robot_ip, rt_config);
 }
 
 void Robot::write(const std::array<double, 7>& efforts) {

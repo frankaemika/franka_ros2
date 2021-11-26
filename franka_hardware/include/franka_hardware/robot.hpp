@@ -85,6 +85,5 @@ class Robot {
   bool stopped_ = true;
   franka::RobotState current_state_;
   std::array<double, 7> tau_command_{};
-  franka::RealtimeConfig rt_config_ = franka::RealtimeConfig::kEnforce;
 };
 }  // namespace franka_hardware
