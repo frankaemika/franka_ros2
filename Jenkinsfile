@@ -24,6 +24,7 @@ pipeline {
     }
     post {
         always {
+            junit 'build/**/test_results/**/*.xml'
             script {
                 notifyBitbucket()
             }
