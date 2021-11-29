@@ -3,7 +3,7 @@
 <package format="3">
   <name>franka_moveit_config</name>
   <version>0.0.0</version>
-  <description>Contains Moveit2 configuration files for Franka Emika resarch robots</description>
+  <description>Contains Moveit2 configuration files for Franka Emika research robots</description>
   <maintainer email="support@franka.de">Franka Emika GmbH</maintainer>
   <license>Apache 2.0</license>
 
