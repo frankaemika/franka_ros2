@@ -17,11 +17,21 @@
 #include <cassert>
 #include <mutex>
 
+#include <franka/control_tools.h>
+#include <rclcpp/logging.hpp>
+
 namespace franka_hardware {
 
-Robot::Robot(const std::string& robot_ip) {
+Robot::Robot(const std::string& robot_ip, const rclcpp::Logger& logger) {
   tau_command_.fill(0.);
-  robot_ = std::make_unique<franka::Robot>(robot_ip);
+  franka::RealtimeConfig rt_config = franka::RealtimeConfig::kEnforce;
+  if (not franka::hasRealtimeKernel()) {
+    rt_config = franka::RealtimeConfig::kIgnore;
+    RCLCPP_WARN(
+        logger,
+        "You are not using a real-time kernel. Using a real-time kernel is strongly recommended!");
+  }
+  robot_ = std::make_unique<franka::Robot>(robot_ip, rt_config);
 }
 
 void Robot::write(const std::array<double, 7>& efforts) {

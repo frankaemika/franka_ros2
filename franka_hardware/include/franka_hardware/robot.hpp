@@ -23,6 +23,7 @@
 #include <thread>
 
 #include <franka/robot.h>
+#include <rclcpp/logger.hpp>
 
 namespace franka_hardware {
 
@@ -33,8 +34,9 @@ class Robot {
    * responding. An exception will be thrown if the connection cannot be established.
    *
    * @param[in] robot_ip IP address or hostname of the robot.
+   * @param[im] logger ROS Logger to print eventual warnings.
    */
-  explicit Robot(const std::string& robot_ip);
+  explicit Robot(const std::string& robot_ip, const rclcpp::Logger& logger);
   Robot(const Robot&) = delete;
   Robot& operator=(const Robot& other) = delete;
   Robot& operator=(Robot&& other) = delete;
