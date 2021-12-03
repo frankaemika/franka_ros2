@@ -83,7 +83,7 @@ hardware_interface::return_type FrankaHardwareInterface::read() {
 
 hardware_interface::return_type FrankaHardwareInterface::write() {
   if (std::any_of(hw_commands_.begin(), hw_commands_.end(),
-                  [](const double& c) { return std::isnan(c); })) {
+                  [](double c) { return not std::isfinite(c); })) {
     return hardware_interface::return_type::ERROR;
   }
 
