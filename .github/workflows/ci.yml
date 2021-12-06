@@ -1,0 +1,59 @@
+name: CI
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+jobs:
+  CI:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Prepare
+        run: |
+          mkdir -p ${{github.workspace}}/src
+
+      - uses: actions/checkout@v2
+        with:
+          path: src/franka_ros2
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v2
+        with:
+          tags: franka_ros2:foxy
+          file: Dockerfile
+          push: false
+
+      - name: Build
+        uses: addnab/docker-run-action@v3
+        with:
+          image: franka_ros2:foxy
+          options: -v ${{github.workspace}}/:/ros/
+          run: |
+            cd /ros
+            . /opt/ros/foxy/setup.sh
+            colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCHECK_TIDY=ON
+
+      - name: Test
+        uses: addnab/docker-run-action@v3
+        with:
+          image: franka_ros2:foxy
+          options: -v ${{github.workspace}}/:/ros/
+          run: |
+            cd /ros
+            . /opt/ros/foxy/setup.sh
+            . install/setup.sh
+            colcon test
+            colcon test-result
+
+      - name: Upload Tests to Artifacts
+        uses: actions/upload-artifact@v2
+        if: always()
+        with:
+          name: test-results
+          path: build/*/test_results/*/*.xml
+
+      - name: Publish Unit Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        if: always()
+        with:
+          files: build/*/test_results/*/*.xml
