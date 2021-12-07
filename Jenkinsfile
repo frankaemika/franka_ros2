@@ -2,6 +2,9 @@ pipeline {
     agent {
          dockerfile true 
     }
+    triggers {
+        pollSCM('H/5 * * * *')
+    }
     stages {
         stage('Init') {
             steps {
@@ -13,12 +16,20 @@ pipeline {
         }
         stage('Build') {
             steps {
-                sh '. /opt/ros/foxy/setup.sh && colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCHECK_TIDY=ON'
+                sh '''
+                    . /opt/ros/foxy/setup.sh
+                    colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCHECK_TIDY=ON
+                '''
             }
         }
         stage('Test') {
             steps {
-                sh '. /opt/ros/foxy/setup.sh && . install/setup.sh && colcon test && colcon test-result'    
+                sh '''
+                    . /opt/ros/foxy/setup.sh
+                    . install/setup.sh
+                    colcon test
+                    colcon test-result
+                '''
             }
         }
     }
