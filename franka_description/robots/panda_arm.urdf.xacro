@@ -5,7 +5,7 @@
   <xacro:arg name="robot_ip" default=""/> <!-- IP address or hostname of the robot" -->
   <xacro:arg name="use_fake_hardware" default="false"/>
   <xacro:arg name="fake_sensor_commands" default="false"/>
-  <xacro:arg name="ignition_sim" default="true"/>
+  <xacro:arg name="ignition_sim" default="false"/>
 
   <xacro:include filename="$(find franka_description)/robots/panda_arm.xacro"/>
 
