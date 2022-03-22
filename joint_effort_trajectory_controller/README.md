@@ -1,4 +1,4 @@
-**This package is a Foxy version of [this Pull Request](https://github.com/ros-controls/ros2_controllers/pull/225).
+**This package is a Galactic version of [this Pull Request](https://github.com/ros-controls/ros2_controllers/pull/225).
 It is needed since the joint trajectory controller is currently not able to do torque control.**
 
 # Original README
