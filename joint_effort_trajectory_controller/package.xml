@@ -5,7 +5,7 @@
     <version>0.0.0</version>
     <description>
         Joint trajectory controller that can be used with the effort interface.
-        It is a Foxy version of this PR: https://github.com/ros-controls/ros2_controllers/pull/225.
+        It is a Galactic version of this PR: https://github.com/ros-controls/ros2_controllers/pull/225.
     </description>
     <maintainer email="support@franka.de">Franka Emika GmbH</maintainer>
     <license>Apache License 2.0</license>
