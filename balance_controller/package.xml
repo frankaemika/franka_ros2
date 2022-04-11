@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+    <name>balance_controller</name>
+    <version>0.0.0</version>
+    <description>
+        The balance controller adjusts the orientation of a 2d plane such that the object stays in the middle
+    </description>
+    <maintainer email="andreas.ziegler@uni-tuebingen.de">Andreas Ziegler</maintainer>
+    <license>Apache License 2.0</license>
+
+    <buildtool_depend>ament_cmake</buildtool_depend>
+
+    <build_depend>angles</build_depend>
+    <build_depend>pluginlib</build_depend>
+    <build_depend>realtime_tools</build_depend>
+
+    <exec_depend>angles</exec_depend>
+    <exec_depend>pluginlib</exec_depend>
+    <exec_depend>realtime_tools</exec_depend>
+
+    <depend>controller_interface</depend>
+    <depend>control_msgs</depend>
+    <depend>hardware_interface</depend>
+    <depend>rclcpp</depend>
+    <depend>rclcpp_lifecycle</depend>
+    <depend>trajectory_msgs</depend>
+
+    <test_depend>ament_cmake_gtest</test_depend>
+    <test_depend>controller_manager</test_depend>
+    <test_depend>ros2_control_test_assets</test_depend>
+
+    <export>
+        <build_type>ament_cmake</build_type>
+    </export>
+</package>
