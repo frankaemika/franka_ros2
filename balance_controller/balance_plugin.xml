@@ -1,0 +1,7 @@
+<library path="balance_controller">
+  <class name="balance_controller/BalanceController" type="balance_controller::BalanceController" base_class_type="controller_interface::ControllerInterface">
+  <description>
+    The balance controller adjusts the orientation of a 2d plane such that the object stays in the middle
+  </description>
+  </class>
+</library>
