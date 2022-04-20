@@ -21,6 +21,7 @@
 
     <depend>controller_interface</depend>
     <depend>control_msgs</depend>
+    <depend>ball_tracker_msgs</depend>
     <depend>hardware_interface</depend>
     <depend>rclcpp</depend>
     <depend>rclcpp_lifecycle</depend>
