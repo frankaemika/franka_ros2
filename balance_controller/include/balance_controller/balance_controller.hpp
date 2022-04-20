@@ -258,6 +258,14 @@ private:
   rclcpp::Subscription<ball_tracker_msgs::msg::TrackingUpdate>::SharedPtr tracking_sub_;
 
   Position current_position_;
+
+  Position previous_position_;
+
+  double x_prev_error_integral_;
+  double y_prev_error_integral_;
+
+  double delta_t_;
+  std::chrono::time_point<std::chrono::system_clock> last_update_time_stamp_;
 };
 
 }  // namespace joint_trajectory_controller

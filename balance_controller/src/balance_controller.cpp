@@ -50,7 +50,8 @@ BalanceController::BalanceController()
       tracking_sub_{node_->create_subscription<ball_tracker_msgs::msg::TrackingUpdate>(
           "/camera1/tracking_update",
           500,
-          std::bind(&BalanceController::tracking_callback, this, std::placeholders::_1))} {}
+          std::bind(&BalanceController::tracking_callback, this, std::placeholders::_1))},
+      last_update_time_stamp_{std::chrono::system_clock::now()} {}
 
 controller_interface::return_type BalanceController::init(const std::string& controller_name) {
   const auto ret = ControllerInterface::init(controller_name);
@@ -141,6 +142,33 @@ controller_interface::return_type BalanceController::update()
     }
   };
 
+  auto now = std::chrono::system_clock::now();
+  delta_t_ = (now - last_update_time_stamp_).count();
+  last_update_time_stamp_ = now;
+
+  // Integral of the error
+  auto x_error_integral = x_prev_error_integral_ + current_position_.x * delta_t_;
+  auto y_error_integral = y_prev_error_integral_ + current_position_.y * delta_t_;
+
+  x_prev_error_integral_ = x_error_integral;
+  y_prev_error_integral_ = y_error_integral;
+
+  // Anti-windup
+  // x_error_integral = std::max(std::min(x_error_integral, MAX_VALUE), -MAX_VALUE);
+
+  // Derivative of the error
+  auto x_error_derivative = (current_position_.x - previous_position_.x) / delta_t_;
+  auto y_error_derivative = (current_position_.y - previous_position_.y) / delta_t_;
+
+  // Controll coefficients
+  double k_p = 5;
+  double k_i = 0.2;
+  double k_d = 0.1;
+
+  auto x_delta =
+      k_p * current_position_.x + k_i * x_prev_error_integral_ + k_d * x_error_derivative;
+  auto y_delta =
+      k_p * current_position_.y + k_i * y_prev_error_integral_ + k_d * y_error_derivative;
   /*
   // Check if a new external message has been received from nonRT threads
   auto current_external_msg = traj_external_point_ptr_->get_trajectory_msg();
