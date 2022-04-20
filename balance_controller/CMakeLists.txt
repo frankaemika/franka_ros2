@@ -21,6 +21,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(realtime_tools REQUIRED)
 find_package(trajectory_msgs REQUIRED)
 find_package(control_toolbox REQUIRED)
+find_package(ball_tracker_msgs REQUIRED)
 
 add_library(balance_controller SHARED
         src/balance_controller.cpp
@@ -38,6 +39,7 @@ ament_target_dependencies(balance_controller
         realtime_tools
         trajectory_msgs
         control_toolbox
+        ball_tracker_msgs
         )
 
 pluginlib_export_plugin_description_file(controller_interface balance_plugin.xml)

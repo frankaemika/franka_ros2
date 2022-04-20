@@ -42,6 +42,8 @@
 #include "trajectory_msgs/msg/joint_trajectory.hpp"
 #include "trajectory_msgs/msg/joint_trajectory_point.hpp"
 
+#include <ball_tracker_msgs/msg/tracking_update.hpp>
+
 using namespace std::chrono_literals;  // NOLINT
 
 namespace rclcpp_action
@@ -53,6 +55,12 @@ namespace rclcpp_lifecycle
 {
 class State;
 }  // namespace rclcpp_lifecycle
+
+struct Position
+{
+  int x;
+  int y;
+};
 
 namespace balance_controller
 {
@@ -244,6 +252,12 @@ private:
 
   void resize_joint_trajectory_point(
     trajectory_msgs::msg::JointTrajectoryPoint & point, size_t size);
+
+  void tracking_callback(const ball_tracker_msgs::msg::TrackingUpdate::SharedPtr msg);
+
+  rclcpp::Subscription<ball_tracker_msgs::msg::TrackingUpdate>::SharedPtr tracking_sub_;
+
+  Position current_position_;
 };
 
 }  // namespace joint_trajectory_controller

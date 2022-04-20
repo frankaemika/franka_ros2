@@ -45,14 +45,14 @@
 namespace balance_controller
 {
 BalanceController::BalanceController()
-: controller_interface::ControllerInterface(), joint_names_({})
-{
+    : controller_interface::ControllerInterface(),
+      joint_names_({}),
+      tracking_sub_{node_->create_subscription<ball_tracker_msgs::msg::TrackingUpdate>(
+          "/camera1/tracking_update",
+          500,
+          std::bind(&BalanceController::tracking_callback, this, std::placeholders::_1))} {}
 
-}
-
-controller_interface::return_type BalanceController::init(
-  const std::string & controller_name)
-{
+controller_interface::return_type BalanceController::init(const std::string& controller_name) {
   const auto ret = ControllerInterface::init(controller_name);
   if (ret != controller_interface::return_type::OK) {
     return ret;
@@ -1263,7 +1263,14 @@ void BalanceController::resize_joint_trajectory_point(
   }
 }
 
-}  // namespace joint_trajectory_controller
+void BalanceController::tracking_callback(
+    const ball_tracker_msgs::msg::TrackingUpdate::SharedPtr msg)
+{
+  current_position_.x = msg->x;
+  current_position_.y = msg->y;
+}
+
+}  // namespace balance_controller
 
 #include "pluginlib/class_list_macros.hpp"
 
