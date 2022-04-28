@@ -243,7 +243,7 @@ def generate_launch_description():
          ros2_control_node,
          mongodb_server_node,
          joint_state_publisher,
-         gripper_launch_file
+         #gripper_launch_file
          ]
         + load_controllers
     )

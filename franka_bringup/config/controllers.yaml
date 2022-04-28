@@ -17,6 +17,9 @@ controller_manager:
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
 
+    balance_controller:
+      type: 'balance_controller/BalanceController'
+
 joint_trajectory_controller:
   ros__parameters:
     joints:
