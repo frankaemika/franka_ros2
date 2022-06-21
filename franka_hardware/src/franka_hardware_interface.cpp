@@ -55,7 +55,8 @@ std::vector<CommandInterface> FrankaHardwareInterface::export_command_interfaces
   return command_interfaces;
 }
 
-CallbackReturn FrankaHardwareInterface::on_activate(const rclcpp_lifecycle::State & /*previous_state*/) {
+CallbackReturn FrankaHardwareInterface::on_activate(
+    const rclcpp_lifecycle::State& /*previous_state*/) {
   robot_->initializeContinuousReading();
   hw_commands_.fill(0);
   read();  // makes sure that the robot state is properly initialized.
@@ -63,7 +64,8 @@ CallbackReturn FrankaHardwareInterface::on_activate(const rclcpp_lifecycle::Stat
   return CallbackReturn::SUCCESS;
 }
 
-CallbackReturn FrankaHardwareInterface::on_deactivate(const rclcpp_lifecycle::State & /*previous_state*/) {
+CallbackReturn FrankaHardwareInterface::on_deactivate(
+    const rclcpp_lifecycle::State& /*previous_state*/) {
   RCLCPP_INFO(getLogger(), "trying to Stop...");
   robot_->stopRobot();
   RCLCPP_INFO(getLogger(), "Stopped");
@@ -88,13 +90,13 @@ hardware_interface::return_type FrankaHardwareInterface::write() {
   return hardware_interface::return_type::OK;
 }
 
-CallbackReturn FrankaHardwareInterface::on_init(
-    const hardware_interface::HardwareInfo& info) {
-  if (hardware_interface::SystemInterface::on_init(info) != CallbackReturn::SUCCESS){
+CallbackReturn FrankaHardwareInterface::on_init(const hardware_interface::HardwareInfo& info) {
+  if (hardware_interface::SystemInterface::on_init(info) != CallbackReturn::SUCCESS) {
     return CallbackReturn::ERROR;
   }
   if (info_.joints.size() != kNumberOfJoints) {
-    RCLCPP_FATAL(getLogger(), "Got %ld joints. Expected %ld.", info_.joints.size(), kNumberOfJoints);
+    RCLCPP_FATAL(getLogger(), "Got %ld joints. Expected %ld.", info_.joints.size(),
+                 kNumberOfJoints);
     return CallbackReturn::ERROR;
   }
 
@@ -143,7 +145,7 @@ CallbackReturn FrankaHardwareInterface::on_init(
     robot_ = std::make_unique<Robot>(robot_ip, getLogger());
   } catch (const franka::Exception& e) {
     RCLCPP_FATAL(getLogger(), "Could not connect to robot");
-    RCLCPP_FATAL(getLogger(), e.what());
+    RCLCPP_FATAL(getLogger(), "%s", e.what());
     return CallbackReturn::ERROR;
   }
   RCLCPP_INFO(getLogger(), "Successfully connected to robot");

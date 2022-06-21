@@ -46,7 +46,8 @@ JointImpedanceExampleController::state_interface_configuration() const {
 }
 
 controller_interface::return_type JointImpedanceExampleController::update(
-    const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/) {
+    const rclcpp::Time& /*time*/,
+    const rclcpp::Duration& /*period*/) {
   updateJointStates();
   Vector7d q_goal = initial_q_;
   auto time = this->node_->now() - start_time_;
@@ -76,7 +77,8 @@ CallbackReturn JointImpedanceExampleController::on_init() {
   return CallbackReturn::SUCCESS;
 }
 
-CallbackReturn JointImpedanceExampleController::on_configure(const rclcpp_lifecycle::State& /*previous_state*/) {
+CallbackReturn JointImpedanceExampleController::on_configure(
+    const rclcpp_lifecycle::State& /*previous_state*/) {
   arm_id_ = node_->get_parameter("arm_id").as_string();
   auto k_gains = node_->get_parameter("k_gains").as_double_array();
   auto d_gains = node_->get_parameter("d_gains").as_double_array();
@@ -106,7 +108,8 @@ CallbackReturn JointImpedanceExampleController::on_configure(const rclcpp_lifecy
   return CallbackReturn::SUCCESS;
 }
 
-CallbackReturn JointImpedanceExampleController::on_activate(const rclcpp_lifecycle::State& /*previous_state*/) {
+CallbackReturn JointImpedanceExampleController::on_activate(
+    const rclcpp_lifecycle::State& /*previous_state*/) {
   updateJointStates();
   initial_q_ = q_;
   start_time_ = this->node_->now();

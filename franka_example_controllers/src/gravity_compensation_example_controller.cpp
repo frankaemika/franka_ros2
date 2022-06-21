@@ -36,7 +36,8 @@ GravityCompensationExampleController::state_interface_configuration() const {
 }
 
 controller_interface::return_type GravityCompensationExampleController::update(
-    const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/) {
+    const rclcpp::Time& /*time*/,
+    const rclcpp::Duration& /*period*/) {
   for (auto& command_interface : command_interfaces_) {
     command_interface.set_value(0);
   }

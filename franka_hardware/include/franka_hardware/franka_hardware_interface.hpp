@@ -32,8 +32,7 @@ using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
 
 namespace franka_hardware {
 
-class FrankaHardwareInterface
-    : public hardware_interface::SystemInterface {
+class FrankaHardwareInterface : public hardware_interface::SystemInterface {
  public:
   hardware_interface::return_type prepare_command_mode_switch(
       const std::vector<std::string>& start_interfaces,
@@ -43,8 +42,8 @@ class FrankaHardwareInterface
       const std::vector<std::string>& stop_interfaces) override;
   std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
   std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
-  CallbackReturn on_activate(const rclcpp_lifecycle::State & previous_state) override;
-  CallbackReturn on_deactivate(const rclcpp_lifecycle::State & previous_state) override;
+  CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
   hardware_interface::return_type read() override;
   hardware_interface::return_type write() override;
   CallbackReturn on_init(const hardware_interface::HardwareInfo& info) override;
