@@ -45,7 +45,9 @@ JointImpedanceExampleController::state_interface_configuration() const {
   return config;
 }
 
-controller_interface::return_type JointImpedanceExampleController::update() {
+controller_interface::return_type JointImpedanceExampleController::update(
+    const rclcpp::Time& /*time*/,
+    const rclcpp::Duration& /*period*/) {
   updateJointStates();
   Vector7d q_goal = initial_q_;
   auto time = this->node_->now() - start_time_;
@@ -63,25 +65,20 @@ controller_interface::return_type JointImpedanceExampleController::update() {
   return controller_interface::return_type::OK;
 }
 
-controller_interface::return_type JointImpedanceExampleController::init(
-    const std::string& controller_name) {
-  auto ret = ControllerInterface::init(controller_name);
-  if (ret != controller_interface::return_type::OK) {
-    return ret;
-  }
+CallbackReturn JointImpedanceExampleController::on_init() {
   try {
     auto_declare<std::string>("arm_id", "panda");
     auto_declare<std::vector<double>>("k_gains", {});
     auto_declare<std::vector<double>>("d_gains", {});
   } catch (const std::exception& e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return controller_interface::return_type::ERROR;
+    return CallbackReturn::ERROR;
   }
-  return controller_interface::return_type::OK;
+  return CallbackReturn::SUCCESS;
 }
 
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-JointImpedanceExampleController::on_configure(const rclcpp_lifecycle::State& /*previous_state*/) {
+CallbackReturn JointImpedanceExampleController::on_configure(
+    const rclcpp_lifecycle::State& /*previous_state*/) {
   arm_id_ = node_->get_parameter("arm_id").as_string();
   auto k_gains = node_->get_parameter("k_gains").as_double_array();
   auto d_gains = node_->get_parameter("d_gains").as_double_array();
@@ -90,7 +87,7 @@ JointImpedanceExampleController::on_configure(const rclcpp_lifecycle::State& /*p
     return CallbackReturn::FAILURE;
   }
   if (k_gains.size() != static_cast<uint>(num_joints)) {
-    RCLCPP_FATAL(node_->get_logger(), "k_gains should be of size %d but is of size %d", num_joints,
+    RCLCPP_FATAL(node_->get_logger(), "k_gains should be of size %d but is of size %ld", num_joints,
                  k_gains.size());
     return CallbackReturn::FAILURE;
   }
@@ -99,7 +96,7 @@ JointImpedanceExampleController::on_configure(const rclcpp_lifecycle::State& /*p
     return CallbackReturn::FAILURE;
   }
   if (d_gains.size() != static_cast<uint>(num_joints)) {
-    RCLCPP_FATAL(node_->get_logger(), "d_gains should be of size %d but is of size %d", num_joints,
+    RCLCPP_FATAL(node_->get_logger(), "d_gains should be of size %d but is of size %ld", num_joints,
                  d_gains.size());
     return CallbackReturn::FAILURE;
   }
@@ -111,8 +108,8 @@ JointImpedanceExampleController::on_configure(const rclcpp_lifecycle::State& /*p
   return CallbackReturn::SUCCESS;
 }
 
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-JointImpedanceExampleController::on_activate(const rclcpp_lifecycle::State& /*previous_state*/) {
+CallbackReturn JointImpedanceExampleController::on_activate(
+    const rclcpp_lifecycle::State& /*previous_state*/) {
   updateJointStates();
   initial_q_ = q_;
   start_time_ = this->node_->now();
