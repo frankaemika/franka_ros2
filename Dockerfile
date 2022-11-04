@@ -1,4 +1,4 @@
-FROM ros:galactic
+FROM ros:humble
 RUN apt-get update -y && apt-get install -y --allow-unauthenticated \
     clang-6.0 \
     clang-format-6.0 \
@@ -6,16 +6,16 @@ RUN apt-get update -y && apt-get install -y --allow-unauthenticated \
     python3-pip \
     libpoco-dev \
     libeigen3-dev \
-    ros-galactic-control-msgs \
-    ros-galactic-xacro \
-    ros-galactic-ament-cmake-clang-format \
-    ros-galactic-ament-clang-format \
-    ros-galactic-ament-flake8 \
-    ros-galactic-ament-cmake-clang-tidy \
-    ros-galactic-angles \
-    ros-galactic-ros2-control \
-    ros-galactic-realtime-tools \
-    ros-galactic-control-toolbox \
+    ros-humble-control-msgs \
+    ros-humble-xacro \
+    ros-humble-ament-cmake-clang-format \
+    ros-humble-ament-clang-format \
+    ros-humble-ament-flake8 \
+    ros-humble-ament-cmake-clang-tidy \
+    ros-humble-angles \
+    ros-humble-ros2-control \
+    ros-humble-realtime-tools \
+    ros-humble-control-toolbox \
     && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m pip install -U \

@@ -33,11 +33,11 @@
 namespace franka_gripper {
 GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)
     : Node("franka_gripper_node", options) {
-  this->declare_parameter("robot_ip");
+  this->declare_parameter("robot_ip", std::string());
   this->declare_parameter("default_grasp_epsilon.inner", k_default_grasp_epsilon);
   this->declare_parameter("default_grasp_epsilon.outer", k_default_grasp_epsilon);
   this->declare_parameter("default_speed", k_default_speed);
-  this->declare_parameter("joint_names");
+  this->declare_parameter("joint_names", std::vector<std::string>());
   this->declare_parameter("state_publish_rate", k_default_state_publish_rate);
   this->declare_parameter("feedback_publish_rate", k_default_feedback_publish_rate);
   std::string robot_ip;

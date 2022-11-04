@@ -19,28 +19,28 @@ jobs:
       - name: Build Docker Image
         uses: docker/build-push-action@v2
         with:
-          tags: franka_ros2:galactic
+          tags: franka_ros2:humble
           file: Dockerfile
           push: false
 
       - name: Build
         uses: addnab/docker-run-action@v3
         with:
-          image: franka_ros2:galactic
+          image: franka_ros2:humble
           options: -v ${{github.workspace}}/:/ros/
           run: |
             cd /ros
-            . /opt/ros/galactic/setup.sh
+            . /opt/ros/humble/setup.sh
             colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCHECK_TIDY=ON
 
       - name: Test
         uses: addnab/docker-run-action@v3
         with:
-          image: franka_ros2:galactic
+          image: franka_ros2:humble
           options: -v ${{github.workspace}}/:/ros/
           run: |
             cd /ros
-            . /opt/ros/galactic/setup.sh
+            . /opt/ros/humble/setup.sh
             . install/setup.sh
             colcon test
             colcon test-result

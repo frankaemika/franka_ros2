@@ -59,7 +59,8 @@ CallbackReturn FrankaHardwareInterface::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   robot_->initializeContinuousReading();
   hw_commands_.fill(0);
-  read();  // makes sure that the robot state is properly initialized.
+  read(rclcpp::Time(0),
+       rclcpp::Duration(0, 0));  // makes sure that the robot state is properly initialized.
   RCLCPP_INFO(getLogger(), "Started");
   return CallbackReturn::SUCCESS;
 }
@@ -72,7 +73,8 @@ CallbackReturn FrankaHardwareInterface::on_deactivate(
   return CallbackReturn::SUCCESS;
 }
 
-hardware_interface::return_type FrankaHardwareInterface::read() {
+hardware_interface::return_type FrankaHardwareInterface::read(const rclcpp::Time& /*time*/,
+                                                              const rclcpp::Duration& /*period*/) {
   const auto kState = robot_->read();
   hw_positions_ = kState.q;
   hw_velocities_ = kState.dq;
@@ -80,7 +82,8 @@ hardware_interface::return_type FrankaHardwareInterface::read() {
   return hardware_interface::return_type::OK;
 }
 
-hardware_interface::return_type FrankaHardwareInterface::write() {
+hardware_interface::return_type FrankaHardwareInterface::write(const rclcpp::Time& /*time*/,
+                                                               const rclcpp::Duration& /*period*/) {
   if (std::any_of(hw_commands_.begin(), hw_commands_.end(),
                   [](double c) { return not std::isfinite(c); })) {
     return hardware_interface::return_type::ERROR;

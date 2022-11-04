@@ -46,7 +46,7 @@ controller_interface::return_type GravityCompensationExampleController::update(
 
 CallbackReturn GravityCompensationExampleController::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
-  arm_id_ = node_->get_parameter("arm_id").as_string();
+  arm_id_ = get_node()->get_parameter("arm_id").as_string();
   return CallbackReturn::SUCCESS;
 }
 
