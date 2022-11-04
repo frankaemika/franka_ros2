@@ -31,11 +31,16 @@ pipeline {
                     colcon test-result
                 '''
             }
+            post {
+                always {
+                    junit 'build/**/test_results/**/*.xml'
+                }
+            }
         }
     }
     post {
         always {
-            junit 'build/**/test_results/**/*.xml'
+            cleanWs()
             script {
                 notifyBitbucket()
             }
