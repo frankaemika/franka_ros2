@@ -1,8 +1,8 @@
 FROM ros:humble
 RUN apt-get update -y && apt-get install -y --allow-unauthenticated \
-    clang-6.0 \
-    clang-format-6.0 \
-    clang-tidy-6.0 \
+    clang-14 \
+    clang-format-14 \
+    clang-tidy-14 \
     python3-pip \
     libpoco-dev \
     libeigen3-dev \
