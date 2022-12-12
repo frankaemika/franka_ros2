@@ -106,7 +106,7 @@ def generate_launch_description():
         ),
         Node(
             package='controller_manager',
-            executable='spawner.py',
+            executable='spawner',
             arguments=['joint_state_broadcaster'],
             output='screen',
         ),
