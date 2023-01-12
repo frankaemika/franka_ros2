@@ -70,7 +70,7 @@ def generate_launch_description():
 
         Node(
             package='controller_manager',
-            executable='spawner.py',
+            executable='spawner',
             arguments=['move_to_start_example_controller'],
             output='screen',
         ),
