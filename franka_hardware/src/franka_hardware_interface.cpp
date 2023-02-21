@@ -85,7 +85,7 @@ hardware_interface::return_type FrankaHardwareInterface::read(const rclcpp::Time
 hardware_interface::return_type FrankaHardwareInterface::write(const rclcpp::Time& /*time*/,
                                                                const rclcpp::Duration& /*period*/) {
   if (std::any_of(hw_commands_.begin(), hw_commands_.end(),
-                  [](double c) { return ! std::isfinite(c); })) {
+                  [](double c) { return !std::isfinite(c); })) {
     return hardware_interface::return_type::ERROR;
   }
 
@@ -162,11 +162,11 @@ rclcpp::Logger FrankaHardwareInterface::getLogger() {
 hardware_interface::return_type FrankaHardwareInterface::perform_command_mode_switch(
     const std::vector<std::string>& /*start_interfaces*/,
     const std::vector<std::string>& /*stop_interfaces*/) {
-  if (! effort_interface_running_ && effort_interface_claimed_) {
+  if (!effort_interface_running_ && effort_interface_claimed_) {
     robot_->stopRobot();
     robot_->initializeTorqueControl();
     effort_interface_running_ = true;
-  } else if (effort_interface_running_ && ! effort_interface_claimed_) {
+  } else if (effort_interface_running_ && !effort_interface_claimed_) {
     robot_->stopRobot();
     robot_->initializeContinuousReading();
     effort_interface_running_ = false;
