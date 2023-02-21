@@ -158,7 +158,7 @@ class GripperActionServer : public rclcpp::Node {
     std::future<std::shared_ptr<typename T::Result>> result_future =
         std::async(std::launch::async, command_execution_thread);
 
-    while (not resultIsReady(result_future, future_wait_timeout_) and rclcpp::ok()) {
+    while (! resultIsReady(result_future, future_wait_timeout_) && rclcpp::ok()) {
       if (goal_handle->is_canceling()) {
         gripper_->stop();
         auto result = result_future.get();

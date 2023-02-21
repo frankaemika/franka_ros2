@@ -25,7 +25,7 @@ namespace franka_hardware {
 Robot::Robot(const std::string& robot_ip, const rclcpp::Logger& logger) {
   tau_command_.fill(0.);
   franka::RealtimeConfig rt_config = franka::RealtimeConfig::kEnforce;
-  if (not franka::hasRealtimeKernel()) {
+  if (!franka::hasRealtimeKernel()) {
     rt_config = franka::RealtimeConfig::kIgnore;
     RCLCPP_WARN(
         logger,
@@ -45,7 +45,7 @@ franka::RobotState Robot::read() {
 }
 
 void Robot::stopRobot() {
-  if (not stopped_) {
+  if (!stopped_) {
     finish_ = true;
     control_thread_->join();
     finish_ = false;
@@ -82,7 +82,7 @@ void Robot::initializeContinuousReading() {
         std::lock_guard<std::mutex> lock(read_mutex_);
         current_state_ = state;
       }
-      return not finish_;
+      return !finish_;
     });
   };
   control_thread_ = std::make_unique<std::thread>(kReading);
