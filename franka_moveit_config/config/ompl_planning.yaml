@@ -14,7 +14,7 @@ planner_configs:
   BKPIECEkConfigDefault:
     type: geometric::BKPIECE
     range: 0.0  # Max motion added to tree. ==> maxDistance_ default: 0.0, if 0.0, set on setup()
-    border_fraction: 0.9  # Fraction fof time focused on boarder default: 0.9
+    border_fraction: 0.9  # Fraction of time focused on boarder default: 0.9
     failed_expansion_score_factor: 0.5  # When extending motion fails, scale score by factor. default: 0.5
     min_valid_path_fraction: 0.5  # Accept partially valid moves above fraction. default: 0.5
   KPIECEkConfigDefault:
