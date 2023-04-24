@@ -50,13 +50,8 @@ JointTrajectoryController::JointTrajectoryController()
 
 }
 
-controller_interface::return_type JointTrajectoryController::init(
-  const std::string & controller_name)
+CallbackReturn JointTrajectoryController::on_init()
 {
-  const auto ret = ControllerInterface::init(controller_name);
-  if (ret != controller_interface::return_type::OK) {
-    return ret;
-  }
   try
   {
     // with the lifecycle node being initialized, we can declare parameters
@@ -79,10 +74,10 @@ controller_interface::return_type JointTrajectoryController::init(
   catch (const std::exception & e)
   {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return controller_interface::return_type::ERROR;
+    return CallbackReturn::ERROR;
   }
 
-  return controller_interface::return_type::OK;
+  return CallbackReturn::SUCCESS;
 }
 
 controller_interface::InterfaceConfiguration
@@ -117,9 +112,10 @@ JointTrajectoryController::state_interface_configuration() const
   return conf;
 }
 
-controller_interface::return_type JointTrajectoryController::update()
+controller_interface::return_type JointTrajectoryController::update(
+    const rclcpp::Time & /*time*/, const rclcpp::Duration & /*period*/)
 {
-  if (get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
     return controller_interface::return_type::OK;
   }
@@ -946,7 +942,7 @@ rclcpp_action::GoalResponse JointTrajectoryController::goal_callback(
   RCLCPP_INFO(node_->get_logger(), "Received new action goal");
 
   // Precondition: Running controller
-  if (get_current_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
+  if (get_state().id() == lifecycle_msgs::msg::State::PRIMARY_STATE_INACTIVE)
   {
     RCLCPP_ERROR(node_->get_logger(), "Can't accept new action goals. Controller is not running.");
     return rclcpp_action::GoalResponse::REJECT;
