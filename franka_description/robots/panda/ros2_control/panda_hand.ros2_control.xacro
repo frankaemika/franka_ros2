@@ -4,7 +4,7 @@
   <xacro:macro name="panda_hand_ros2_control" params="ns">
     <ros2_control name="PandaHandFakeSystem" type="system">
       <hardware>
-          <plugin>fake_components/GenericSystem</plugin>
+          <plugin>mock_components/GenericSystem</plugin>
           <param name="fake_sensor_commands">true</param>
           <param name="state_following_offset">0.0</param>
       </hardware>
