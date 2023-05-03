@@ -50,7 +50,7 @@ class MotionGenerator {
  private:
   using Vector7i = Eigen::Matrix<int, 7, 1>;
 
-  bool calculateDesiredValues(double t, Vector7d* delta_q_d) const;
+  bool calculateDesiredValues(double time, Vector7d* delta_q_d) const;
   void calculateSynchronizedValues();
 
   static constexpr double kDeltaQMotionFinished = 1e-6;

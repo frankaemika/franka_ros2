@@ -56,7 +56,7 @@ GripperActionServer::GripperActionServer(const rclcpp::NodeOptions& options)
 
   if (this->joint_names_.size() != 2) {
     RCLCPP_FATAL(this->get_logger(),
-                 "Parameter 'joint_names' needs exactly two arguments, got %d instead",
+                 "Parameter 'joint_names' needs exactly two arguments, got %ld instead",
                  this->joint_names_.size());
     throw std::invalid_argument("Parameter 'joint_names' has wrong number of arguments");
   }
