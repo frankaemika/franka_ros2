@@ -60,6 +60,7 @@ if(BUILD_TESTING)
     find_package(ament_cmake_lint_cmake REQUIRED)
     find_package(ament_cmake_pep257 REQUIRED)
     find_package(ament_cmake_xmllint REQUIRED)
+    find_package(ament_cmake_gmock REQUIRED)
 
     set(CPP_DIRECTORIES src include)
     ament_clang_format(CONFIG_FILE ../.clang-format ${CPP_DIRECTORIES})
@@ -74,6 +75,13 @@ if(BUILD_TESTING)
         set(ament_cmake_clang_tidy_CONFIG_FILE ../.clang-tidy)
         ament_clang_tidy(${CMAKE_BINARY_DIR})
     endif()
+
+    ament_add_gmock(${PROJECT_NAME}_test test/franka_hardware_interface_test.cpp)
+    target_include_directories(${PROJECT_NAME}_test PUBLIC
+      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+      $<INSTALL_INTERFACE:include>
+    )
+    target_link_libraries(${PROJECT_NAME}_test  ${PROJECT_NAME})
 endif()
 
 ament_export_include_directories(

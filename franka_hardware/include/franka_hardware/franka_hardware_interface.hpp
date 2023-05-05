@@ -34,6 +34,9 @@ namespace franka_hardware {
 
 class FrankaHardwareInterface : public hardware_interface::SystemInterface {
  public:
+  explicit FrankaHardwareInterface(std::unique_ptr<Robot> robot);
+  FrankaHardwareInterface() = default;
+
   hardware_interface::return_type prepare_command_mode_switch(
       const std::vector<std::string>& start_interfaces,
       const std::vector<std::string>& stop_interfaces) override;
