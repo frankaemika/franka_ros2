@@ -130,12 +130,12 @@ CallbackReturn FrankaHardwareInterface::on_init(const hardware_interface::Hardwa
     }
     if (joint.state_interfaces[1].name != hardware_interface::HW_IF_VELOCITY) {
       RCLCPP_FATAL(getLogger(), "Joint '%s' has unexpected state interface '%s'. Expected '%s'",
-                   joint.name.c_str(), joint.state_interfaces[0].name.c_str(),
+                   joint.name.c_str(), joint.state_interfaces[1].name.c_str(),
                    hardware_interface::HW_IF_VELOCITY);
     }
     if (joint.state_interfaces[2].name != hardware_interface::HW_IF_EFFORT) {
       RCLCPP_FATAL(getLogger(), "Joint '%s' has unexpected state interface '%s'. Expected '%s'",
-                   joint.name.c_str(), joint.state_interfaces[0].name.c_str(),
+                   joint.name.c_str(), joint.state_interfaces[2].name.c_str(),
                    hardware_interface::HW_IF_EFFORT);
     }
   }
