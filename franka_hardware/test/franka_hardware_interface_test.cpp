@@ -8,6 +8,12 @@
 #include <hardware_interface/types/hardware_interface_return_values.hpp>
 #include <hardware_interface/types/hardware_interface_type_values.hpp>
 
+const std::string k_position_controller{"position"};
+const std::string k_velocity_controller{"velocity"};
+const std::string k_effort_controller{"effort"};
+const std::string k_joint_name{"joint"};
+const size_t k_number_of_joints{7};
+
 class MockRobot : public franka_hardware::Robot {
  public:
   MOCK_METHOD(void, initializeContinuousReading, (), (override));
@@ -32,12 +38,12 @@ auto createHardwareInfo() -> hardware_interface::HardwareInfo {
   std::vector<hardware_interface::InterfaceInfo> state_interfaces = {
       position_state_interface, velocity_state_interface, effort_state_interface};
 
-  for (auto i = 0U; i < 7; i++) {
+  for (auto i = 0U; i < k_number_of_joints; i++) {
     hardware_interface::ComponentInfo joint;
 
-    joint.name = "fr3_joint" + std::to_string(i + 1);
+    joint.name = k_joint_name + std::to_string(i + 1);
 
-    command_interface.name = "effort";
+    command_interface.name = k_effort_controller;
 
     joint.command_interfaces.push_back(command_interface);
     joint.state_interfaces = state_interfaces;
@@ -92,13 +98,13 @@ TEST(
     if (i % 3 == 0) {
       joint_index++;
     }
-    const std::string joint_name = "fr3_joint" + std::to_string(joint_index);
+    const std::string joint_name = k_joint_name + std::to_string(joint_index);
     if (i % 3 == 0) {
-      EXPECT_EQ(states[i].get_name(), joint_name + "/position");
+      EXPECT_EQ(states[i].get_name(), joint_name + "/" + k_position_controller);
     } else if (i % 3 == 1) {
-      EXPECT_EQ(states[i].get_name(), joint_name + "/velocity");
+      EXPECT_EQ(states[i].get_name(), joint_name + "/" + k_velocity_controller);
     } else {
-      EXPECT_EQ(states[i].get_name(), joint_name + "/effort");
+      EXPECT_EQ(states[i].get_name(), joint_name + "/" + k_effort_controller);
     }
     EXPECT_EQ(states[i].get_value(), 0.0);
   }
@@ -115,8 +121,8 @@ TEST(FrankaHardwareInterfaceTest,
   std::vector<std::string> stop_interface;
 
   for (size_t i = 0; i < hardware_info.joints.size(); i++) {
-    const std::string joint_name = "fr3_joint" + std::to_string(i);
-    stop_interface.push_back(joint_name + "/effort");
+    const std::string joint_name = k_joint_name + std::to_string(i);
+    stop_interface.push_back(joint_name + "/" + k_effort_controller);
   }
   std::vector<std::string> start_interface = {};
   EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
@@ -134,8 +140,8 @@ TEST(
   std::vector<std::string> stop_interface;
 
   for (size_t i = 0; i < hardware_info.joints.size(); i++) {
-    const std::string joint_name = "fr3_joint" + std::to_string(i);
-    stop_interface.push_back(joint_name + "/effort");
+    const std::string joint_name = k_joint_name + std::to_string(i);
+    stop_interface.push_back(joint_name + "/" + k_effort_controller);
   }
   std::vector<std::string> start_interface = {"fr3_joint1/effort"};
   EXPECT_THROW(
@@ -153,8 +159,8 @@ TEST(FrankaHardwareInterfaceTest,
   std::vector<std::string> start_interface;
 
   for (size_t i = 0; i < hardware_info.joints.size(); i++) {
-    const std::string joint_name = "fr3_joint" + std::to_string(i);
-    start_interface.push_back(joint_name + "/effort");
+    const std::string joint_name = k_joint_name + std::to_string(i);
+    start_interface.push_back(joint_name + "/" + k_effort_controller);
   }
 
   std::vector<std::string> stop_interface = {};
@@ -174,8 +180,8 @@ TEST(
   std::vector<std::string> start_interface;
 
   for (size_t i = 0; i < hardware_info.joints.size(); i++) {
-    const std::string joint_name = "fr3_joint" + std::to_string(i);
-    start_interface.push_back(joint_name + "/effort");
+    const std::string joint_name = k_joint_name + std::to_string(i);
+    start_interface.push_back(joint_name + "/" + k_effort_controller);
   }
 
   std::vector<std::string> stop_interface = {"fr3_joint1/effort"};
@@ -236,8 +242,8 @@ TEST(FrankaHardwareInterfaceTest,
   std::vector<std::string> start_interface;
 
   for (size_t i = 0; i < hardware_info.joints.size(); i++) {
-    const std::string joint_name = "fr3_joint" + std::to_string(i);
-    start_interface.push_back(joint_name + "/effort");
+    const std::string joint_name = k_joint_name + std::to_string(i);
+    start_interface.push_back(joint_name + "/" + k_effort_controller);
   }
 
   std::vector<std::string> stop_interface = {};
@@ -263,8 +269,8 @@ TEST(FrankaHardwareInterfaceTest,
   std::vector<std::string> start_interface;
 
   for (size_t i = 0; i < hardware_info.joints.size(); i++) {
-    const std::string joint_name = "fr3_joint" + std::to_string(i);
-    start_interface.push_back(joint_name + "/effort");
+    const std::string joint_name = k_joint_name + std::to_string(i);
+    start_interface.push_back(joint_name + "/" + k_effort_controller);
   }
 
   std::vector<std::string> stop_interface = {};
@@ -276,8 +282,8 @@ TEST(FrankaHardwareInterfaceTest,
             hardware_interface::return_type::OK);
 
   for (size_t i = 0; i < hardware_info.joints.size(); i++) {
-    const std::string joint_name = "fr3_joint" + std::to_string(i);
-    stop_interface.push_back(joint_name + "/effort");
+    const std::string joint_name = k_joint_name + std::to_string(i);
+    stop_interface.push_back(joint_name + "/" + k_effort_controller);
   }
 
   start_interface.clear();

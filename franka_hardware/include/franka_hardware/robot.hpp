@@ -29,7 +29,6 @@ namespace franka_hardware {
 
 class Robot {
  public:
-  Robot() = default;
   /**
    * Connects to the robot. This method can block for up to one minute if the robot is not
    * responding. An exception will be thrown if the connection cannot be established.
@@ -76,6 +75,9 @@ class Robot {
 
   /// @return true if there is no control or reading loop running.
   virtual bool isStopped() const;
+
+ protected:
+  Robot() = default;
 
  private:
   std::unique_ptr<std::thread> control_thread_;

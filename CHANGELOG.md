@@ -16,4 +16,4 @@
 
 ### Fixed
 
-- franka\_hardware Fix the mismatched joint state interface type logger error message
+* franka\_hardware Fix the mismatched joint state interface type logger error message
