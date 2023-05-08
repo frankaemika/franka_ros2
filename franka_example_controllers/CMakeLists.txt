@@ -68,6 +68,9 @@ if(BUILD_TESTING)
     find_package(ament_cmake_lint_cmake REQUIRED)
     find_package(ament_cmake_pep257 REQUIRED)
     find_package(ament_cmake_xmllint REQUIRED)
+    find_package(ament_cmake_gmock REQUIRED)
+    find_package(controller_manager REQUIRED)
+    find_package(ros2_control_test_assets REQUIRED)
 
     set(CPP_DIRECTORIES src include)
     ament_clang_format(CONFIG_FILE ../.clang-format ${CPP_DIRECTORIES})
@@ -77,13 +80,21 @@ if(BUILD_TESTING)
     ament_flake8()
     ament_pep257()
     ament_xmllint()
+    ament_add_gmock(${PROJECT_NAME}_test test/gravity_compensation_controller_test.cpp)
 
     if(CHECK_TIDY)
         find_package(ament_cmake_clang_tidy REQUIRED)
         set(ament_cmake_clang_tidy_CONFIG_FILE ../.clang-tidy)
         ament_clang_tidy(${CMAKE_BINARY_DIR})
     endif()
+
+    target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME})
+    ament_target_dependencies(${PROJECT_NAME}_test
+        controller_manager
+        ros2_control_test_assets
+    )
 endif()
+
 ament_export_include_directories(
         include
 )
