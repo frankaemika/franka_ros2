@@ -1,15 +1,3 @@
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-#include <rclcpp/rclcpp.hpp>
-
-#include <franka_example_controllers/gravity_compensation_example_controller.hpp>
-
-TEST(GravityCompenstatioControllerTest, sum_up) {
-  ASSERT_EQ(2 + 2, 4);
-}
-
-TEST(GravityCompenstatioControllerTest,
-     test_load_gravity_compensation)  // Copyright 2020 PAL Robotics SL.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,19 +10,15 @@ TEST(GravityCompenstatioControllerTest,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
+#include <gtest/gtest.h>
 #include <memory>
-
-#include "gmock/gmock.h"
 
 #include "controller_manager/controller_manager.hpp"
 #include "hardware_interface/resource_manager.hpp"
-#include "rclcpp/executor.hpp"
 #include "rclcpp/executors/single_threaded_executor.hpp"
-#include "rclcpp/utilities.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
 
-TEST(TestGravityCompentationController, load_controller) {
+TEST(TestLoadGravityCompensationExampleController, load_controller) {
   rclcpp::init(0, nullptr);
 
   std::shared_ptr<rclcpp::Executor> executor =
@@ -44,14 +28,11 @@ TEST(TestGravityCompentationController, load_controller) {
                                                ros2_control_test_assets::minimal_robot_urdf),
                                            executor, "test_controller_manager");
 
-  ASSERT_NO_THROW(
-      cm.load_controller("test_gravity_compensation_controller",
-                         "franka_example_controllers/GravityCompensationExampleController"));
+  auto response =
+      cm.load_controller("test_gravity_compensation_example_controller",
+                         "franka_example_controllers/GravityCompensationExampleController");
+
+  ASSERT_NE(response, nullptr);
 
   rclcpp::shutdown();
-}
-
-int main(int argc, char** argv) {
-  testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
 }
