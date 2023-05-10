@@ -16,6 +16,7 @@ RUN apt-get update -y && apt-get install -y --allow-unauthenticated \
     ros-humble-ros2-control \
     ros-humble-realtime-tools \
     ros-humble-control-toolbox \
+    ros-humble-generate-parameter-library \
     && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m pip install -U \

@@ -140,14 +140,14 @@ CallbackReturn FrankaHardwareInterface::on_init(const hardware_interface::Hardwa
   try {
     robot_ip = info_.hardware_parameters.at("robot_ip");
   } catch (const std::out_of_range& ex) {
-    RCLCPP_FATAL(getLogger(), "Parameter 'robot_ip' ! set");
+    RCLCPP_FATAL(getLogger(), "Parameter 'robot_ip' is not set");
     return CallbackReturn::ERROR;
   }
   try {
     RCLCPP_INFO(getLogger(), "Connecting to robot at \"%s\" ...", robot_ip.c_str());
     robot_ = std::make_unique<Robot>(robot_ip, getLogger());
   } catch (const franka::Exception& e) {
-    RCLCPP_FATAL(getLogger(), "Could ! connect to robot");
+    RCLCPP_FATAL(getLogger(), "Could not connect to robot");
     RCLCPP_FATAL(getLogger(), "%s", e.what());
     return CallbackReturn::ERROR;
   }

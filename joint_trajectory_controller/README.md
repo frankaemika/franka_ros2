@@ -1,5 +1,5 @@
-**This package is a Foxy version of [this Pull Request](https://github.com/ros-controls/ros2_controllers/pull/225).
-It is needed since the joint trajectory controller is currently not able to do torque control.**
+**This package is from [this Pull Request](https://github.com/ros-controls/ros2_controllers/pull/558/).
+This PR contains features to ensure that the current robot configuration is used as a goal when the JTC hasn't already been passed a goal**
 
 # Original README
 

@@ -12,7 +12,7 @@ controller_manager:
       type: franka_example_controllers/MoveToStartExampleController
 
     joint_trajectory_controller:
-      type: joint_effort_trajectory_controller/JointTrajectoryController
+      type: joint_trajectory_controller/JointTrajectoryController
 
     joint_state_broadcaster:
       type: joint_state_broadcaster/JointStateBroadcaster
