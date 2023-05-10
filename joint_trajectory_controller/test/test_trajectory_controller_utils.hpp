@@ -124,7 +124,6 @@ public:
 
   virtual void SetUp()
   {
-    rclcpp::init(0, nullptr);
     controller_name_ = "test_joint_trajectory_controller";
 
     joint_names_ = {"joint1", "joint2", "joint3"};

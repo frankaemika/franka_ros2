@@ -1,4 +1,22 @@
 FROM ros:humble
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+ARG USER_UID=1001
+ARG USER_GID=1001
+ARG USERNAME=user
+
+WORKDIR /tmp
+
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    #
+    # [Optional] Add sudo support. Omit if you don't need to install software after connecting.
+    && apt-get update \
+    && apt-get install -y sudo \
+    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME
+
 RUN apt-get update -y && apt-get install -y --allow-unauthenticated \
     clang-14 \
     clang-format-14 \
@@ -15,8 +33,13 @@ RUN apt-get update -y && apt-get install -y --allow-unauthenticated \
     ros-humble-angles \
     ros-humble-ros2-control \
     ros-humble-realtime-tools \
-    ros-humble-control-toolbox \
+    ros-humble-control-toolbox \    
+    ros-humble-controller-manager \
+    ros-humble-hardware-interface \
     ros-humble-generate-parameter-library \
+    ros-humble-controller-interface \
+    ros-humble-ros2-control-test-assets \
+    ros-humble-controller-manager \
     && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m pip install -U \
@@ -42,3 +65,6 @@ RUN cd ~/source_code && git clone https://github.com/frankaemika/libfranka.git \
     && cmake -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=OFF  .. \
     && make franka -j$(nproc) \
     && make install
+
+# set the default user to the newly created user
+USER $USERNAME
