@@ -57,6 +57,9 @@ controller_interface::CallbackReturn JointTrajectoryController::on_init()
     // Create the parameter listener and get the parameters
     param_listener_ = std::make_shared<ParamListener>(get_node());
     params_ = param_listener_->get_params();
+
+    // Set interpolation method from string parameter
+    interpolation_method_ = interpolation_methods::from_string(params_.interpolation_method);
   }
   catch (const std::exception & e)
   {
@@ -116,46 +119,14 @@ controller_interface::return_type JointTrajectoryController::update(
     return controller_interface::return_type::OK;
   }
 
-  // current state update
-  state_current_.time_from_start.set__sec(0);
-  read_state_from_hardware(state_current_);
-
-  if (start_holding)
-  {
-    // Command to stay at current position
-    trajectory_msgs::msg::JointTrajectory current_pose_msg;
-    current_pose_msg.header.stamp = rclcpp::Time(0);
-    current_pose_msg.joint_names = params_.joints;
-    current_pose_msg.points.push_back(state_current_);
-    current_pose_msg.points[0].velocities.clear();     // ensure no velocity
-    current_pose_msg.points[0].accelerations.clear();  // ensure no acceleration
-    current_pose_msg.points[0].effort.clear();  // ensure no explicit effort (PID will fix this)
-
-    aborted_traj_ptr =
-      traj_external_point_ptr_
-        ->get_trajectory_msg();  // Used to avoid updating the trajectory back to the aborted one
-    traj_external_point_ptr_->update(
-      std::make_shared<trajectory_msgs::msg::JointTrajectory>(current_pose_msg));
-    start_holding = false;
-  }
-
   auto compute_error_for_joint = [&](
                                    JointTrajectoryPoint & error, int index,
                                    const JointTrajectoryPoint & current,
                                    const JointTrajectoryPoint & desired)
   {
     // error defined as the difference between current and desired
-    if (normalize_joint_error_[index])
-    {
-      // if desired, the shortest_angular_distance is calculated, i.e., the error is
-      //  normalized between -pi<error<pi
-      error.positions[index] =
-        angles::shortest_angular_distance(current.positions[index], desired.positions[index]);
-    }
-    else
-    {
-      error.positions[index] = desired.positions[index] - current.positions[index];
-    }
+    error.positions[index] =
+      angles::shortest_angular_distance(current.positions[index], desired.positions[index]);
     if (has_velocity_state_interface_ && has_velocity_command_interface_)
     {
       error.velocities[index] = desired.velocities[index] - current.velocities[index];
@@ -169,7 +140,7 @@ controller_interface::return_type JointTrajectoryController::update(
   // Check if a new external message has been received from nonRT threads
   auto current_external_msg = traj_external_point_ptr_->get_trajectory_msg();
   auto new_external_msg = traj_msg_external_point_ptr_.readFromRT();
-  if (current_external_msg != *new_external_msg && aborted_traj_ptr != *new_external_msg)
+  if (current_external_msg != *new_external_msg)
   {
     fill_partial_goal(*new_external_msg);
     sort_to_local_joint_order(*new_external_msg);
@@ -187,6 +158,10 @@ controller_interface::return_type JointTrajectoryController::update(
       joint_interface[index].get().set_value(trajectory_point_interface[index]);
     }
   };
+
+  // current state update
+  state_current_.time_from_start.set__sec(0);
+  read_state_from_hardware(state_current_);
 
   // currently carrying out a trajectory
   if (traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg())
@@ -268,7 +243,8 @@ controller_interface::return_type JointTrajectoryController::update(
           {
             tmp_command_[i] = (state_desired_.velocities[i] * ff_velocity_scale_[i]) +
                               pids_[i]->computeCommand(
-                                state_error_.positions[i], state_error_.velocities[i],
+                                state_desired_.positions[i] - state_current_.positions[i],
+                                state_desired_.velocities[i] - state_current_.velocities[i],
                                 (uint64_t)period.nanoseconds());
           }
         }
@@ -374,8 +350,14 @@ controller_interface::return_type JointTrajectoryController::update(
       }
     }
   }
+  else
+  {
+    // TODO(peterdavidfagan) temporary solution to keep the initial position
+    // before the first trajectory goal arrives
+    set_hold_position();
+  }
 
-  publish_state(time, state_desired_, state_current_, state_error_);
+  publish_state(state_desired_, state_current_, state_error_);
   return controller_interface::return_type::OK;
 }
 
@@ -486,53 +468,6 @@ bool JointTrajectoryController::read_state_from_command_interfaces(JointTrajecto
   return has_values;
 }
 
-void JointTrajectoryController::query_state_service(
-  const std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Request> request,
-  std::shared_ptr<control_msgs::srv::QueryTrajectoryState::Response> response)
-{
-  const auto logger = get_node()->get_logger();
-  // Preconditions
-  if (get_state().id() != lifecycle_msgs::msg::State::PRIMARY_STATE_ACTIVE)
-  {
-    RCLCPP_ERROR(logger, "Can't sample trajectory. Controller is not active.");
-    response->success = false;
-    return;
-  }
-  const auto active_goal = *rt_active_goal_.readFromRT();
-  response->name = params_.joints;
-  trajectory_msgs::msg::JointTrajectoryPoint state_requested = state_current_;
-  if ((traj_point_active_ptr_ && (*traj_point_active_ptr_)->has_trajectory_msg()))
-  {
-    TrajectoryPointConstIter start_segment_itr, end_segment_itr;
-    response->success = (*traj_point_active_ptr_)
-                          ->sample(
-                            static_cast<rclcpp::Time>(request->time), interpolation_method_,
-                            state_requested, start_segment_itr, end_segment_itr);
-    // If the requested sample time precedes the trajectory finish time respond as failure
-    if (response->success)
-    {
-      if (end_segment_itr == (*traj_point_active_ptr_)->end())
-      {
-        RCLCPP_ERROR(logger, "Requested sample time precedes the current trajectory end time.");
-        response->success = false;
-      }
-    }
-    else
-    {
-      RCLCPP_ERROR(
-        logger, "Requested sample time is earlier than the current trajectory start time.");
-    }
-  }
-  else
-  {
-    RCLCPP_ERROR(logger, "Currently there is no valid trajectory instance.");
-    response->success = false;
-  }
-  response->position = state_requested.positions;
-  response->velocity = state_requested.velocities;
-  response->acceleration = state_requested.accelerations;
-}
-
 controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   const rclcpp_lifecycle::State &)
 {
@@ -634,16 +569,22 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       pids_[i] = std::make_shared<control_toolbox::Pid>(
         gains.p, gains.i, gains.d, gains.i_clamp, -gains.i_clamp);
 
-      ff_velocity_scale_[i] = gains.ff_velocity_scale;
-    }
-  }
+      // TODO(destogl): remove this in ROS2 Iron
+      // Check deprecated style for "ff_velocity_scale" parameter definition.
+      if (gains.ff_velocity_scale == 0.0)
+      {
+        RCLCPP_WARN(
+          get_node()->get_logger(),
+          "'ff_velocity_scale' parameters is not defined under 'gains.<joint_name>.' structure. "
+          "Maybe you are using deprecated format 'ff_velocity_scale/<joint_name>'!");
 
-  // Configure joint position error normalization from ROS parameters
-  normalize_joint_error_.resize(dof_);
-  for (size_t i = 0; i < dof_; ++i)
-  {
-    const auto & gains = params_.gains.joints_map.at(params_.joints[i]);
-    normalize_joint_error_[i] = gains.normalize_error;
+        ff_velocity_scale_[i] = auto_declare<double>("ff_velocity_scale/" + params_.joints[i], 0.0);
+      }
+      else
+      {
+        ff_velocity_scale_[i] = gains.ff_velocity_scale;
+      }
+    }
   }
 
   if (params_.state_interfaces.empty())
@@ -724,6 +665,17 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
       "~/joint_trajectory", rclcpp::SystemDefaultsQoS(),
       std::bind(&JointTrajectoryController::topic_callback, this, std::placeholders::_1));
 
+  // State publisher
+  RCLCPP_INFO(logger, "Controller state will be published at %.2f Hz.", params_.state_publish_rate);
+  if (params_.state_publish_rate > 0.0)
+  {
+    state_publisher_period_ = rclcpp::Duration::from_seconds(1.0 / params_.state_publish_rate);
+  }
+  else
+  {
+    state_publisher_period_ = rclcpp::Duration::from_seconds(0.0);
+  }
+
   publisher_ =
     get_node()->create_publisher<ControllerStateMsg>("~/state", rclcpp::SystemDefaultsQoS());
   state_publisher_ = std::make_unique<StatePublisher>(publisher_);
@@ -746,6 +698,8 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
     state_publisher_->msg_.error.accelerations.resize(dof_);
   }
   state_publisher_->unlock();
+
+  last_state_publish_time_ = get_node()->now();
 
   // action server configuration
   if (params_.allow_partial_joints_goal)
@@ -770,10 +724,6 @@ controller_interface::CallbackReturn JointTrajectoryController::on_configure(
   resize_joint_trajectory_point(state_desired_, dof_);
   resize_joint_trajectory_point(state_error_, dof_);
   resize_joint_trajectory_point(last_commanded_state_, dof_);
-
-  query_state_srv_ = get_node()->create_service<control_msgs::srv::QueryTrajectoryState>(
-    std::string(get_node()->get_name()) + "/query_state",
-    std::bind(&JointTrajectoryController::query_state_service, this, _1, _2));
 
   return CallbackReturn::SUCCESS;
 }
@@ -832,6 +782,7 @@ controller_interface::CallbackReturn JointTrajectoryController::on_activate(
 
   subscriber_is_active_ = true;
   traj_point_active_ptr_ = &traj_external_point_ptr_;
+  last_state_publish_time_ = get_node()->now();
 
   // Initialize current state storage if hardware state has tracking offset
   read_state_from_hardware(state_current_);
@@ -941,12 +892,23 @@ controller_interface::CallbackReturn JointTrajectoryController::on_shutdown(
 }
 
 void JointTrajectoryController::publish_state(
-  const rclcpp::Time & time, const JointTrajectoryPoint & desired_state,
-  const JointTrajectoryPoint & current_state, const JointTrajectoryPoint & state_error)
+  const JointTrajectoryPoint & desired_state, const JointTrajectoryPoint & current_state,
+  const JointTrajectoryPoint & state_error)
 {
-  if (state_publisher_->trylock())
+  if (state_publisher_period_.seconds() <= 0.0)
   {
-    state_publisher_->msg_.header.stamp = time;
+    return;
+  }
+
+  if (get_node()->now() < (last_state_publish_time_ + state_publisher_period_))
+  {
+    return;
+  }
+
+  if (state_publisher_ && state_publisher_->trylock())
+  {
+    last_state_publish_time_ = get_node()->now();
+    state_publisher_->msg_.header.stamp = last_state_publish_time_;
     state_publisher_->msg_.desired.positions = desired_state.positions;
     state_publisher_->msg_.desired.velocities = desired_state.velocities;
     state_publisher_->msg_.desired.accelerations = desired_state.accelerations;
@@ -1305,7 +1267,20 @@ void JointTrajectoryController::preempt_active_goal()
 
 void JointTrajectoryController::set_hold_position()
 {
-  start_holding = true;  // Should I use writeFromNonRT?
+  trajectory_msgs::msg::JointTrajectory msg;
+  msg.header.stamp = rclcpp::Time(0);
+  msg.joint_names = params_.joints;
+  trajectory_msgs::msg::JointTrajectoryPoint point;
+  for (const auto & joint_position : last_commanded_state_.positions)
+  {
+    point.velocities.push_back(0);
+    point.accelerations.push_back(0);
+    point.positions.push_back(joint_position);
+  }
+  msg.points.push_back(point);
+
+  auto traj_msg = std::make_shared<trajectory_msgs::msg::JointTrajectory>(msg);
+  add_new_trajectory_msg(traj_msg);
 }
 
 bool JointTrajectoryController::contains_interface_type(
