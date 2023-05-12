@@ -40,7 +40,7 @@ joint_trajectory_controller:
     default_value: 50.0,
     description: "Rate controller state is published",
     validation: {
-      lower_bounds: [0.1]
+      gt_eq: [0.1]
     }
   }
   allow_partial_joints_goal: {
