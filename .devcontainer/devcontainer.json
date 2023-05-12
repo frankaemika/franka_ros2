@@ -1,0 +1,19 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/docker-existing-dockerfile
+{
+	"name": "ROS2 Humble",
+	"dockerComposeFile": "./docker-compose.yml",
+	"service": "ros2_control",
+	"workspaceFolder": "/workspaces",
+	// "remoteUser": "devcontainer"
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"bungcip.better-toml",
+				"ms-vscode.cpptools",
+				"ms-vscode.cpptools-extension-pack"
+			]
+		}
+	}
+}
