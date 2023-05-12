@@ -74,6 +74,8 @@ if(BUILD_TESTING)
         set(ament_cmake_clang_tidy_CONFIG_FILE ../.clang-tidy)
         ament_clang_tidy(${CMAKE_BINARY_DIR})
     endif()
+
+    add_subdirectory(test)
 endif()
 
 ament_export_include_directories(

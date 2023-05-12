@@ -49,32 +49,35 @@ class Robot {
    * Starts a torque control loop. Before using this method make sure that no other
    * control or reading loop is currently active.
    */
-  void initializeTorqueControl();
+  virtual void initializeTorqueControl();
 
   /**
    * Starts a reading loop of the robot state. Before using this method make sure that no other
    * control or reading loop is currently active.
    */
-  void initializeContinuousReading();
+  virtual void initializeContinuousReading();
 
   /// stops the control or reading loop of the robot.
-  void stopRobot();
+  virtual void stopRobot();
 
   /**
    * Get the current robot state in a thread-safe way.
    * @return current robot state.
    */
-  franka::RobotState read();
+  virtual franka::RobotState read();
 
   /**
    * Sends new desired torque commands to the control loop in a thread-safe way.
    * The robot will use these torques until a different set of torques are commanded.
    * @param[in] efforts torque command for each joint.
    */
-  void write(const std::array<double, 7>& efforts);
+  virtual void write(const std::array<double, 7>& efforts);
 
   /// @return true if there is no control or reading loop running.
-  bool isStopped() const;
+  virtual bool isStopped() const;
+
+ protected:
+  Robot() = default;
 
  private:
   std::unique_ptr<std::thread> control_thread_;
