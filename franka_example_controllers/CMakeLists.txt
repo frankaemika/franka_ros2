@@ -3,7 +3,8 @@ project(franka_example_controllers)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
-    set(CMAKE_CXX_STANDARD 14)
+    set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -68,6 +69,9 @@ if(BUILD_TESTING)
     find_package(ament_cmake_lint_cmake REQUIRED)
     find_package(ament_cmake_pep257 REQUIRED)
     find_package(ament_cmake_xmllint REQUIRED)
+    find_package(ament_cmake_gmock REQUIRED)
+    find_package(controller_manager REQUIRED)
+    find_package(ros2_control_test_assets REQUIRED)
 
     set(CPP_DIRECTORIES src include)
     ament_clang_format(CONFIG_FILE ../.clang-format ${CPP_DIRECTORIES})
@@ -77,6 +81,17 @@ if(BUILD_TESTING)
     ament_flake8()
     ament_pep257()
     ament_xmllint()
+    ament_add_gmock(${PROJECT_NAME}_test test/test_load_gravity_compensation_controller.cpp)
+    target_include_directories(${PROJECT_NAME}_test PRIVATE include)
+
+    ament_target_dependencies(${PROJECT_NAME}_test
+        controller_manager
+        ros2_control_test_assets
+    )
+
+    ament_add_gmock(${PROJECT_NAME}_gravity_test test/test_gravity_compensation_example.cpp)
+    target_include_directories(${PROJECT_NAME}_gravity_test PRIVATE include)
+    target_link_libraries(${PROJECT_NAME}_gravity_test ${PROJECT_NAME})
 
     if(CHECK_TIDY)
         find_package(ament_cmake_clang_tidy REQUIRED)
@@ -84,6 +99,7 @@ if(BUILD_TESTING)
         ament_clang_tidy(${CMAKE_BINARY_DIR})
     endif()
 endif()
+
 ament_export_include_directories(
         include
 )
