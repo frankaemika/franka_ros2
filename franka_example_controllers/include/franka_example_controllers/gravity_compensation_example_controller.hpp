@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Franka Emika GmbH
+// Copyright (c) 2023 Franka Emika GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef FRANKA_EXAMPLE_CONTROLLERS__GRAVITY_COMPENSATION_EXAMPLE_CONTROLLER_HPP_
-#define FRANKA_EXAMPLE_CONTROLLERS__GRAVITY_COMPENSATION_EXAMPLE_CONTROLLER_HPP_
 
 #pragma once
 
@@ -55,5 +53,3 @@ class GravityCompensationExampleController : public controller_interface::Contro
   const int num_joints = 7;
 };
 }  // namespace franka_example_controllers
-
-#endif  // FRANKA_EXAMPLE_CONTROLLERS__GRAVITY_COMPENSATION_EXAMPLE_CONTROLLER_HPP_

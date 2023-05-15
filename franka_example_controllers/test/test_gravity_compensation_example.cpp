@@ -1,3 +1,4 @@
+// Copyright (c) 2023 Franka Emika GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -10,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #include <gtest/gtest.h>
 #include <memory>
 #include <vector>
@@ -28,14 +30,13 @@ using hardware_interface::LoanedCommandInterface;
 
 class TestGravityCompensationExample : public ::testing::Test {
  public:
-  static void SetUpTestCase();
-  static void TearDownTestCase();
+  static void SetUpTestSuite();
+  static void TearDownTestSuite();
 
   void SetUp();
   void TearDown();
 
   void SetUpController();
-  void SetUpHandles();
 
  protected:
   std::unique_ptr<franka_example_controllers::GravityCompensationExampleController> controller_;
@@ -54,11 +55,11 @@ class TestGravityCompensationExample : public ::testing::Test {
   CommandInterface joint_7_pos_cmd_{joint_names_[6], HW_IF_EFFORT, &joint_commands_[6]};
 };
 
-void TestGravityCompensationExample::SetUpTestCase() {
+void TestGravityCompensationExample::SetUpTestSuite() {
   rclcpp::init(0, nullptr);
 }
 
-void TestGravityCompensationExample::TearDownTestCase() {
+void TestGravityCompensationExample::TearDownTestSuite() {
   rclcpp::shutdown();
 }
 
@@ -86,21 +87,23 @@ void TestGravityCompensationExample::SetUpController() {
   controller_->assign_interfaces(std::move(command_ifs), {});
 }
 
-// TEST_F(TestGravityCompensationExample, JointsParameterNotSet) {
-//   SetUpController();
+TEST_F(TestGravityCompensationExample, JointsParameterNotSet) {
+  GTEST_SKIP() << "Skipping joint parameters not set test";
+  SetUpController();
 
-//   // TODO(baris) configure must fail, 'joints' parameter not set
-//   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
-// }
+  // TODO(baris) configure must fail, 'joints' parameter not set
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+}
 
-// TEST_F(TestGravityCompensationExample, JointsParameterIsEmpty) {
-//   SetUpController();
-//   controller_->get_node()->set_parameter({"joints", std::vector<std::string>()});
+TEST_F(TestGravityCompensationExample, JointsParameterIsEmpty) {
+  GTEST_SKIP() << "Skipping joints parameter is empty test";
+  SetUpController();
+  controller_->get_node()->set_parameter({"joints", std::vector<std::string>()});
 
-//   // Should return ERROR!!
-//   // TODO(baris) params_.joints can't be empty add a check
-//   ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
-// }
+  // Should return ERROR!!
+  // TODO(baris) params_.joints can't be empty add a check
+  ASSERT_EQ(controller_->on_configure(rclcpp_lifecycle::State()), CallbackReturn::ERROR);
+}
 
 TEST_F(TestGravityCompensationExample, given_correct_number_of_joints_configure_returns_success) {
   SetUpController();
