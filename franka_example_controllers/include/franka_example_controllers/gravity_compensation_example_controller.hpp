@@ -39,10 +39,12 @@ class GravityCompensationExampleController : public controller_interface::Contro
   CallbackReturn on_init() override;
 
   FRANKA_EXAMPLE_CONTROLLERS_PUBLIC
-  controller_interface::InterfaceConfiguration command_interface_configuration() const override;
+  [[nodiscard]] controller_interface::InterfaceConfiguration command_interface_configuration()
+      const override;
 
   FRANKA_EXAMPLE_CONTROLLERS_PUBLIC
-  controller_interface::InterfaceConfiguration state_interface_configuration() const override;
+  [[nodiscard]] controller_interface::InterfaceConfiguration state_interface_configuration()
+      const override;
 
   FRANKA_EXAMPLE_CONTROLLERS_PUBLIC
   controller_interface::return_type update(const rclcpp::Time& time,
