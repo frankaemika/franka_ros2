@@ -110,6 +110,12 @@ def generate_launch_description():
             arguments=['joint_state_broadcaster'],
             output='screen',
         ),
+        Node(
+            package='controller_manager',
+            executable='spawner',
+            arguments=['franka_state_broadcaster'],
+            output='screen',
+        ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([PathJoinSubstitution(
                 [FindPackageShare('franka_gripper'), 'launch', 'gripper.launch.py'])]),

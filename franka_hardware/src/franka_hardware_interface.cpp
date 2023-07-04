@@ -45,6 +45,9 @@ std::vector<StateInterface> FrankaHardwareInterface::export_state_interfaces() {
     state_interfaces.emplace_back(
         StateInterface(info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &hw_efforts_.at(i)));
   }
+
+  state_interfaces.emplace_back(
+      StateInterface("fr3", "franka_state", reinterpret_cast<double*>(&hw_franka_state_addr_)));
   return state_interfaces;
 }
 
@@ -78,10 +81,10 @@ CallbackReturn FrankaHardwareInterface::on_deactivate(
 
 hardware_interface::return_type FrankaHardwareInterface::read(const rclcpp::Time& /*time*/,
                                                               const rclcpp::Duration& /*period*/) {
-  const auto kState = robot_->read();
-  hw_positions_ = kState.q;
-  hw_velocities_ = kState.dq;
-  hw_efforts_ = kState.tau_J;
+  hw_franka_state_ = robot_->read();
+  hw_positions_ = hw_franka_state_.q;
+  hw_velocities_ = hw_franka_state_.dq;
+  hw_efforts_ = hw_franka_state_.tau_J;
   return hardware_interface::return_type::OK;
 }
 
