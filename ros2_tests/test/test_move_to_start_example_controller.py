@@ -117,54 +117,57 @@ class TestStartJointPositions(unittest.TestCase):
 
     def setUp(self):
         # Create a ROS node for tests
-        self.node = rclpy.create_node("controller_test_link")  # type: ignore
+        self.link_node = rclpy.create_node("controller_test_link")  # type: ignore
 
     def tearDown(self):
-        self.node.destroy_node()
+        self.link_node.destroy_node()
 
     def test_start_joint_positions(self, launch_service, move_to_start_controller, proc_output):
-        self._joint_positions_goal = [0, -pi / 4, 0, -3 * pi / 4, 0, pi / 2, pi / 4]
-        self._joint_positions = []
-        self._process_finished = False
+        self.joint_positions_goal = [0, -pi / 4, 0, -3 * pi / 4, 0, pi / 2, pi / 4]
+        self.joint_positions = []
+        self.process_finished = False
+
+        # decimal places in assertion
+        ACCURACY = 1
 
         def _service_callback(msg):
             for joint_no in range(7):
-                if len(self._joint_positions) <= joint_no:
-                    self._joint_positions.append([msg.position[joint_no]])
+                if len(self.joint_positions) <= joint_no:
+                    self.joint_positions.append(msg.position[joint_no])
                 else:
-                    self._joint_positions[joint_no].append(msg.position[joint_no])
+                    self.joint_positions[joint_no] = msg.position[joint_no]
 
         # Wait for main nodes to start up
         time.sleep(1)
 
-        _sub = self.node.create_subscription(
+        sub = self.link_node.create_subscription(
             sensor_msgs.msg.JointState,
             "joint_states",
             _service_callback,
             10,
         )
 
-        _client = self.node.create_client(
+        client = self.link_node.create_client(
             GetParameters, "/move_to_start_example_controller/get_parameters"
         )
-        while not _client.wait_for_service(timeout_sec=1.0):
-            print("Service not available, waiting...")
+        while not client.wait_for_service(timeout_sec=1.0):
+            self.link_node.get_logger().info("Service not available, waiting...")
 
         request = GetParameters.Request()
         request.names = {"process_finished"}
 
-        while not self._process_finished or len(self._joint_positions) < 7:
-            future = _client.call_async(request)
-            rclpy.spin_until_future_complete(self.node, future)
-            self._process_finished = future.result().values[0].bool_value  # type: ignore
+        while not self.process_finished or len(self.joint_positions) < 7:
+            future = client.call_async(request)
+            rclpy.spin_until_future_complete(self.link_node, future)
+            self.process_finished = future.result().values[0].bool_value  # type: ignore
 
-        self.node.destroy_subscription(_sub)
-        self.node.destroy_client(_client)
+        self.link_node.destroy_subscription(sub)
+        self.link_node.destroy_client(client)
 
-        self.assertAlmostEqual(self._joint_positions_goal[0], self._joint_positions[0][-1])
-        self.assertAlmostEqual(self._joint_positions_goal[1], self._joint_positions[1][-1])
-        self.assertAlmostEqual(self._joint_positions_goal[2], self._joint_positions[2][-1])
-        self.assertAlmostEqual(self._joint_positions_goal[3], self._joint_positions[3][-1])
-        self.assertAlmostEqual(self._joint_positions_goal[4], self._joint_positions[4][-1])
-        self.assertAlmostEqual(self._joint_positions_goal[5], self._joint_positions[5][-1])
-        self.assertAlmostEqual(self._joint_positions_goal[6], self._joint_positions[6][-1])
+        self.assertAlmostEqual(self.joint_positions_goal[0], self.joint_positions[0], ACCURACY)
+        self.assertAlmostEqual(self.joint_positions_goal[1], self.joint_positions[1], ACCURACY)
+        self.assertAlmostEqual(self.joint_positions_goal[2], self.joint_positions[2], ACCURACY)
+        self.assertAlmostEqual(self.joint_positions_goal[3], self.joint_positions[3], ACCURACY)
+        self.assertAlmostEqual(self.joint_positions_goal[4], self.joint_positions[4], ACCURACY)
+        self.assertAlmostEqual(self.joint_positions_goal[5], self.joint_positions[5], ACCURACY)
+        self.assertAlmostEqual(self.joint_positions_goal[6], self.joint_positions[6], ACCURACY)
