@@ -1,13 +1,13 @@
 #  Copyright (c) 2023 Franka Emika GmbH
 #
-#  Licensed under the Apache License, Version 2.0 (the "License");
+#  Licensed under the Apache License, Version 2.0 (the 'License');
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
 #
 #      http://www.apache.org/licenses/LICENSE-2.0
 #
 #  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
+#  distributed under the License is distributed on an 'AS IS' BASIS,
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
@@ -15,40 +15,40 @@
 import time
 import unittest
 
-import rclpy
-import sensor_msgs.msg
+from franka_msgs.action import Move  # type: ignore
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 from launch_ros.substitutions import FindPackageShare
 from launch_testing.actions import ReadyToTest
-from rclpy.action import ActionClient
 
-from franka_msgs.action import Move  # type: ignore
+import rclpy
+from rclpy.action import ActionClient
+import sensor_msgs.msg
 
 
 def generate_test_description():
-    robot_ip_parameter_name = "robot_ip"
-    use_fake_hardware_parameter_name = "use_fake_hardware"
-    arm_parameter_name = "arm_id"
-    joint_names_parameter_name = "joint_names"
+    robot_ip_parameter_name = 'robot_ip'
+    use_fake_hardware_parameter_name = 'use_fake_hardware'
+    arm_parameter_name = 'arm_id'
+    joint_names_parameter_name = 'joint_names'
     robot_ip = LaunchConfiguration(robot_ip_parameter_name)
     use_fake_hardware = LaunchConfiguration(use_fake_hardware_parameter_name)
     arm_id = LaunchConfiguration(arm_parameter_name)
     joint_names = LaunchConfiguration(joint_names_parameter_name)
 
-    default_joint_name_postfix = "_finger_joint"
+    default_joint_name_postfix = '_finger_joint'
     arm_default_argument = [
-        "[",
+        '[',
         arm_id,
         default_joint_name_postfix,
-        "1",
-        ",",
+        '1',
+        ',',
         arm_id,
         default_joint_name_postfix,
-        "2",
-        "]",
+        '2',
+        ']',
     ]
 
     franka_gripper_description = IncludeLaunchDescription(
@@ -56,9 +56,9 @@ def generate_test_description():
             [
                 PathJoinSubstitution(
                     [
-                        FindPackageShare("franka_gripper"),
-                        "launch",
-                        "gripper.launch.py",
+                        FindPackageShare('franka_gripper'),
+                        'launch',
+                        'gripper.launch.py',
                     ]
                 )
             ]
@@ -75,27 +75,27 @@ def generate_test_description():
         LaunchDescription(
             [
                 DeclareLaunchArgument(
-                    robot_ip_parameter_name, description="Hostname or IP address of the robot."
+                    robot_ip_parameter_name, description='Hostname or IP address of the robot.'
                 ),
                 DeclareLaunchArgument(
                     use_fake_hardware_parameter_name,
-                    default_value="false",
+                    default_value='false',
                     description=(
-                        "Publish fake gripper joint states without connecting to a real gripper"
+                        'Publish fake gripper joint states without connecting to a real gripper'
                     ),
                 ),
                 DeclareLaunchArgument(
                     arm_parameter_name,
-                    default_value="panda",
+                    default_value='panda',
                     description=(
-                        "Name of the arm in the URDF file. This is used to generate the joint "
-                        "names of the gripper."
+                        'Name of the arm in the URDF file. This is used to generate the joint '
+                        'names of the gripper.'
                     ),
                 ),
                 DeclareLaunchArgument(
                     joint_names_parameter_name,
                     default_value=arm_default_argument,
-                    description="Names of the gripper joints in the URDF",
+                    description='Names of the gripper joints in the URDF',
                 ),
                 franka_gripper_description,
                 # Start test right away, no need to wait for anything
@@ -103,13 +103,14 @@ def generate_test_description():
             ],
         ),
         {
-            "franka_gripper": franka_gripper_description,
+            'franka_gripper': franka_gripper_description,
         },
     )
 
 
 # Test node
 class TestStartJointPositions(unittest.TestCase):
+
     @classmethod
     def setUpClass(cls):
         # Initialize the ROS context for the test node
@@ -122,7 +123,7 @@ class TestStartJointPositions(unittest.TestCase):
 
     def setUp(self):
         # Create a ROS node for tests
-        self.link_node = rclpy.create_node("gripper_test_link")  # type: ignore
+        self.link_node = rclpy.create_node('gripper_test_link')  # type: ignore
 
     def tearDown(self):
         self.link_node.destroy_node()
@@ -141,29 +142,26 @@ class TestStartJointPositions(unittest.TestCase):
             gripper_right_position = msg.position[0]
             self.gripper_position = gripper_left_position + gripper_right_position
 
-        # Wait for main nodes to start up
-        time.sleep(1)
-
         sub = self.link_node.create_subscription(
             sensor_msgs.msg.JointState,
-            "/panda_gripper/joint_states",
+            '/panda_gripper/joint_states',
             _service_callback,
             10,
         )
 
         action_client = ActionClient(
-            self.link_node, action_name="/panda_gripper/move", action_type=Move
+            self.link_node, action_name='/panda_gripper/move', action_type=Move
         )
 
         while not action_client.wait_for_server(timeout_sec=1.0):
-            self.link_node.get_logger().info("Action server not available, waiting...")
+            self.link_node.get_logger().info('Action server not available, waiting...')
 
         goal_msg = Move.Goal()
         goal_msg.speed = self.gripper_speed
 
         for position in self.gripper_positions_goal:
-            print("\n")
-            self.link_node.get_logger().info(f"VALIDATING POSITION {position}:")
+            print('\n')
+            self.link_node.get_logger().info(f'VALIDATING POSITION {position}:')
             goal_msg.width = position
             future = action_client.send_goal_async(goal_msg)
 

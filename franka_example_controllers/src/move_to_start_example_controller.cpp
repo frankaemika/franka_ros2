@@ -63,9 +63,9 @@ controller_interface::return_type MoveToStartExampleController::update(
     }
   } else {
     for (auto& command_interface : command_interfaces_) {
-      this->get_node()->set_parameter({"process_finished", true});
       command_interface.set_value(0);
     }
+    this->get_node()->set_parameter({"process_finished", true});
   }
   return controller_interface::return_type::OK;
 }
