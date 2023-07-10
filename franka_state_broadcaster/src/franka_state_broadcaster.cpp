@@ -1,3 +1,17 @@
+// Copyright (c) 2023 Franka Emika GmbH
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include "franka_state_broadcaster/franka_state_broadcaster.hpp"
 
 #include <stddef.h>
@@ -19,11 +33,6 @@
 #include "std_msgs/msg/header.hpp"
 
 namespace franka_state_broadcaster {
-
-// const auto kUninitializedValue = std::numeric_limits<double>::quiet_NaN();
-using hardware_interface::HW_IF_EFFORT;
-using hardware_interface::HW_IF_POSITION;
-using hardware_interface::HW_IF_VELOCITY;
 
 controller_interface::CallbackReturn FrankaStateBroadcaster::on_init() {
   try {
@@ -56,10 +65,9 @@ controller_interface::CallbackReturn FrankaStateBroadcaster::on_configure(
   params_ = param_listener_->get_params();
 
   franka_state_ = std::make_unique<franka_semantic_components::FrankaState>(
-      franka_semantic_components::FrankaState("fr3/franka_state"));
+      franka_semantic_components::FrankaState("panda/franka_state"));
 
   try {
-    // register ft sensor data publisher
     franka_state_publisher_ = get_node()->create_publisher<franka_msgs::msg::FrankaState>(
         "~/franka_state", rclcpp::SystemDefaultsQoS());
     realtime_franka_state_publisher_ =
@@ -97,16 +105,20 @@ controller_interface::return_type FrankaStateBroadcaster::update(
     if (!franka_state_->get_values_as_message(realtime_franka_state_publisher_->msg_)) {
       RCLCPP_ERROR(get_node()->get_logger(),
                    "Failed to get franka state via franka state interface.");
+      realtime_franka_state_publisher_->unlock();
       return controller_interface::return_type::ERROR;
     }
     realtime_franka_state_publisher_->unlockAndPublish();
+    return controller_interface::return_type::OK;
+
+  } else {
+    return controller_interface::return_type::ERROR;
   }
-  return controller_interface::return_type::OK;
 }
 
 }  // namespace franka_state_broadcaster
 
 #include "pluginlib/class_list_macros.hpp"
-
+// NOLINTNEXTLINE
 PLUGINLIB_EXPORT_CLASS(franka_state_broadcaster::FrankaStateBroadcaster,
                        controller_interface::ControllerInterface)

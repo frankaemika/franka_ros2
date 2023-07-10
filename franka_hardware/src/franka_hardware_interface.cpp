@@ -47,7 +47,7 @@ std::vector<StateInterface> FrankaHardwareInterface::export_state_interfaces() {
   }
 
   state_interfaces.emplace_back(
-      StateInterface("fr3", "franka_state", reinterpret_cast<double*>(&hw_franka_state_addr_)));
+      StateInterface("panda", "franka_state", reinterpret_cast<double*>(&hw_franka_state_addr_)));
   return state_interfaces;
 }
 

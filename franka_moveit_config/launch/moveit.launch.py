@@ -21,6 +21,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription,
                             Shutdown)
+from launch.conditions import UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
@@ -198,6 +199,15 @@ def generate_launch_description():
         parameters=[
             {'source_list': ['franka/joint_states', 'panda_gripper/joint_states'], 'rate': 30}],
     )
+
+    franka_state_broadcaster = Node(
+            package='controller_manager',
+            executable='spawner',
+            arguments=['franka_state_broadcaster'],
+            output='screen',
+            condition=UnlessCondition(use_fake_hardware),
+    )
+
     robot_arg = DeclareLaunchArgument(
         robot_ip_parameter_name,
         description='Hostname or IP address of the robot.')
@@ -227,6 +237,7 @@ def generate_launch_description():
          run_move_group_node,
          ros2_control_node,
          joint_state_publisher,
+         franka_state_broadcaster,
          gripper_launch_file
          ]
         + load_controllers

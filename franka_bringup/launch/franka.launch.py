@@ -18,7 +18,7 @@ import os
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, Shutdown
-from launch.conditions import IfCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
@@ -115,6 +115,7 @@ def generate_launch_description():
             executable='spawner',
             arguments=['franka_state_broadcaster'],
             output='screen',
+            condition=UnlessCondition(use_fake_hardware),
         ),
         IncludeLaunchDescription(
             PythonLaunchDescriptionSource([PathJoinSubstitution(

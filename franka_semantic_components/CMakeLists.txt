@@ -12,8 +12,7 @@ endif()
 
 option(CHECK_TIDY "Adds clang-tidy tests" OFF)
 
-set(THIS_PACKAGE_INCLUDE_DEPENDS franka_msgs hardware_interface
-                                 rclcpp_lifecycle)
+set(THIS_PACKAGE_INCLUDE_DEPENDS franka_msgs hardware_interface rclcpp_lifecycle)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -25,6 +24,7 @@ find_package(Franka REQUIRED)
 
 add_library(franka_semantic_components SHARED src/franka_state.cpp)
 target_include_directories(franka_semantic_components PRIVATE include)
+target_link_libraries(franka_semantic_components Franka::Franka)
 ament_target_dependencies(franka_semantic_components
                           Franka
                           ${THIS_PACKAGE_INCLUDE_DEPENDS})

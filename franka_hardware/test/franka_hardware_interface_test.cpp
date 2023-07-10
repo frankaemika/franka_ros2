@@ -81,7 +81,7 @@ TEST(
     FrankaHardwareInterfaceTest,
     given_that_the_robot_interfaces_are_set_when_call_export_state_return_zero_values_and_correct_interface_names) {
   franka::RobotState robot_state;
-  const size_t state_interface_size = 21;  // position, effort and velocity states for every joint
+  const size_t state_interface_size = 22;  // position, effort and velocity states for every joint
   auto mock_robot = std::make_unique<MockRobot>();
   EXPECT_CALL(*mock_robot, read()).WillOnce(testing::Return(robot_state));
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
@@ -94,7 +94,9 @@ TEST(
   EXPECT_EQ(return_type, hardware_interface::return_type::OK);
   auto states = franka_hardware_interface.export_state_interfaces();
   size_t joint_index = 0;
-  for (size_t i = 0; i < states.size(); i++) {
+
+  // Get all the states except the last one reserved for robot state
+  for (size_t i = 0; i < states.size() - 1; i++) {
     if (i % 3 == 0) {
       joint_index++;
     }
@@ -108,6 +110,7 @@ TEST(
     }
     EXPECT_EQ(states[i].get_value(), 0.0);
   }
+
   EXPECT_EQ(states.size(), state_interface_size);
 }
 

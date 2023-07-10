@@ -1,9 +1,22 @@
+// Copyright (c) 2023 Franka Emika GmbH
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include "franka_semantic_components/franka_state.hpp"
 
 #include <cstring>
 
 #include "rclcpp/logging.hpp"
-
 namespace {
 
 // Example implementation of bit_cast: https://en.cppreference.com/w/cpp/numeric/bit_cast
@@ -137,10 +150,18 @@ FrankaState::FrankaState(const std::string& name) : SemanticComponentInterface(n
 }
 
 bool FrankaState::get_values_as_message(franka_msgs::msg::FrankaState& message) {
-  if (state_interfaces_.size() != 1) {
+  auto franka_state_interface = std::find_if(
+      state_interfaces_.begin(), state_interfaces_.end(),
+      [](const auto& interface) { return interface.get().get_name() == "panda/franka_state"; });
+
+  if (franka_state_interface != state_interfaces_.end()) {
+    robot_state_ptr_ = bit_cast<franka::RobotState*>((*franka_state_interface).get().get_value());
+  } else {
+    RCLCPP_ERROR(rclcpp::get_logger("franka_state_semantic_component"),
+                 "Franka state interface does not exist! Did you assign the loaned state in the "
+                 "controller?");
     return false;
   }
-  robot_state_ptr_ = bit_cast<franka::RobotState*>((state_interfaces_.at(0).get().get_value()));
 
   static_assert(
       sizeof(robot_state_ptr_->cartesian_collision) == sizeof(robot_state_ptr_->cartesian_contact),
