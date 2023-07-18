@@ -40,6 +40,9 @@ if(BUILD_TESTING)
   find_package(ament_cmake_lint_cmake REQUIRED)
   find_package(ament_cmake_pep257 REQUIRED)
   find_package(ament_cmake_xmllint REQUIRED)
+  find_package(franka_msgs REQUIRED)
+  find_package(ament_cmake_gmock REQUIRED)
+  find_package(controller_interface REQUIRED)
 
   set(CPP_DIRECTORIES src include)
   ament_clang_format(CONFIG_FILE ../.clang-format ${CPP_DIRECTORIES})
@@ -54,6 +57,19 @@ if(BUILD_TESTING)
     set(ament_cmake_clang_tidy_CONFIG_FILE ../.clang-tidy)
     ament_clang_tidy(${CMAKE_BINARY_DIR})
   endif()
+
+  ament_add_gmock(test_franka_state test/franka_state_test.cpp)
+  target_include_directories(test_franka_state PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+  target_link_libraries(test_franka_state
+    franka_semantic_components
+  )
+  ament_target_dependencies(test_franka_state
+    controller_interface
+    hardware_interface
+    franka_msgs
+    Franka
+  )
 endif()
 
 ament_export_include_directories(include)
