@@ -91,7 +91,9 @@ if(BUILD_TESTING)
         ament_clang_tidy(${CMAKE_BINARY_DIR})
     endif()
 
-    ament_add_gmock(${PROJECT_NAME}_test test/test_franka_state_broadcaster.cpp)
+    add_rostest_with_parameters_gmock(${PROJECT_NAME}_test
+        test/test_franka_state_broadcaster.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/franka_state_broadcaster_parameters.yaml)
     target_include_directories(${PROJECT_NAME}_test PRIVATE include)
     target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME})
     ament_target_dependencies(${PROJECT_NAME}_test controller_manager hardware_interface)

@@ -65,7 +65,7 @@ controller_interface::CallbackReturn FrankaStateBroadcaster::on_configure(
   params_ = param_listener_->get_params();
 
   franka_state_ = std::make_unique<franka_semantic_components::FrankaState>(
-      franka_semantic_components::FrankaState("panda/franka_state"));
+      franka_semantic_components::FrankaState(params_.arm_id + "/" + state_interface_name_));
 
   try {
     franka_state_publisher_ = get_node()->create_publisher<franka_msgs::msg::FrankaState>(

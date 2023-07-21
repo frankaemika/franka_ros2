@@ -47,10 +47,10 @@ class FrankaStateBroadcaster : public controller_interface::ControllerInterface 
       const rclcpp_lifecycle::State& previous_state) override;
 
  protected:
-  // Optional parameters
   std::shared_ptr<ParamListener> param_listener_;
   Params params_;
 
+  std::string state_interface_name_{"franka_state"};
   std::shared_ptr<rclcpp::Publisher<franka_msgs::msg::FrankaState>> franka_state_publisher_;
   std::shared_ptr<realtime_tools::RealtimePublisher<franka_msgs::msg::FrankaState>>
       realtime_franka_state_publisher_;

@@ -11,12 +11,9 @@ using namespace franka_state_broadcaster;
 class TestFrankaStateBroadcaster : public ::testing::Test {
  protected:
   void SetUp() override {
-    rclcpp::init(0, nullptr);
     broadcaster_ = std::make_unique<FrankaStateBroadcaster>();
     broadcaster_->init("test_broadcaster");
   }
-
-  void TearDown() override { rclcpp::shutdown(); }
 
   std::unique_ptr<FrankaStateBroadcaster> broadcaster_;
 };
@@ -67,4 +64,12 @@ TEST_F(TestFrankaStateBroadcaster, TestUpdateWithFrankaStateInterfaceReturnsSucc
   rclcpp::Duration period(0, 0);
 
   EXPECT_EQ(broadcaster_->update(time, period), controller_interface::return_type::OK);
+}
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  rclcpp::init(argc, argv);
+  int result = RUN_ALL_TESTS();
+  rclcpp::shutdown();
+  return result;
 }
