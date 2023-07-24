@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "controller_interface/controller_interface.hpp"
-#include "franka_semantic_components/franka_state.hpp"
+#include "franka_semantic_components/franka_robot_state.hpp"
 #include "franka_state_broadcaster_parameters.hpp"
 #include "rclcpp_lifecycle/lifecycle_publisher.hpp"
 #include "rclcpp_lifecycle/node_interfaces/lifecycle_node_interface.hpp"
@@ -47,14 +47,15 @@ class FrankaStateBroadcaster : public controller_interface::ControllerInterface 
       const rclcpp_lifecycle::State& previous_state) override;
 
  protected:
-  std::shared_ptr<ParamListener> param_listener_;
-  Params params_;
+  std::shared_ptr<ParamListener> param_listener;
+  Params params;
 
-  std::string state_interface_name_{"franka_state"};
-  std::shared_ptr<rclcpp::Publisher<franka_msgs::msg::FrankaState>> franka_state_publisher_;
-  std::shared_ptr<realtime_tools::RealtimePublisher<franka_msgs::msg::FrankaState>>
-      realtime_franka_state_publisher_;
-  std::unique_ptr<franka_semantic_components::FrankaState> franka_state_;
+  std::string arm_id{"panda"};
+  std::string state_interface_name{"robot_state"};
+  std::shared_ptr<rclcpp::Publisher<franka_msgs::msg::FrankaRobotState>> franka_state_publisher;
+  std::shared_ptr<realtime_tools::RealtimePublisher<franka_msgs::msg::FrankaRobotState>>
+      realtime_franka_state_publisher;
+  std::unique_ptr<franka_semantic_components::FrankaRobotState> franka_robot_state;
 };
 
 }  // namespace franka_state_broadcaster

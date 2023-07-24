@@ -19,11 +19,11 @@
 #include <vector>
 
 #include "franka/robot_state.h"
-#include "franka_semantic_components/franka_state.hpp"
+#include "franka_semantic_components/franka_robot_state.hpp"
 #include "gmock/gmock.h"
 
 // implementing and friending so we can access member variables
-class FrankaStateTestFriend : public franka_semantic_components::FrankaState {
+class FrankaStateTestFriend : public franka_semantic_components::FrankaRobotState {
   FRIEND_TEST(FrankaStateTest, validate_state_names_and_size);
   FRIEND_TEST(FrankaStateTest,
               given_franka_semantic_state_initialized_when_message_returned_expect_correct_values);
@@ -32,7 +32,7 @@ class FrankaStateTestFriend : public franka_semantic_components::FrankaState {
  public:
   // Use generation of interface names
   explicit FrankaStateTestFriend(const std::string& name)
-      : franka_semantic_components::FrankaState(name) {}
+      : franka_semantic_components::FrankaRobotState(name) {}
 
   virtual ~FrankaStateTestFriend() = default;
 };
@@ -44,18 +44,18 @@ class FrankaStateTest : public ::testing::Test {
   void TearDown();
 
  protected:
-  const size_t size_ = 1;
-  const std::string robot_name_ = "panda";
-  const std::string franka_state_interface_name_ = "franka_state";
-  franka::RobotState robot_state_;
-  franka::RobotState* robot_state_address_ = &robot_state_;
+  const size_t size = 1;
+  const std::string robot_name = "panda";
+  const std::string franka_state_interface_name = "robot_state";
+  franka::RobotState robot_state;
+  franka::RobotState* robot_state_address = &robot_state;
 
-  std::array<double, 7> joint_angles_ = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
-  std::array<double, 7> joint_velocities_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  franka::RobotMode robot_mode_ = franka::RobotMode::kUserStopped;
-  franka_msgs::msg::FrankaState franka_robot_state_msg_;
+  std::array<double, 7> joint_angles = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+  std::array<double, 7> joint_velocities = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  franka::RobotMode robot_mode = franka::RobotMode::kUserStopped;
+  franka_msgs::msg::FrankaRobotState franka_robot_state_msg;
 
-  std::unique_ptr<FrankaStateTestFriend> franka_state_friend_;
+  std::unique_ptr<FrankaStateTestFriend> franka_state_friend;
 
-  std::vector<std::string> full_interface_names_;
+  std::vector<std::string> full_interface_names;
 };

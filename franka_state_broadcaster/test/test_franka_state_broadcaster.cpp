@@ -1,3 +1,17 @@
+// Copyright (c) 2023 Franka Emika GmbH
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include <gmock/gmock.h>
 
 #include "controller_interface/controller_interface.hpp"
@@ -18,23 +32,23 @@ class TestFrankaStateBroadcaster : public ::testing::Test {
   std::unique_ptr<FrankaStateBroadcaster> broadcaster_;
 };
 
-TEST_F(TestFrankaStateBroadcaster, TestInitReturnSuccess) {
+TEST_F(TestFrankaStateBroadcaster, test_init_return_success) {
   EXPECT_EQ(broadcaster_->on_init(), controller_interface::CallbackReturn::SUCCESS);
 }
 
-TEST_F(TestFrankaStateBroadcaster, TestConfigureReturnSuccess) {
+TEST_F(TestFrankaStateBroadcaster, test_configure_return_success) {
   EXPECT_EQ(broadcaster_->on_configure(rclcpp_lifecycle::State()),
             controller_interface::CallbackReturn::SUCCESS);
 }
 
-TEST_F(TestFrankaStateBroadcaster, TestActivateReturnSuccess) {
+TEST_F(TestFrankaStateBroadcaster, test_activate_return_success) {
   EXPECT_EQ(broadcaster_->on_configure(rclcpp_lifecycle::State()),
             controller_interface::CallbackReturn::SUCCESS);
   EXPECT_EQ(broadcaster_->on_activate(rclcpp_lifecycle::State()),
             controller_interface::CallbackReturn::SUCCESS);
 }
 
-TEST_F(TestFrankaStateBroadcaster, TestDeactivateReturnSuccess) {
+TEST_F(TestFrankaStateBroadcaster, test_deactivate_return_success) {
   EXPECT_EQ(broadcaster_->on_configure(rclcpp_lifecycle::State()),
             controller_interface::CallbackReturn::SUCCESS);
 
@@ -42,7 +56,7 @@ TEST_F(TestFrankaStateBroadcaster, TestDeactivateReturnSuccess) {
             controller_interface::CallbackReturn::SUCCESS);
 }
 
-TEST_F(TestFrankaStateBroadcaster, TestUpdateWithoutFrankaStateInterfaceReturnsError) {
+TEST_F(TestFrankaStateBroadcaster, test_update_without_franka_state_interface_returns_error) {
   EXPECT_EQ(broadcaster_->on_configure(rclcpp_lifecycle::State()),
             controller_interface::CallbackReturn::SUCCESS);
   EXPECT_EQ(broadcaster_->on_activate(rclcpp_lifecycle::State()),
@@ -53,7 +67,7 @@ TEST_F(TestFrankaStateBroadcaster, TestUpdateWithoutFrankaStateInterfaceReturnsE
   EXPECT_EQ(broadcaster_->update(time, period), controller_interface::return_type::ERROR);
 }
 
-TEST_F(TestFrankaStateBroadcaster, TestUpdateWithFrankaStateInterfaceReturnsSuccess) {
+TEST_F(TestFrankaStateBroadcaster, test_update_with_franka_state_returns_success) {
   GTEST_SKIP() << "Realtime publisher lock behaviour is not deterministic";
   EXPECT_EQ(broadcaster_->on_configure(rclcpp_lifecycle::State()),
             controller_interface::CallbackReturn::SUCCESS);

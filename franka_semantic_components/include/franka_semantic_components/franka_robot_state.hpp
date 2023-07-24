@@ -20,27 +20,29 @@
 
 #include "franka/robot_state.h"
 #include "franka_msgs/msg/errors.hpp"
-#include "franka_msgs/msg/franka_state.hpp"
+#include "franka_msgs/msg/franka_robot_state.hpp"
 #include "semantic_components/semantic_component_interface.hpp"
 
 namespace franka_semantic_components {
-class FrankaState
-    : public semantic_components::SemanticComponentInterface<franka_msgs::msg::FrankaState> {
+class FrankaRobotState
+    : public semantic_components::SemanticComponentInterface<franka_msgs::msg::FrankaRobotState> {
  public:
-  explicit FrankaState(const std::string& name);
+  explicit FrankaRobotState(const std::string& name);
 
-  virtual ~FrankaState() = default;
-
-  const franka::RobotState& getRobotState() const noexcept { return *robot_state_ptr_; }
+  virtual ~FrankaRobotState() = default;
 
   /**
-   * Constructs and return a FrankaState message from the current values.
-   * \return FrankaState message from values;
+   * Constructs and return a FrankaRobotState message from the current values.
+   * \return FrankaRobotState message from values;
    */
-  bool get_values_as_message(franka_msgs::msg::FrankaState& message);
+  bool get_values_as_message(franka_msgs::msg::FrankaRobotState& message);
 
  protected:
-  franka::RobotState* robot_state_ptr_;
+  franka::RobotState* robot_state_ptr;
+
+ private:
+  const std::string robot_name_{"panda"};
+  const std::string state_interface_name_{"robot_state"};
 };
 
 }  // namespace franka_semantic_components

@@ -60,10 +60,13 @@ class FrankaHardwareInterface : public hardware_interface::SystemInterface {
   std::array<double, kNumberOfJoints> hw_positions_{0, 0, 0, 0, 0, 0, 0};
   std::array<double, kNumberOfJoints> hw_velocities_{0, 0, 0, 0, 0, 0, 0};
   std::array<double, kNumberOfJoints> hw_efforts_{0, 0, 0, 0, 0, 0, 0};
-  franka::RobotState hw_franka_state_;
-  franka::RobotState* hw_franka_state_addr_ = &hw_franka_state_;
+  franka::RobotState hw_franka_robot_state_;
+  franka::RobotState* hw_franka_robot_state_addr_ = &hw_franka_robot_state_;
   bool effort_interface_claimed_ = false;
   bool effort_interface_running_ = false;
   static rclcpp::Logger getLogger();
+
+  const std::string robot_name_{"panda"};
+  const std::string robot_state_interface_name_{"robot_state"};
 };
 }  // namespace franka_hardware
