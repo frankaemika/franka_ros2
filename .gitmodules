@@ -1,3 +1,0 @@
-[submodule "libfranka"]
-	path = libfranka
-	url = ssh://git@beehive:7999/swdev/libfranka.git
