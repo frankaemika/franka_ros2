@@ -12,7 +12,7 @@ endif()
 
 option(CHECK_TIDY "Adds clang-tidy tests" OFF)
 
-set(THIS_PACKAGE_INCLUDE_DEPENDS franka_msgs hardware_interface rclcpp_lifecycle)
+set(THIS_PACKAGE_INCLUDE_DEPENDS franka_hardware franka_msgs hardware_interface rclcpp_lifecycle)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -22,7 +22,7 @@ endforeach()
 
 find_package(Franka REQUIRED)
 
-add_library(franka_semantic_components SHARED src/franka_robot_state.cpp)
+add_library(franka_semantic_components SHARED src/franka_robot_state.cpp src/franka_model.cpp)
 target_include_directories(franka_semantic_components PRIVATE include)
 target_link_libraries(franka_semantic_components Franka::Franka)
 ament_target_dependencies(franka_semantic_components
@@ -64,6 +64,18 @@ if(BUILD_TESTING)
     franka_semantic_components
   )
   ament_target_dependencies(test_franka_robot_state
+    controller_interface
+    hardware_interface
+    franka_msgs
+    Franka
+  )
+  ament_add_gmock(test_franka_model test/franka_model_test.cpp)
+  target_include_directories(test_franka_model PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+  target_link_libraries(test_franka_model
+    franka_semantic_components
+  )
+  ament_target_dependencies(test_franka_model
     controller_interface
     hardware_interface
     franka_msgs

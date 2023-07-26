@@ -22,6 +22,7 @@
   <test_depend>ament_cmake_pep257</test_depend>
   <test_depend>ament_cmake_xmllint</test_depend>
   <test_depend>ament_cmake_gmock</test_depend>
+  <test_depend>ament_cmake_clang_tidy</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

@@ -46,9 +46,14 @@ std::vector<StateInterface> FrankaHardwareInterface::export_state_interfaces() {
         StateInterface(info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &hw_efforts_.at(i)));
   }
 
-  state_interfaces.emplace_back(
-      StateInterface(robot_name_, robot_state_interface_name_,
-                     reinterpret_cast<double*>(&hw_franka_robot_state_addr_)));
+  state_interfaces.emplace_back(StateInterface(
+      k_robot_name, k_robot_state_interface_name,
+      reinterpret_cast<double*>(  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+          &hw_franka_robot_state_addr_)));
+  state_interfaces.emplace_back(StateInterface(
+      k_robot_name, k_robot_model_interface_name,
+      reinterpret_cast<double*>(  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
+          &hw_franka_model_ptr_)));
   return state_interfaces;
 }
 
@@ -82,6 +87,9 @@ CallbackReturn FrankaHardwareInterface::on_deactivate(
 
 hardware_interface::return_type FrankaHardwareInterface::read(const rclcpp::Time& /*time*/,
                                                               const rclcpp::Duration& /*period*/) {
+  if (hw_franka_model_ptr_ == nullptr) {
+    hw_franka_model_ptr_ = robot_->getModel();
+  }
   hw_franka_robot_state_ = robot_->read();
   hw_positions_ = hw_franka_robot_state_.q;
   hw_velocities_ = hw_franka_robot_state_.dq;
@@ -92,7 +100,7 @@ hardware_interface::return_type FrankaHardwareInterface::read(const rclcpp::Time
 hardware_interface::return_type FrankaHardwareInterface::write(const rclcpp::Time& /*time*/,
                                                                const rclcpp::Duration& /*period*/) {
   if (std::any_of(hw_commands_.begin(), hw_commands_.end(),
-                  [](double c) { return !std::isfinite(c); })) {
+                  [](double hw_command) { return !std::isfinite(hw_command); })) {
     return hardware_interface::return_type::ERROR;
   }
 
