@@ -45,6 +45,10 @@ std::vector<StateInterface> FrankaHardwareInterface::export_state_interfaces() {
     state_interfaces.emplace_back(
         StateInterface(info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &hw_efforts_.at(i)));
   }
+
+  state_interfaces.emplace_back(
+      StateInterface(robot_name_, robot_state_interface_name_,
+                     reinterpret_cast<double*>(&hw_franka_robot_state_addr_)));
   return state_interfaces;
 }
 
@@ -78,10 +82,10 @@ CallbackReturn FrankaHardwareInterface::on_deactivate(
 
 hardware_interface::return_type FrankaHardwareInterface::read(const rclcpp::Time& /*time*/,
                                                               const rclcpp::Duration& /*period*/) {
-  const auto kState = robot_->read();
-  hw_positions_ = kState.q;
-  hw_velocities_ = kState.dq;
-  hw_efforts_ = kState.tau_J;
+  hw_franka_robot_state_ = robot_->read();
+  hw_positions_ = hw_franka_robot_state_.q;
+  hw_velocities_ = hw_franka_robot_state_.dq;
+  hw_efforts_ = hw_franka_robot_state_.tau_J;
   return hardware_interface::return_type::OK;
 }
 
@@ -144,14 +148,14 @@ CallbackReturn FrankaHardwareInterface::on_init(const hardware_interface::Hardwa
     try {
       robot_ip = info_.hardware_parameters.at("robot_ip");
     } catch (const std::out_of_range& ex) {
-      RCLCPP_FATAL(getLogger(), "Parameter 'robot_ip' ! set");
+      RCLCPP_FATAL(getLogger(), "Parameter 'robot_ip' is not set");
       return CallbackReturn::ERROR;
     }
     try {
       RCLCPP_INFO(getLogger(), "Connecting to robot at \"%s\" ...", robot_ip.c_str());
       robot_ = std::make_unique<Robot>(robot_ip, getLogger());
     } catch (const franka::Exception& e) {
-      RCLCPP_FATAL(getLogger(), "Could ! connect to robot");
+      RCLCPP_FATAL(getLogger(), "Could not connect to robot");
       RCLCPP_FATAL(getLogger(), "%s", e.what());
       return CallbackReturn::ERROR;
     }

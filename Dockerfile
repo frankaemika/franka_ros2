@@ -59,12 +59,14 @@ RUN python3 -m pip install -U \
 RUN mkdir ~/source_code    
 RUN cd ~/source_code && git clone https://github.com/frankaemika/libfranka.git \
     && cd libfranka \
+    && git switch fr3-develop \
     && git submodule init \
     && git submodule update \
     && mkdir build && cd build \
     && cmake -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=OFF  .. \
     && make franka -j$(nproc) \
-    && make install
+    && cpack -G DEB \
+    && sudo dpkg -i libfranka*.deb
 
 # set the default user to the newly created user
 USER $USERNAME
