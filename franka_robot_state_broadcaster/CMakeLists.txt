@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
-project(franka_state_broadcaster)
+project(franka_robot_state_broadcaster)
 
 # Default to C++14
 if(NOT CMAKE_CXX_STANDARD)
@@ -34,29 +34,29 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
-add_library(franka_state_broadcaster
+add_library(franka_robot_state_broadcaster
         SHARED
-        src/franka_state_broadcaster.cpp)
+        src/franka_robot_state_broadcaster.cpp)
 target_include_directories(
-  franka_state_broadcaster
+  franka_robot_state_broadcaster
         PRIVATE
         include
 )
 
 
-generate_parameter_library(franka_state_broadcaster_parameters src/franka_state_broadcaster_parameters.yaml)
+generate_parameter_library(franka_robot_state_broadcaster_parameters src/franka_robot_state_broadcaster_parameters.yaml)
 
-target_link_libraries(franka_state_broadcaster
-                      PUBLIC franka_state_broadcaster_parameters)
-ament_target_dependencies(franka_state_broadcaster PUBLIC
+target_link_libraries(franka_robot_state_broadcaster
+                      PUBLIC franka_robot_state_broadcaster_parameters)
+ament_target_dependencies(franka_robot_state_broadcaster PUBLIC
                           ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
 
-pluginlib_export_plugin_description_file(controller_interface franka_state_broadcaster.xml)
+pluginlib_export_plugin_description_file(controller_interface franka_robot_state_broadcaster.xml)
 
 
 install(
-        TARGETS franka_state_broadcaster
+        TARGETS franka_robot_state_broadcaster
         DESTINATION lib
 )
 install(
@@ -92,17 +92,17 @@ if(BUILD_TESTING)
     endif()
 
     add_rostest_with_parameters_gmock(${PROJECT_NAME}_test
-        test/test_franka_state_broadcaster.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/test/franka_state_broadcaster_parameters.yaml)
+        test/test_franka_robot_state_broadcaster.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/test/franka_robot_state_broadcaster_parameters.yaml)
     target_include_directories(${PROJECT_NAME}_test PRIVATE include)
     target_link_libraries(${PROJECT_NAME}_test ${PROJECT_NAME})
     ament_target_dependencies(${PROJECT_NAME}_test controller_manager hardware_interface)
 
-    ament_add_gmock(test_load_franka_state_broadcaster test/test_load_franka_state_broadcaster.cpp)
-    target_include_directories(test_load_franka_state_broadcaster PRIVATE include)
-    target_link_libraries(test_load_franka_state_broadcaster ${PROJECT_NAME})
+    ament_add_gmock(test_load_franka_robot_state_broadcaster test/test_load_franka_robot_state_broadcaster.cpp)
+    target_include_directories(test_load_franka_robot_state_broadcaster PRIVATE include)
+    target_link_libraries(test_load_franka_robot_state_broadcaster ${PROJECT_NAME})
     ament_target_dependencies(
-      test_load_franka_state_broadcaster controller_manager hardware_interface
+      test_load_franka_robot_state_broadcaster controller_manager hardware_interface
       ros2_control_test_assets)
 endif()
 
@@ -110,7 +110,7 @@ ament_export_include_directories(
         include
 )
 ament_export_libraries(
-        franka_state_broadcaster
+        franka_robot_state_broadcaster
 )
 ament_export_dependencies(
         hardware_interface

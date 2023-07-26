@@ -113,7 +113,7 @@ def generate_launch_description():
         Node(
             package='controller_manager',
             executable='spawner',
-            arguments=['franka_state_broadcaster'],
+            arguments=['franka_robot_state_broadcaster'],
             output='screen',
             condition=UnlessCondition(use_fake_hardware),
         ),

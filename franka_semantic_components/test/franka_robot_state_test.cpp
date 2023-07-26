@@ -18,15 +18,15 @@
 #include <string>
 #include <vector>
 
-void FrankaStateTest::TearDown() {
+void FrankaRobotStateTest::TearDown() {
   franka_state_friend.reset(nullptr);
 }
 
-void FrankaStateTest::SetUp() {
+void FrankaRobotStateTest::SetUp() {
   full_interface_names.reserve(size);
   full_interface_names.emplace_back(robot_name + "/" + franka_state_interface_name);
   franka_state_friend =
-      std::make_unique<FrankaStateTestFriend>(robot_name + "/" + franka_state_interface_name);
+      std::make_unique<FrankaRobotStateTestFriend>(robot_name + "/" + franka_state_interface_name);
 
   std::vector<std::string> interface_names = franka_state_friend->get_state_interface_names();
 
@@ -45,7 +45,7 @@ void FrankaStateTest::SetUp() {
   ASSERT_TRUE(franka_state_friend->get_values_as_message(franka_robot_state_msg));
 }
 
-TEST_F(FrankaStateTest, validate_state_names_and_size) {
+TEST_F(FrankaRobotStateTest, validate_state_names_and_size) {
   ASSERT_EQ(franka_state_friend->name_, robot_name + "/" + franka_state_interface_name);
 
   ASSERT_EQ(franka_state_friend->interface_names_.size(), size);
@@ -60,14 +60,14 @@ TEST_F(FrankaStateTest, validate_state_names_and_size) {
   ASSERT_EQ(franka_state_friend->state_interfaces_.size(), 0u);
 }
 
-TEST_F(FrankaStateTest, robot_state_ptr_uncasted_correctly) {
+TEST_F(FrankaRobotStateTest, robot_state_ptr_uncasted_correctly) {
   ASSERT_EQ(franka_state_friend->robot_state_ptr, robot_state_address);
   franka_state_friend->release_interfaces();
   // validate the count of state_interfaces_
   ASSERT_EQ(franka_state_friend->state_interfaces_.size(), 0u);
 }
 
-TEST_F(FrankaStateTest,
+TEST_F(FrankaRobotStateTest,
        given_franka_semantic_state_initialized_when_message_returned_expect_correct_values) {
   ASSERT_EQ(joint_angles, franka_robot_state_msg.q);
   ASSERT_EQ(joint_velocities, franka_robot_state_msg.q_d);

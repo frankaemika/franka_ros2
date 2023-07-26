@@ -22,7 +22,7 @@
 #include "rclcpp/utilities.hpp"
 #include "ros2_control_test_assets/descriptions.hpp"
 
-TEST(TestLoadFrankaStateBroadcaster, load_controller) {
+TEST(TestLoadFrankaRobotStateBroadcaster, load_controller) {
   rclcpp::init(0, nullptr);
 
   std::shared_ptr<rclcpp::Executor> executor =
@@ -32,8 +32,9 @@ TEST(TestLoadFrankaStateBroadcaster, load_controller) {
                                                ros2_control_test_assets::minimal_robot_urdf),
                                            executor, "test_controller_manager");
 
-  auto controller = cm.load_controller("test_franka_state_broadcaster",
-                                       "franka_state_broadcaster/FrankaStateBroadcaster");
+  auto controller =
+      cm.load_controller("test_franka_robot_state_broadcaster",
+                         "franka_robot_state_broadcaster/FrankaRobotStateBroadcaster");
   ASSERT_NE(controller.get(), nullptr);
   rclcpp::shutdown();
 }

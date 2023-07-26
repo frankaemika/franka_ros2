@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "franka_state_broadcaster/franka_state_broadcaster.hpp"
+#include "franka_robot_state_broadcaster/franka_robot_state_broadcaster.hpp"
 
 #include <stddef.h>
 #include <limits>
@@ -32,9 +32,9 @@
 #include "rcutils/logging_macros.h"
 #include "std_msgs/msg/header.hpp"
 
-namespace franka_state_broadcaster {
+namespace franka_robot_state_broadcaster {
 
-controller_interface::CallbackReturn FrankaStateBroadcaster::on_init() {
+controller_interface::CallbackReturn FrankaRobotStateBroadcaster::on_init() {
   try {
     param_listener = std::make_shared<ParamListener>(get_node());
     params = param_listener->get_params();
@@ -47,20 +47,20 @@ controller_interface::CallbackReturn FrankaStateBroadcaster::on_init() {
 }
 
 controller_interface::InterfaceConfiguration
-FrankaStateBroadcaster::command_interface_configuration() const {
+FrankaRobotStateBroadcaster::command_interface_configuration() const {
   return controller_interface::InterfaceConfiguration{
       controller_interface::interface_configuration_type::NONE};
 }
 
-controller_interface::InterfaceConfiguration FrankaStateBroadcaster::state_interface_configuration()
-    const {
+controller_interface::InterfaceConfiguration
+FrankaRobotStateBroadcaster::state_interface_configuration() const {
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   state_interfaces_config.names = franka_robot_state->get_state_interface_names();
   return state_interfaces_config;
 }
 
-controller_interface::CallbackReturn FrankaStateBroadcaster::on_configure(
+controller_interface::CallbackReturn FrankaRobotStateBroadcaster::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   params = param_listener->get_params();
 
@@ -84,19 +84,19 @@ controller_interface::CallbackReturn FrankaStateBroadcaster::on_configure(
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn FrankaStateBroadcaster::on_activate(
+controller_interface::CallbackReturn FrankaRobotStateBroadcaster::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   franka_robot_state->assign_loaned_state_interfaces(state_interfaces_);
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::CallbackReturn FrankaStateBroadcaster::on_deactivate(
+controller_interface::CallbackReturn FrankaRobotStateBroadcaster::on_deactivate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   franka_robot_state->release_interfaces();
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type FrankaStateBroadcaster::update(
+controller_interface::return_type FrankaRobotStateBroadcaster::update(
     const rclcpp::Time& time,
     const rclcpp::Duration& /*period*/) {
   if (realtime_franka_state_publisher && realtime_franka_state_publisher->trylock()) {
@@ -116,9 +116,9 @@ controller_interface::return_type FrankaStateBroadcaster::update(
   }
 }
 
-}  // namespace franka_state_broadcaster
+}  // namespace franka_robot_state_broadcaster
 
 #include "pluginlib/class_list_macros.hpp"
 // NOLINTNEXTLINE
-PLUGINLIB_EXPORT_CLASS(franka_state_broadcaster::FrankaStateBroadcaster,
+PLUGINLIB_EXPORT_CLASS(franka_robot_state_broadcaster::FrankaRobotStateBroadcaster,
                        controller_interface::ControllerInterface)

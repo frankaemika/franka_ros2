@@ -1,4 +1,4 @@
-franka_state_broadcaster:
+franka_robot_state_broadcaster:
   arm_id: {
     type: string,
     default_value: "panda",
