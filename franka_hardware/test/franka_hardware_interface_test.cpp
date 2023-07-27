@@ -86,8 +86,8 @@ TEST(FrankaHardwareInterfaceTest, when_on_init_called_expect_success) {
 
 TEST(FrankaHardwareInterfaceTest, given_that_the_robot_interfaces_set_when_read_called_return_ok) {
   franka::RobotState robot_state;
-  MockModel mock_model_;
-  MockModel* model_address = &mock_model_;
+  MockModel mock_model;
+  MockModel* model_address = &mock_model;
 
   auto mock_robot = std::make_unique<MockRobot>();
   EXPECT_CALL(*mock_robot, read()).WillOnce(testing::Return(robot_state));
@@ -108,8 +108,8 @@ TEST(
   const size_t state_interface_size =
       23;  // position, effort and velocity states for every joint + robot state and model
   auto mock_robot = std::make_unique<MockRobot>();
-  MockModel mock_model_;
-  MockModel* model_address = &mock_model_;
+  MockModel mock_model;
+  MockModel* model_address = &mock_model;
 
   EXPECT_CALL(*mock_robot, getModel()).WillOnce(testing::Return(model_address));
   EXPECT_CALL(*mock_robot, read()).WillOnce(testing::Return(robot_state));
@@ -151,8 +151,8 @@ TEST(
       23;  // position, effort and velocity states for every joint + robot state and model
   auto mock_robot = std::make_unique<MockRobot>();
 
-  MockModel mock_model_;
-  MockModel* model_address = &mock_model_;
+  MockModel mock_model;
+  MockModel* model_address = &mock_model;
 
   EXPECT_CALL(*mock_robot, read()).WillOnce(testing::Return(robot_state));
   EXPECT_CALL(*mock_robot, getModel()).WillOnce(testing::Return(model_address));
@@ -183,8 +183,8 @@ TEST(
   franka::RobotState robot_state;
   franka::RobotState* robot_state_address = &robot_state;
 
-  MockModel mock_model_;
-  MockModel* model_address = &mock_model_;
+  MockModel mock_model;
+  MockModel* model_address = &mock_model;
 
   EXPECT_CALL(*mock_robot, read()).WillOnce(testing::Return(robot_state));
   EXPECT_CALL(*mock_robot, getModel()).WillOnce(testing::Return(model_address));
@@ -301,8 +301,8 @@ TEST(FrankaHardwareIntefaceTest, when_write_called_expect_ok) {
 TEST(FrankaHardwareInterfaceTest, when_on_activate_called_expect_success) {
   franka::RobotState robot_state;
 
-  MockModel mock_model_;
-  MockModel* model_address = &mock_model_;
+  MockModel mock_model;
+  MockModel* model_address = &mock_model;
 
   auto mock_robot = std::make_unique<MockRobot>();
   EXPECT_CALL(*mock_robot, read()).WillOnce(testing::Return(robot_state));
