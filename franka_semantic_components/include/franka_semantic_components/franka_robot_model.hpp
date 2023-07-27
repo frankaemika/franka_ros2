@@ -25,17 +25,18 @@
 #include "semantic_components/semantic_component_interface.hpp"
 
 namespace franka_semantic_components {
-class FrankaModel : public semantic_components::SemanticComponentInterface<franka_hardware::Model> {
+class FrankaRobotModel
+    : public semantic_components::SemanticComponentInterface<franka_hardware::Model> {
  public:
   /**
-   * Creates an instance of a FrankaModel.
+   * Creates an instance of a FrankaRobotModel.
    * @param[in] name The name of robot model state interface.
    */
-  FrankaModel(const std::string& franka_model_interface_name,
-              const std::string& franka_state_interface_name);
-  FrankaModel() = delete;
+  FrankaRobotModel(const std::string& franka_model_interface_name,
+                   const std::string& franka_state_interface_name);
+  FrankaRobotModel() = delete;
 
-  virtual ~FrankaModel() = default;
+  virtual ~FrankaRobotModel() = default;
 
   /**
    * Calculates the 7x7 mass matrix from the current robot state. Unit: \f$[kg \times m^2]\f$.
@@ -50,7 +51,7 @@ class FrankaModel : public semantic_components::SemanticComponentInterface<frank
     if (!initialized) {
       initialize();
     }
-    return model->mass(*robot_state);
+    return robot_model->mass(*robot_state);
   }
 
   /**
@@ -66,7 +67,7 @@ class FrankaModel : public semantic_components::SemanticComponentInterface<frank
     if (!initialized) {
       initialize();
     }
-    return model->coriolis(*robot_state);
+    return robot_model->coriolis(*robot_state);
   }
 
   /**
@@ -81,7 +82,7 @@ class FrankaModel : public semantic_components::SemanticComponentInterface<frank
     if (!initialized) {
       initialize();
     }
-    return model->gravity(*robot_state);
+    return robot_model->gravity(*robot_state);
   }
 
   /**
@@ -101,7 +102,7 @@ class FrankaModel : public semantic_components::SemanticComponentInterface<frank
     if (!initialized) {
       initialize();
     }
-    return model->pose(frame, *robot_state);
+    return robot_model->pose(frame, *robot_state);
   }
 
   /**
@@ -143,7 +144,7 @@ class FrankaModel : public semantic_components::SemanticComponentInterface<frank
     if (!initialized) {
       initialize();
     }
-    return model->bodyJacobian(frame, *robot_state);
+    return robot_model->bodyJacobian(frame, *robot_state);
   }
 
   /**
@@ -182,19 +183,19 @@ class FrankaModel : public semantic_components::SemanticComponentInterface<frank
     if (!initialized) {
       initialize();
     }
-    return model->zeroJacobian(frame, *robot_state);
+    return robot_model->zeroJacobian(frame, *robot_state);
   }
 
  protected:
   /**
-   * Retrieve the robot state and model pointers from the robot state
+   * Retrieve the robot state and robot model pointers from the hardware state interface
    *
    * @throws Runtime error when state interfaces are not available.
    */
   void initialize();
 
   bool initialized{false};
-  franka_hardware::Model* model;
+  franka_hardware::Model* robot_model;
   franka::RobotState* robot_state;
 
  private:

@@ -54,17 +54,17 @@ controller_interface::InterfaceConfiguration ModelExampleController::state_inter
     const {
   controller_interface::InterfaceConfiguration state_interfaces_config;
   state_interfaces_config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-  for (const auto& franka_model_name : franka_model_->get_state_interface_names()) {
-    state_interfaces_config.names.push_back(franka_model_name);
+  for (const auto& franka_robot_model_name : franka_robot_model_->get_state_interface_names()) {
+    state_interfaces_config.names.push_back(franka_robot_model_name);
   }
   return state_interfaces_config;
 }
 
 controller_interface::CallbackReturn ModelExampleController::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
-  franka_model_ = std::make_unique<franka_semantic_components::FrankaModel>(
-      franka_semantic_components::FrankaModel(arm_id_ + "/" + k_robot_model_interface_name,
-                                              arm_id_ + "/" + k_robot_state_interface_name));
+  franka_robot_model_ = std::make_unique<franka_semantic_components::FrankaRobotModel>(
+      franka_semantic_components::FrankaRobotModel(arm_id_ + "/" + k_robot_model_interface_name,
+                                                   arm_id_ + "/" + k_robot_state_interface_name));
 
   RCLCPP_DEBUG(get_node()->get_logger(), "configured successfully");
   return CallbackReturn::SUCCESS;
@@ -72,27 +72,27 @@ controller_interface::CallbackReturn ModelExampleController::on_configure(
 
 controller_interface::CallbackReturn ModelExampleController::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
-  franka_model_->assign_loaned_state_interfaces(state_interfaces_);
+  franka_robot_model_->assign_loaned_state_interfaces(state_interfaces_);
   return CallbackReturn::SUCCESS;
 }
 
 controller_interface::CallbackReturn ModelExampleController::on_deactivate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
-  franka_model_->release_interfaces();
+  franka_robot_model_->release_interfaces();
   return CallbackReturn::SUCCESS;
 }
 
 controller_interface::return_type ModelExampleController::update(
     const rclcpp::Time& /*time*/,
     const rclcpp::Duration& /*period*/) {
-  std::array<double, 49> mass = franka_model_->getMassMatrix();
-  std::array<double, 7> coriolis = franka_model_->getCoriolisForceVector();
-  std::array<double, 7> gravity = franka_model_->getGravityForceVector();
-  std::array<double, 16> pose = franka_model_->getPoseMatrix(franka::Frame::kJoint4);
+  std::array<double, 49> mass = franka_robot_model_->getMassMatrix();
+  std::array<double, 7> coriolis = franka_robot_model_->getCoriolisForceVector();
+  std::array<double, 7> gravity = franka_robot_model_->getGravityForceVector();
+  std::array<double, 16> pose = franka_robot_model_->getPoseMatrix(franka::Frame::kJoint4);
   std::array<double, 42> joint4_body_jacobian_wrt_joint4 =
-      franka_model_->getBodyJacobian(franka::Frame::kJoint4);
+      franka_robot_model_->getBodyJacobian(franka::Frame::kJoint4);
   std::array<double, 42> endeffector_jacobian_wrt_base =
-      franka_model_->getZeroJacobian(franka::Frame::kEndEffector);
+      franka_robot_model_->getZeroJacobian(franka::Frame::kEndEffector);
 
   RCLCPP_INFO_THROTTLE(get_node()->get_logger(), *get_node()->get_clock(), 1000,
                        "-------------------------------------------------------------");

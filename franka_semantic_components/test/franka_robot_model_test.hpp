@@ -21,10 +21,10 @@
 
 #include "franka/model.h"
 #include "franka/robot_state.h"
-#include "franka_semantic_components/franka_model.hpp"
+#include "franka_semantic_components/franka_robot_model.hpp"
 #include "gmock/gmock.h"
 
-class FrankaModelTest;
+class FrankaRobotModelTest;
 
 class MockModel : public franka_hardware::Model {
  public:
@@ -45,38 +45,40 @@ class MockModel : public franka_hardware::Model {
   MOCK_METHOD((std::array<double, 49>), mass, (const franka::RobotState&), (const, override));
 };
 
-class FrankaModelTestFriend : public franka_semantic_components::FrankaModel {
-  FRIEND_TEST(FrankaModelTest, validate_state_names_and_size);
-  FRIEND_TEST(FrankaModelTest,
+class FrankaRobotModelTestFriend : public franka_semantic_components::FrankaRobotModel {
+  FRIEND_TEST(FrankaRobotModelTest, validate_state_names_and_size);
+  FRIEND_TEST(FrankaRobotModelTest,
               given_franka_semantic_model_initialized_when_get_coriolis_expect_one);
-  FRIEND_TEST(FrankaModelTest, given_franka_semantic_model_initialized_when_get_gravity_expect_one);
-  FRIEND_TEST(FrankaModelTest, given_franka_semantic_model_initialized_when_get_pose_expect_one);
-  FRIEND_TEST(FrankaModelTest,
+  FRIEND_TEST(FrankaRobotModelTest,
+              given_franka_semantic_model_initialized_when_get_gravity_expect_one);
+  FRIEND_TEST(FrankaRobotModelTest,
+              given_franka_semantic_model_initialized_when_get_pose_expect_one);
+  FRIEND_TEST(FrankaRobotModelTest,
               given_franka_semantic_model_initialized_when_get_mass_expect_correct);
-  FRIEND_TEST(FrankaModelTest, given_franka_semantic_model_not_initialized_expect_exception);
-  FRIEND_TEST(FrankaModelTest,
+  FRIEND_TEST(FrankaRobotModelTest, given_franka_semantic_model_not_initialized_expect_exception);
+  FRIEND_TEST(FrankaRobotModelTest,
               given_franka_semantic_model_not_initialized_when_get_gravity_called_expect_exception);
-  FRIEND_TEST(FrankaModelTest,
+  FRIEND_TEST(FrankaRobotModelTest,
               given_franka_semantic_model_not_initialized_when_get_pose_called_expect_exception);
-  FRIEND_TEST(FrankaModelTest,
+  FRIEND_TEST(FrankaRobotModelTest,
               given_franka_semantic_model_not_initialized_when_get_pose_called_expect_exception);
   FRIEND_TEST(
-      FrankaModelTest,
+      FrankaRobotModelTest,
       given_franka_semantic_model_not_initialized_when_get_body_jacobian_called_expect_exception);
   FRIEND_TEST(
-      FrankaModelTest,
+      FrankaRobotModelTest,
       given_franka_semantic_model_not_initialized_when_get_zero_jacobian_called_expect_exception);
 
  public:
-  FrankaModelTestFriend(const std::string& model_interface_name,
-                        const std::string& model_state_name)
-      : franka_semantic_components::FrankaModel(model_interface_name, model_state_name) {}
-  FrankaModelTestFriend() = delete;
+  FrankaRobotModelTestFriend(const std::string& model_interface_name,
+                             const std::string& model_state_name)
+      : franka_semantic_components::FrankaRobotModel(model_interface_name, model_state_name) {}
+  FrankaRobotModelTestFriend() = delete;
 
-  virtual ~FrankaModelTestFriend() = default;
+  virtual ~FrankaRobotModelTestFriend() = default;
 };
 
-class FrankaModelTest : public ::testing::Test {
+class FrankaRobotModelTest : public ::testing::Test {
  public:
   void SetUp();
   void TearDown();
@@ -93,7 +95,7 @@ class FrankaModelTest : public ::testing::Test {
   franka::RobotState robot_state;
   franka::RobotState* robot_state_address = &robot_state;
 
-  std::unique_ptr<FrankaModelTestFriend> franka_model_friend;
+  std::unique_ptr<FrankaRobotModelTestFriend> franka_robot_model_friend;
 
   std::vector<std::string> full_interface_names;
 };

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "franka_semantic_components/franka_model.hpp"
+#include "franka_semantic_components/franka_robot_model.hpp"
 
 #include <cstring>
 #include <iostream>
@@ -38,14 +38,14 @@ bit_cast(const From& src) noexcept {
 
 namespace franka_semantic_components {
 
-FrankaModel::FrankaModel(const std::string& franka_model_interface_name,
-                         const std::string& franka_state_interface_name)
+FrankaRobotModel::FrankaRobotModel(const std::string& franka_model_interface_name,
+                                   const std::string& franka_state_interface_name)
     : SemanticComponentInterface(franka_model_interface_name, 2) {
   interface_names_.emplace_back(franka_model_interface_name);
   interface_names_.emplace_back(franka_state_interface_name);
 }
 
-void FrankaModel::initialize() {
+void FrankaRobotModel::initialize() {
   auto franka_state_interface =
       std::find_if(state_interfaces_.begin(), state_interfaces_.end(), [&](const auto& interface) {
         return interface.get().get_name() == arm_id_ + "/" + robot_state_interface_name_;
@@ -58,7 +58,7 @@ void FrankaModel::initialize() {
 
   if (franka_state_interface != state_interfaces_.end() &&
       franka_model_interface != state_interfaces_.end()) {
-    model = bit_cast<franka_hardware::Model*>((*franka_model_interface).get().get_value());
+    robot_model = bit_cast<franka_hardware::Model*>((*franka_model_interface).get().get_value());
     robot_state = bit_cast<franka::RobotState*>((*franka_state_interface).get().get_value());
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("franka_model_semantic_component"),

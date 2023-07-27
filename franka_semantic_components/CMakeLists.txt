@@ -22,7 +22,7 @@ endforeach()
 
 find_package(Franka REQUIRED)
 
-add_library(franka_semantic_components SHARED src/franka_robot_state.cpp src/franka_model.cpp)
+add_library(franka_semantic_components SHARED src/franka_robot_state.cpp src/franka_robot_model.cpp)
 target_include_directories(franka_semantic_components PRIVATE include)
 target_link_libraries(franka_semantic_components Franka::Franka)
 ament_target_dependencies(franka_semantic_components
@@ -69,13 +69,13 @@ if(BUILD_TESTING)
     franka_msgs
     Franka
   )
-  ament_add_gmock(test_franka_model test/franka_model_test.cpp)
-  target_include_directories(test_franka_model PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+  ament_add_gmock(test_franka_robot_model test/franka_robot_model_test.cpp)
+  target_include_directories(test_franka_robot_model PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
-  target_link_libraries(test_franka_model
+  target_link_libraries(test_franka_robot_model
     franka_semantic_components
   )
-  ament_target_dependencies(test_franka_model
+  ament_target_dependencies(test_franka_robot_model
     controller_interface
     hardware_interface
     franka_msgs
