@@ -61,6 +61,7 @@ class FrankaRobotModel
    * @return Coriolis force vector.
    *
    * @throws Runtime error when state interfaces are not available.
+   *
    * @see franka::Model::coriolis
    */
   std::array<double, 7> getCoriolisForceVector() {
@@ -126,12 +127,12 @@ class FrankaRobotModel
    * kJoint1_J_kJoint1 can be used to calculate the twist in the Joint1 by multiplying
    * with the joint velocities.
    *
-   * joint1_twist_joint1(6x1) = kJoint1_J_kJoint(6x7) * dq(7x1)
+   * \f$^{1}{\mathcal{V}_{1}} = \, ^{1}{\mathcal{J}_{1}} * dq\f$
    *
-   * Similarly, given desired joint twist in the kJoint1 frame, body jacobian can be used to
-   * retrieve the desired joint velocity to command.
+   * Similarly, given desired joint twist in the kJoint1 frame, pseudoinverse of body jacobian can
+   * be used to retrieve the desired joint velocity to command.
    *
-   * dq_desired(7x1)  = kJoint1_J_kJoint1_pseudoinverse(7x6) * joint1_twist_joint1_desired(6x1)
+   * \f$ dq = \ ^{1}{\mathcal{J}^{\dagger}_{1}} * \, ^{1}{\mathcal{V}_{1}}\f$
    *
    * @param[in] frame The desired frame.
    *
@@ -165,12 +166,13 @@ class FrankaRobotModel
    * base_J_kJoint1 can be used to calculate the twist in the Joint1 by multiplying
    * with the joint velocities.
    *
-   * joint1_twist_base_frame(6x1) = base_J_kJoint(6x7) * dq(7x1)
+   * \f$^{O}{\mathcal{V}_{1}} = \, ^{O}{\mathcal{J}_{1}} * dq\f$
    *
-   * Similarly, given desired joint twist in the base frame, zero jacobian can be used to
-   * retrieve the desired joint velocity to command.
+   * Similarly, given desired joint twist in the base frame, pseudoinverse of zero jacobian can be
+   *used to retrieve the desired joint velocity to command.
    *
-   * dq_desired(7x1)  = base_J_kJoint1_pseudoinverse(7x6) * Joint1_twist_base_desired(6x1)
+   *
+   *\f$ dq = \, ^{O}{\mathcal{J}^{\dagger}_{1}} * \, ^{O}{\mathcal{V}_{1}}\f$
    *
    * @param[in] frame The desired frame.
    *
