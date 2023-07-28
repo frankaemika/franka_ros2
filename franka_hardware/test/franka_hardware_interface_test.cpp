@@ -201,7 +201,7 @@ TEST(
             "panda/robot_state");  // Last state interface is the robot model state
   EXPECT_NEAR(states[state_interface_size - 2].get_value(),
               *reinterpret_cast<double*>(&robot_state_address),
-              k_EPS);  // testing that the casted mock_model ptr
+              k_EPS);  // testing that the casted robot state ptr
                        // is correctly pushed to state interface
 }
 
