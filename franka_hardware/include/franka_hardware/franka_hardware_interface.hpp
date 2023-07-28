@@ -20,6 +20,7 @@
 
 #include <hardware_interface/visibility_control.h>
 #include <franka_hardware/robot.hpp>
+
 #include <hardware_interface/hardware_info.hpp>
 #include <hardware_interface/system_interface.hpp>
 #include <hardware_interface/types/hardware_interface_return_values.hpp>
@@ -62,11 +63,14 @@ class FrankaHardwareInterface : public hardware_interface::SystemInterface {
   std::array<double, kNumberOfJoints> hw_efforts_{0, 0, 0, 0, 0, 0, 0};
   franka::RobotState hw_franka_robot_state_;
   franka::RobotState* hw_franka_robot_state_addr_ = &hw_franka_robot_state_;
+  Model* hw_franka_model_ptr_ = nullptr;
+
   bool effort_interface_claimed_ = false;
   bool effort_interface_running_ = false;
   static rclcpp::Logger getLogger();
 
-  const std::string robot_name_{"panda"};
-  const std::string robot_state_interface_name_{"robot_state"};
+  const std::string k_robot_name{"panda"};
+  const std::string k_robot_state_interface_name{"robot_state"};
+  const std::string k_robot_model_interface_name{"robot_model"};
 };
 }  // namespace franka_hardware

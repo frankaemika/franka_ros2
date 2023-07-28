@@ -1,9 +1,25 @@
+// Copyright (c) 2023 Franka Emika GmbH
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include <gmock/gmock.h>
 #include <exception>
 #include <rclcpp/rclcpp.hpp>
 
 #include <franka_hardware/franka_hardware_interface.hpp>
+#include <franka_hardware/model.hpp>
 #include <franka_hardware/robot.hpp>
+
 #include <hardware_interface/hardware_info.hpp>
 #include <hardware_interface/types/hardware_interface_return_values.hpp>
 #include <hardware_interface/types/hardware_interface_type_values.hpp>
@@ -13,6 +29,9 @@ const std::string k_velocity_controller{"velocity"};
 const std::string k_effort_controller{"effort"};
 const std::string k_joint_name{"joint"};
 const size_t k_number_of_joints{7};
+const double k_EPS{1e-5};
+
+class MockModel : public franka_hardware::Model {};
 
 class MockRobot : public franka_hardware::Robot {
  public:
@@ -20,6 +39,7 @@ class MockRobot : public franka_hardware::Robot {
   MOCK_METHOD(void, stopRobot, (), (override));
   MOCK_METHOD(void, initializeTorqueControl, (), (override));
   MOCK_METHOD(franka::RobotState, read, (), (override));
+  MOCK_METHOD(MockModel*, getModel, (), (override));
 };
 
 auto createHardwareInfo() -> hardware_interface::HardwareInfo {
@@ -66,9 +86,13 @@ TEST(FrankaHardwareInterfaceTest, when_on_init_called_expect_success) {
 
 TEST(FrankaHardwareInterfaceTest, given_that_the_robot_interfaces_set_when_read_called_return_ok) {
   franka::RobotState robot_state;
+  MockModel mock_model;
+  MockModel* model_address = &mock_model;
 
   auto mock_robot = std::make_unique<MockRobot>();
   EXPECT_CALL(*mock_robot, read()).WillOnce(testing::Return(robot_state));
+  EXPECT_CALL(*mock_robot, getModel()).WillOnce(testing::Return(model_address));
+
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
 
   auto time = rclcpp::Time(0, 0);
@@ -82,8 +106,12 @@ TEST(
     given_that_the_robot_interfaces_are_set_when_call_export_state_return_zero_values_and_correct_interface_names) {
   franka::RobotState robot_state;
   const size_t state_interface_size =
-      22;  // position, effort and velocity states for every joint + franka_robot_state
+      23;  // position, effort and velocity states for every joint + robot state and model
   auto mock_robot = std::make_unique<MockRobot>();
+  MockModel mock_model;
+  MockModel* model_address = &mock_model;
+
+  EXPECT_CALL(*mock_robot, getModel()).WillOnce(testing::Return(model_address));
   EXPECT_CALL(*mock_robot, read()).WillOnce(testing::Return(robot_state));
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
 
@@ -96,8 +124,8 @@ TEST(
   auto states = franka_hardware_interface.export_state_interfaces();
   size_t joint_index = 0;
 
-  // Get all the states except the last one reserved for robot state
-  for (size_t i = 0; i < states.size() - 1; i++) {
+  // Get all the states except the last two reserved for robot state
+  for (size_t i = 0; i < states.size() - 2; i++) {
     if (i % 3 == 0) {
       joint_index++;
     }
@@ -113,6 +141,68 @@ TEST(
   }
 
   EXPECT_EQ(states.size(), state_interface_size);
+}
+
+TEST(
+    FrankaHardwareInterfaceTest,
+    given_that_the_robot_interfaces_are_set_when_call_export_state_interface_robot_model_interface_exists) {
+  franka::RobotState robot_state;
+  const size_t state_interface_size =
+      23;  // position, effort and velocity states for every joint + robot state and model
+  auto mock_robot = std::make_unique<MockRobot>();
+
+  MockModel mock_model;
+  MockModel* model_address = &mock_model;
+
+  EXPECT_CALL(*mock_robot, read()).WillOnce(testing::Return(robot_state));
+  EXPECT_CALL(*mock_robot, getModel()).WillOnce(testing::Return(model_address));
+  franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
+
+  const auto hardware_info = createHardwareInfo();
+  franka_hardware_interface.on_init(hardware_info);
+  auto time = rclcpp::Time(0);
+  auto duration = rclcpp::Duration(0, 0);
+  auto return_type = franka_hardware_interface.read(time, duration);
+  EXPECT_EQ(return_type, hardware_interface::return_type::OK);
+  auto states = franka_hardware_interface.export_state_interfaces();
+  EXPECT_EQ(states[state_interface_size - 1].get_name(),
+            "panda/robot_model");  // Last state interface is the robot model state
+  EXPECT_NEAR(states[state_interface_size - 1].get_value(),
+              *reinterpret_cast<double*>(&model_address),
+              k_EPS);  // testing that the casted mock_model ptr
+                       // is correctly pushed to state interface
+}
+
+TEST(
+    FrankaHardwareInterfaceTest,
+    given_that_the_robot_interfaces_are_set_when_call_export_state_interface_robot_state_interface_exists) {
+  const size_t state_interface_size =
+      23;  // position, effort and velocity states for every joint + robot state and model
+  auto mock_robot = std::make_unique<MockRobot>();
+
+  franka::RobotState robot_state;
+  franka::RobotState* robot_state_address = &robot_state;
+
+  MockModel mock_model;
+  MockModel* model_address = &mock_model;
+
+  EXPECT_CALL(*mock_robot, read()).WillOnce(testing::Return(robot_state));
+  EXPECT_CALL(*mock_robot, getModel()).WillOnce(testing::Return(model_address));
+  franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
+
+  const auto hardware_info = createHardwareInfo();
+  franka_hardware_interface.on_init(hardware_info);
+  auto time = rclcpp::Time(0);
+  auto duration = rclcpp::Duration(0, 0);
+  auto return_type = franka_hardware_interface.read(time, duration);
+  EXPECT_EQ(return_type, hardware_interface::return_type::OK);
+  auto states = franka_hardware_interface.export_state_interfaces();
+  EXPECT_EQ(states[state_interface_size - 2].get_name(),
+            "panda/robot_state");  // Last state interface is the robot model state
+  EXPECT_NEAR(states[state_interface_size - 2].get_value(),
+              *reinterpret_cast<double*>(&robot_state_address),
+              k_EPS);  // testing that the casted robot state ptr
+                       // is correctly pushed to state interface
 }
 
 TEST(FrankaHardwareInterfaceTest,
@@ -211,8 +301,13 @@ TEST(FrankaHardwareIntefaceTest, when_write_called_expect_ok) {
 TEST(FrankaHardwareInterfaceTest, when_on_activate_called_expect_success) {
   franka::RobotState robot_state;
 
+  MockModel mock_model;
+  MockModel* model_address = &mock_model;
+
   auto mock_robot = std::make_unique<MockRobot>();
   EXPECT_CALL(*mock_robot, read()).WillOnce(testing::Return(robot_state));
+  EXPECT_CALL(*mock_robot, getModel()).WillOnce(testing::Return(model_address));
+
   EXPECT_CALL(*mock_robot, initializeContinuousReading());
 
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
