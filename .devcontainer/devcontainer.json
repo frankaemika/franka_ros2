@@ -5,7 +5,7 @@
 	"dockerComposeFile": "./docker-compose.yml",
 	"service": "ros2_control",
 	"workspaceFolder": "/workspaces",
-	// "remoteUser": "devcontainer"
+	"remoteUser": "user",
 	"customizations": {
 		"vscode": {
 			"extensions": [
@@ -13,7 +13,15 @@
 				"bungcip.better-toml",
 				"ms-vscode.cpptools",
 				"ms-vscode.cpptools-extension-pack"
-			]
+			],
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "bash",
+				"terminal.integrated.profiles.linux": {
+					"bash": {
+						"path": "/bin/bash"
+					}
+				}
+			}
 		}
 	}
 }

@@ -15,7 +15,6 @@ RUN groupadd --gid $USER_GID $USERNAME \
     && chown user:user /run/user/"${USER_UID}" \
     && chown user:user /workspaces \
     && chown user:user /run/user/"${USER_UID}"/gdm \
-    #
     # [Optional] Add sudo support. Omit if you don't need to install software after connecting.
     && apt-get update \
     && apt-get install -y sudo \
@@ -44,6 +43,7 @@ RUN apt-get update && \
     ros-humble-joint-trajectory-controller \
     libpoco-dev \
     libeigen3-dev \
+    ament-cmake-clang-tidy \
     && rm -rf /var/lib/apt/lists/*
 
 ENV XDG_RUNTIME_DIR=/run/user/"${USER_UID}"
@@ -59,8 +59,8 @@ RUN cd ~/source_code && git clone https://github.com/frankaemika/libfranka.git \
     && make franka -j$(nproc) \
     && cpack -G DEB \
     && sudo dpkg -i libfranka*.deb
-
+    
 # set the default user to the newly created user
 USER $USERNAME
 
-RUN echo "source /ros_entrypoint.sh" >>~/.bashrc
+RUN echo 'source "/opt/ros/$ROS_DISTRO/setup.bash"' >>~/.bashrc
