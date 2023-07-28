@@ -1,8 +1,17 @@
 # Changelog
 
-## [Unreleased]
+## 0.1.0 - 2023-07-28
+
+Requires libfranka >= 0.10.0, required ROS 2 Humble
+
+* franka\_bringup: franka_robot_state broadcaster added to franka.launch.py.
+* franka\_example\_controllers: model printing read onyl controller implemented
+* franka\_robot\_model: semantic component to access robot model parameters.
+* franka\_msgs: franka robot state msg added
+* franka\_robot\_state: broadcaster publishes robot state.
+
 ### Added
-* franka\_model semantic component to access robot model parameters.
+
 * CI tests in Jenkins.
 * joint\_effort\_trajectory\_controller package that contains a version of the
  joint\_trajectory\_controller that can use the torque interface.
