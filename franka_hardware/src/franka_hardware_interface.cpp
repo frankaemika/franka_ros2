@@ -69,7 +69,7 @@ std::vector<CommandInterface> FrankaHardwareInterface::export_command_interfaces
 
 CallbackReturn FrankaHardwareInterface::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
-  robot_->initializeContinuousReading();
+  robot_->initializeReadWriteInterface();
   hw_commands_.fill(0);
   read(rclcpp::Time(0),
        rclcpp::Duration(0, 0));  // makes sure that the robot state is properly initialized.
@@ -90,10 +90,11 @@ hardware_interface::return_type FrankaHardwareInterface::read(const rclcpp::Time
   if (hw_franka_model_ptr_ == nullptr) {
     hw_franka_model_ptr_ = robot_->getModel();
   }
-  hw_franka_robot_state_ = robot_->read();
+  const auto hw_franka_robot_state_ = robot_->readOnce();
   hw_positions_ = hw_franka_robot_state_.q;
   hw_velocities_ = hw_franka_robot_state_.dq;
   hw_efforts_ = hw_franka_robot_state_.tau_J;
+
   return hardware_interface::return_type::OK;
 }
 
@@ -104,7 +105,7 @@ hardware_interface::return_type FrankaHardwareInterface::write(const rclcpp::Tim
     return hardware_interface::return_type::ERROR;
   }
 
-  robot_->write(hw_commands_);
+  robot_->writeOnce(hw_commands_);
   return hardware_interface::return_type::OK;
 }
 
@@ -179,15 +180,6 @@ rclcpp::Logger FrankaHardwareInterface::getLogger() {
 hardware_interface::return_type FrankaHardwareInterface::perform_command_mode_switch(
     const std::vector<std::string>& /*start_interfaces*/,
     const std::vector<std::string>& /*stop_interfaces*/) {
-  if (!effort_interface_running_ && effort_interface_claimed_) {
-    robot_->stopRobot();
-    robot_->initializeTorqueControl();
-    effort_interface_running_ = true;
-  } else if (effort_interface_running_ && !effort_interface_claimed_) {
-    robot_->stopRobot();
-    robot_->initializeContinuousReading();
-    effort_interface_running_ = false;
-  }
   return hardware_interface::return_type::OK;
 }
 
