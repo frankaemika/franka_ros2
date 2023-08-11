@@ -35,11 +35,11 @@ class MockModel : public franka_hardware::Model {};
 
 class MockRobot : public franka_hardware::Robot {
  public:
-  MOCK_METHOD(void, initializeContinuousReading, (), (override));
+  MOCK_METHOD(void, initializeReadWriteInterface, (), (override));
   MOCK_METHOD(void, stopRobot, (), (override));
-  MOCK_METHOD(void, initializeTorqueControl, (), (override));
-  MOCK_METHOD(franka::RobotState, read, (), (override));
+  MOCK_METHOD(franka::RobotState, readOnce, (), (override));
   MOCK_METHOD(MockModel*, getModel, (), (override));
+  MOCK_METHOD(void, writeOnce, ((const std::array<double, 7>&)efforts), (override));
 };
 
 auto createHardwareInfo() -> hardware_interface::HardwareInfo {
@@ -75,7 +75,6 @@ auto createHardwareInfo() -> hardware_interface::HardwareInfo {
 }
 
 TEST(FrankaHardwareInterfaceTest, when_on_init_called_expect_success) {
-  GTEST_SKIP() << "requires update";
   auto mock_robot = std::make_unique<MockRobot>();
   const hardware_interface::HardwareInfo info = createHardwareInfo();
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
@@ -86,13 +85,12 @@ TEST(FrankaHardwareInterfaceTest, when_on_init_called_expect_success) {
 }
 
 TEST(FrankaHardwareInterfaceTest, given_that_the_robot_interfaces_set_when_read_called_return_ok) {
-  GTEST_SKIP() << "requires update";
   franka::RobotState robot_state;
   MockModel mock_model;
   MockModel* model_address = &mock_model;
 
   auto mock_robot = std::make_unique<MockRobot>();
-  EXPECT_CALL(*mock_robot, read()).WillOnce(testing::Return(robot_state));
+  EXPECT_CALL(*mock_robot, readOnce()).WillOnce(testing::Return(robot_state));
   EXPECT_CALL(*mock_robot, getModel()).WillOnce(testing::Return(model_address));
 
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
@@ -106,7 +104,6 @@ TEST(FrankaHardwareInterfaceTest, given_that_the_robot_interfaces_set_when_read_
 TEST(
     FrankaHardwareInterfaceTest,
     given_that_the_robot_interfaces_are_set_when_call_export_state_return_zero_values_and_correct_interface_names) {
-  GTEST_SKIP() << "requires update";
   franka::RobotState robot_state;
   const size_t state_interface_size =
       23;  // position, effort and velocity states for every joint + robot state and model
@@ -115,7 +112,7 @@ TEST(
   MockModel* model_address = &mock_model;
 
   EXPECT_CALL(*mock_robot, getModel()).WillOnce(testing::Return(model_address));
-  EXPECT_CALL(*mock_robot, read()).WillOnce(testing::Return(robot_state));
+  EXPECT_CALL(*mock_robot, readOnce()).WillOnce(testing::Return(robot_state));
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
 
   const auto hardware_info = createHardwareInfo();
@@ -149,7 +146,6 @@ TEST(
 TEST(
     FrankaHardwareInterfaceTest,
     given_that_the_robot_interfaces_are_set_when_call_export_state_interface_robot_model_interface_exists) {
-  GTEST_SKIP() << "requires update";
   franka::RobotState robot_state;
   const size_t state_interface_size =
       23;  // position, effort and velocity states for every joint + robot state and model
@@ -158,7 +154,7 @@ TEST(
   MockModel mock_model;
   MockModel* model_address = &mock_model;
 
-  EXPECT_CALL(*mock_robot, read()).WillOnce(testing::Return(robot_state));
+  EXPECT_CALL(*mock_robot, readOnce()).WillOnce(testing::Return(robot_state));
   EXPECT_CALL(*mock_robot, getModel()).WillOnce(testing::Return(model_address));
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
 
@@ -180,7 +176,6 @@ TEST(
 TEST(
     FrankaHardwareInterfaceTest,
     given_that_the_robot_interfaces_are_set_when_call_export_state_interface_robot_state_interface_exists) {
-  GTEST_SKIP() << "requires update";
   const size_t state_interface_size =
       23;  // position, effort and velocity states for every joint + robot state and model
   auto mock_robot = std::make_unique<MockRobot>();
@@ -191,7 +186,7 @@ TEST(
   MockModel mock_model;
   MockModel* model_address = &mock_model;
 
-  EXPECT_CALL(*mock_robot, read()).WillOnce(testing::Return(robot_state));
+  EXPECT_CALL(*mock_robot, readOnce()).WillOnce(testing::Return(robot_state));
   EXPECT_CALL(*mock_robot, getModel()).WillOnce(testing::Return(model_address));
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
 
@@ -212,7 +207,6 @@ TEST(
 
 TEST(FrankaHardwareInterfaceTest,
      when_prepare_command_mode_interface_for_stop_effort_interfaces_expect_ok) {
-  GTEST_SKIP() << "requires update";
   auto mock_robot = std::make_unique<MockRobot>();
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
 
@@ -232,7 +226,6 @@ TEST(FrankaHardwareInterfaceTest,
 TEST(
     FrankaHardwareInterfaceTest,
     when_prepare_command_mode_interface_is_called_with_invalid_start_interface_number_expect_throw) {
-  GTEST_SKIP() << "requires update";
   auto mock_robot = std::make_unique<MockRobot>();
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
 
@@ -252,7 +245,6 @@ TEST(
 
 TEST(FrankaHardwareInterfaceTest,
      when_prepare_command_mode_interface_for_start_effort_interfaces_expect_ok) {
-  GTEST_SKIP() << "requires update";
   auto mock_robot = std::make_unique<MockRobot>();
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
 
@@ -274,7 +266,6 @@ TEST(FrankaHardwareInterfaceTest,
 TEST(
     FrankaHardwareInterfaceTest,
     when_prepare_command_mode_interface_is_called_with_invalid_stop_interface_number_expect_throw) {
-  GTEST_SKIP() << "requires update";
   auto mock_robot = std::make_unique<MockRobot>();
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
 
@@ -295,8 +286,9 @@ TEST(
 }
 
 TEST(FrankaHardwareIntefaceTest, when_write_called_expect_ok) {
-  GTEST_SKIP() << "requires update";
   auto mock_robot = std::make_unique<MockRobot>();
+  EXPECT_CALL(*mock_robot, writeOnce(testing::_));
+
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
 
   const auto hardware_info = createHardwareInfo();
@@ -309,17 +301,15 @@ TEST(FrankaHardwareIntefaceTest, when_write_called_expect_ok) {
 }
 
 TEST(FrankaHardwareInterfaceTest, when_on_activate_called_expect_success) {
-  GTEST_SKIP() << "requires update";
   franka::RobotState robot_state;
 
   MockModel mock_model;
   MockModel* model_address = &mock_model;
 
   auto mock_robot = std::make_unique<MockRobot>();
-  EXPECT_CALL(*mock_robot, read()).WillOnce(testing::Return(robot_state));
+  EXPECT_CALL(*mock_robot, readOnce()).WillOnce(testing::Return(robot_state));
   EXPECT_CALL(*mock_robot, getModel()).WillOnce(testing::Return(model_address));
-
-  EXPECT_CALL(*mock_robot, initializeContinuousReading());
+  EXPECT_CALL(*mock_robot, initializeReadWriteInterface());
 
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
 
@@ -328,7 +318,6 @@ TEST(FrankaHardwareInterfaceTest, when_on_activate_called_expect_success) {
 }
 
 TEST(FrankaHardwareInterfaceTest, when_on_deactivate_called_expect_success) {
-  GTEST_SKIP() << "requires update";
   franka::RobotState robot_state;
 
   auto mock_robot = std::make_unique<MockRobot>();
@@ -342,10 +331,7 @@ TEST(FrankaHardwareInterfaceTest, when_on_deactivate_called_expect_success) {
 
 TEST(FrankaHardwareInterfaceTest,
      given_start_effort_interface_prepared_when_perform_comamnd_mode_switch_called_expect_ok) {
-  GTEST_SKIP() << "requires update";
   auto mock_robot = std::make_unique<MockRobot>();
-  EXPECT_CALL(*mock_robot, stopRobot());
-  EXPECT_CALL(*mock_robot, initializeTorqueControl());
 
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
 
@@ -369,11 +355,7 @@ TEST(FrankaHardwareInterfaceTest,
 
 TEST(FrankaHardwareInterfaceTest,
      given_that_effort_control_started_perform_command_mode_switch_stop_expect_ok) {
-  GTEST_SKIP() << "requires update";
   auto mock_robot = std::make_unique<MockRobot>();
-  EXPECT_CALL(*mock_robot, stopRobot()).Times(2).WillRepeatedly(testing::Return());
-  EXPECT_CALL(*mock_robot, initializeTorqueControl());
-  EXPECT_CALL(*mock_robot, initializeContinuousReading());
 
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
 
