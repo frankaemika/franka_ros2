@@ -17,6 +17,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
     control_msgs
     controller_interface
     controller_manager
+    Franka
     franka_msgs
     franka_semantic_components
     generate_parameter_library
@@ -47,7 +48,7 @@ target_include_directories(
 generate_parameter_library(franka_robot_state_broadcaster_parameters src/franka_robot_state_broadcaster_parameters.yaml)
 
 target_link_libraries(franka_robot_state_broadcaster
-                      PUBLIC franka_robot_state_broadcaster_parameters)
+                      PUBLIC franka_robot_state_broadcaster_parameters Franka::Franka)
 ament_target_dependencies(franka_robot_state_broadcaster PUBLIC
                           ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
