@@ -22,7 +22,7 @@
 #include <string>
 #include <thread>
 
-#include <franka/active_control_interface.h>
+#include <franka/active_control.h>
 #include <franka/model.h>
 #include <franka/robot.h>
 #include <franka_hardware/model.hpp>
@@ -78,11 +78,10 @@ class Robot {
 
  private:
   std::unique_ptr<franka::Robot> robot_;
-  std::unique_ptr<franka::ActiveControlInterface> active_control_;
+  std::unique_ptr<franka::ActiveControl> active_control_;
   std::unique_ptr<franka::Model> model_;
   std::unique_ptr<Model> franka_hardware_model_;
 
-  std::array<double, 7> tau_command_{};
-  std::array<double, 7> tau_J_d_ = {0, 0, 0, 0, 0, 0, 0};
+  std::array<double, 7> last_desired_torque_ = {0, 0, 0, 0, 0, 0, 0};
 };
 }  // namespace franka_hardware

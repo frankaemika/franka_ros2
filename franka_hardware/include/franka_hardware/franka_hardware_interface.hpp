@@ -66,7 +66,6 @@ class FrankaHardwareInterface : public hardware_interface::SystemInterface {
   Model* hw_franka_model_ptr_ = nullptr;
 
   bool effort_interface_claimed_ = false;
-  bool effort_interface_running_ = false;
   static rclcpp::Logger getLogger();
 
   const std::string k_robot_name{"panda"};
