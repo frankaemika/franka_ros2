@@ -24,7 +24,7 @@
 
 #include <franka/active_control_interface.h>
 #include <franka/model.h>
-#include <franka/robot_interface.h>
+#include <franka/robot.h>
 #include <franka_hardware/model.hpp>
 #include <rclcpp/logger.hpp>
 
@@ -77,7 +77,7 @@ class Robot {
   Robot() = default;
 
  private:
-  std::unique_ptr<franka::RobotInterface> robot_;
+  std::unique_ptr<franka::Robot> robot_;
   std::unique_ptr<franka::ActiveControlInterface> active_control_;
   std::unique_ptr<franka::Model> model_;
   std::unique_ptr<Model> franka_hardware_model_;
