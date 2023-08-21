@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.2 - 2023-08-21
+
+Requires libfranka >= 0.11.0, required ROS 2 Humble
+
+* franka\_hardware: implement non-realtime parameter services
+
+
 ## 0.1.1 - 2023-08-21
 
 Requires libfranka >= 0.11.0, required ROS 2 Humble
@@ -11,7 +18,7 @@ Requires libfranka >= 0.11.0, required ROS 2 Humble
 Requires libfranka >= 0.10.0, required ROS 2 Humble
 
 * franka\_bringup: franka_robot_state broadcaster added to franka.launch.py.
-* franka\_example\_controllers: model printing read onyl controller implemented
+* franka\_example\_controllers: model printing read only controller implemented
 * franka\_robot\_model: semantic component to access robot model parameters.
 * franka\_msgs: franka robot state msg added
 * franka\_robot\_state: broadcaster publishes robot state.

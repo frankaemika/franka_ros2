@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <franka_hardware/robot.hpp>
-
 #include <cassert>
 #include <mutex>
 
 #include <franka/control_tools.h>
 #include <franka/rate_limiting.h>
 #include <rclcpp/logging.hpp>
+
+#include "franka_hardware/robot.hpp"
 
 namespace franka_hardware {
 
@@ -63,6 +63,109 @@ void Robot::stopRobot() {
 
 void Robot::initializeReadWriteInterface() {
   active_control_ = robot_->startTorqueControl();
+}
+
+void Robot::setJointStiffness(const franka_msgs::srv::SetJointStiffness::Request::SharedPtr& req) {
+  std::lock_guard<std::mutex> lock(write_mutex_);
+  std::array<double, 7> joint_stiffness{};
+  std::copy(req->joint_stiffness.cbegin(), req->joint_stiffness.cend(), joint_stiffness.begin());
+  robot_->setJointImpedance(joint_stiffness);
+}
+
+void Robot::setCartesianStiffness(
+    const franka_msgs::srv::SetCartesianStiffness::Request::SharedPtr& req) {
+  std::lock_guard<std::mutex> lock(write_mutex_);
+  std::array<double, 6> cartesian_stiffness{};
+  std::copy(req->cartesian_stiffness.cbegin(), req->cartesian_stiffness.cend(),
+            cartesian_stiffness.begin());
+  robot_->setCartesianImpedance(cartesian_stiffness);
+}
+
+void Robot::setLoad(const franka_msgs::srv::SetLoad::Request::SharedPtr& req) {
+  std::lock_guard<std::mutex> lock(write_mutex_);
+  double mass(req->mass);
+  std::array<double, 3> center_of_mass{};  // NOLINT [readability-identifier-naming]
+  std::copy(req->center_of_mass.cbegin(), req->center_of_mass.cend(), center_of_mass.begin());
+  std::array<double, 9> load_inertia{};
+  std::copy(req->load_inertia.cbegin(), req->load_inertia.cend(), load_inertia.begin());
+
+  robot_->setLoad(mass, center_of_mass, load_inertia);
+}
+
+void Robot::setTCPFrame(const franka_msgs::srv::SetTCPFrame::Request::SharedPtr& req) {
+  std::lock_guard<std::mutex> lock(write_mutex_);
+
+  std::array<double, 16> transformation{};  // NOLINT [readability-identifier-naming]
+  std::copy(req->transformation.cbegin(), req->transformation.cend(), transformation.begin());
+  robot_->setEE(transformation);
+}
+
+void Robot::setStiffnessFrame(const franka_msgs::srv::SetStiffnessFrame::Request::SharedPtr& req) {
+  std::lock_guard<std::mutex> lock(write_mutex_);
+
+  std::array<double, 16> transformation{};
+  std::copy(req->transformation.cbegin(), req->transformation.cend(), transformation.begin());
+  robot_->setK(transformation);
+}
+
+void Robot::setForceTorqueCollisionBehavior(
+    const franka_msgs::srv::SetForceTorqueCollisionBehavior::Request::SharedPtr& req) {
+  std::lock_guard<std::mutex> lock(write_mutex_);
+
+  std::array<double, 7> lower_torque_thresholds_nominal{};
+  std::copy(req->lower_torque_thresholds_nominal.cbegin(),
+            req->lower_torque_thresholds_nominal.cend(), lower_torque_thresholds_nominal.begin());
+  std::array<double, 7> upper_torque_thresholds_nominal{};
+  std::copy(req->upper_torque_thresholds_nominal.cbegin(),
+            req->upper_torque_thresholds_nominal.cend(), upper_torque_thresholds_nominal.begin());
+  std::array<double, 6> lower_force_thresholds_nominal{};
+  std::copy(req->lower_force_thresholds_nominal.cbegin(),
+            req->lower_force_thresholds_nominal.cend(), lower_force_thresholds_nominal.begin());
+  std::array<double, 6> upper_force_thresholds_nominal{};
+  std::copy(req->upper_force_thresholds_nominal.cbegin(),
+            req->upper_force_thresholds_nominal.cend(), upper_force_thresholds_nominal.begin());
+
+  robot_->setCollisionBehavior(lower_torque_thresholds_nominal, upper_torque_thresholds_nominal,
+                               lower_force_thresholds_nominal, upper_force_thresholds_nominal);
+}
+
+void Robot::setFullCollisionBehavior(
+    const franka_msgs::srv::SetFullCollisionBehavior::Request::SharedPtr& req) {
+  std::lock_guard<std::mutex> lock(write_mutex_);
+
+  std::array<double, 7> lower_torque_thresholds_acceleration{};
+  std::copy(req->lower_torque_thresholds_acceleration.cbegin(),
+            req->lower_torque_thresholds_acceleration.cend(),
+            lower_torque_thresholds_acceleration.begin());
+  std::array<double, 7> upper_torque_thresholds_acceleration{};
+  std::copy(req->upper_torque_thresholds_acceleration.cbegin(),
+            req->upper_torque_thresholds_acceleration.cend(),
+            upper_torque_thresholds_acceleration.begin());
+  std::array<double, 7> lower_torque_thresholds_nominal{};
+  std::copy(req->lower_torque_thresholds_nominal.cbegin(),
+            req->lower_torque_thresholds_nominal.cend(), lower_torque_thresholds_nominal.begin());
+  std::array<double, 7> upper_torque_thresholds_nominal{};
+  std::copy(req->upper_torque_thresholds_nominal.cbegin(),
+            req->upper_torque_thresholds_nominal.cend(), upper_torque_thresholds_nominal.begin());
+  std::array<double, 6> lower_force_thresholds_acceleration{};
+  std::copy(req->lower_force_thresholds_acceleration.cbegin(),
+            req->lower_force_thresholds_acceleration.cend(),
+            lower_force_thresholds_acceleration.begin());
+  std::array<double, 6> upper_force_thresholds_acceleration{};
+  std::copy(req->upper_force_thresholds_acceleration.cbegin(),
+            req->upper_force_thresholds_acceleration.cend(),
+            upper_force_thresholds_acceleration.begin());
+  std::array<double, 6> lower_force_thresholds_nominal{};
+  std::copy(req->lower_force_thresholds_nominal.cbegin(),
+            req->lower_force_thresholds_nominal.cend(), lower_force_thresholds_nominal.begin());
+  std::array<double, 6> upper_force_thresholds_nominal{};
+  std::copy(req->upper_force_thresholds_nominal.cbegin(),
+            req->upper_force_thresholds_nominal.cend(), upper_force_thresholds_nominal.begin());
+  robot_->setCollisionBehavior(
+      lower_torque_thresholds_acceleration, upper_torque_thresholds_acceleration,
+      lower_torque_thresholds_nominal, upper_torque_thresholds_nominal,
+      lower_force_thresholds_acceleration, upper_force_thresholds_acceleration,
+      lower_force_thresholds_nominal, upper_force_thresholds_nominal);
 }
 
 Robot::~Robot() {

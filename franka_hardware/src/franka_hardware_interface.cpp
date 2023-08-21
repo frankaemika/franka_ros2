@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <franka_hardware/franka_hardware_interface.hpp>
-
 #include <algorithm>
 #include <cmath>
 #include <exception>
@@ -27,12 +25,14 @@
 #include <rclcpp/macros.hpp>
 #include <rclcpp/rclcpp.hpp>
 
+#include "franka_hardware/franka_hardware_interface.hpp"
+
 namespace franka_hardware {
 
 using StateInterface = hardware_interface::StateInterface;
 using CommandInterface = hardware_interface::CommandInterface;
 
-FrankaHardwareInterface::FrankaHardwareInterface(std::unique_ptr<Robot> robot)
+FrankaHardwareInterface::FrankaHardwareInterface(std::shared_ptr<Robot> robot)
     : robot_{std::move(robot)} {}
 
 std::vector<StateInterface> FrankaHardwareInterface::export_state_interfaces() {
@@ -162,7 +162,7 @@ CallbackReturn FrankaHardwareInterface::on_init(const hardware_interface::Hardwa
     }
     try {
       RCLCPP_INFO(getLogger(), "Connecting to robot at \"%s\" ...", robot_ip.c_str());
-      robot_ = std::make_unique<Robot>(robot_ip, getLogger());
+      robot_ = std::make_shared<Robot>(robot_ip, getLogger());
     } catch (const franka::Exception& e) {
       RCLCPP_FATAL(getLogger(), "Could not connect to robot");
       RCLCPP_FATAL(getLogger(), "%s", e.what());
@@ -170,6 +170,10 @@ CallbackReturn FrankaHardwareInterface::on_init(const hardware_interface::Hardwa
     }
     RCLCPP_INFO(getLogger(), "Successfully connected to robot");
   }
+
+  node_ = std::make_shared<FrankaParamServiceServer>(rclcpp::NodeOptions(), robot_);
+  executor_ = std::make_shared<FrankaExecutor>();
+  executor_->add_node(node_);
   return CallbackReturn::SUCCESS;
 }
 
