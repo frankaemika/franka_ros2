@@ -19,17 +19,22 @@ find_package(franka_msgs REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(pluginlib REQUIRED)
 find_package(Franka 0.11.0 REQUIRED)
-
+find_package(rclcpp_components REQUIRED)
 
 add_library(franka_hardware
         SHARED
         src/franka_hardware_interface.cpp
-        src/robot.cpp)
+        src/robot.cpp
+        src/franka_param_service_server.cpp
+        src/franka_executor.cpp
+)
+
 target_include_directories(
         franka_hardware
         PRIVATE
         include
 )
+
 ament_target_dependencies(
         franka_hardware
         hardware_interface
@@ -38,6 +43,7 @@ ament_target_dependencies(
         rclcpp
         franka_msgs
 )
+
 pluginlib_export_plugin_description_file(hardware_interface franka_hardware.xml)
 
 
@@ -49,7 +55,6 @@ install(
         DIRECTORY include/
         DESTINATION include
 )
-
 
 if(BUILD_TESTING)
     find_package(ament_cmake_clang_format REQUIRED)
@@ -81,6 +86,7 @@ endif()
 ament_export_include_directories(
         include
 )
+
 ament_export_libraries(
         franka_hardware
 )
