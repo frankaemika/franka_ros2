@@ -1,10 +1,10 @@
 # Changelog
 
-## 0.x.y - unreleased
+## 0.1.1 - 2023-08-21
 
 Requires libfranka >= 0.11.0, required ROS 2 Humble
 
-* franka\_hardware package uses updated libfranka version providing the possibility to have the control loop on the ROS side
+* franka\_hardware: uses updated libfranka version providing the possibility to have the control loop on the ROS side
 
 ## 0.1.0 - 2023-07-28
 
