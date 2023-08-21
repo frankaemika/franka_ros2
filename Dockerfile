@@ -59,7 +59,7 @@ RUN python3 -m pip install -U \
 RUN mkdir ~/source_code    
 RUN cd ~/source_code && git clone https://github.com/frankaemika/libfranka.git \
     && cd libfranka \
-    && git checkout 5c3a5a57e26c1c360b63a4a112c7731bd4bcd515 \
+    && git checkout 9a9e949a85e82011e22f637a8f1e274b4dcd6e05 \
     && git submodule init \
     && git submodule update \
     && mkdir build && cd build \
