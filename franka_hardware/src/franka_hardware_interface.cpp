@@ -90,10 +90,11 @@ hardware_interface::return_type FrankaHardwareInterface::read(const rclcpp::Time
   if (hw_franka_model_ptr_ == nullptr) {
     hw_franka_model_ptr_ = robot_->getModel();
   }
-  const auto kRobotState = robot_->readOnce();
-  hw_positions_ = kRobotState.q;
-  hw_velocities_ = kRobotState.dq;
-  hw_efforts_ = kRobotState.tau_J;
+
+  hw_franka_robot_state_ = robot_->readOnce();
+  hw_positions_ = hw_franka_robot_state_.q;
+  hw_velocities_ = hw_franka_robot_state_.dq;
+  hw_efforts_ = hw_franka_robot_state_.tau_J;
 
   return hardware_interface::return_type::OK;
 }
