@@ -186,6 +186,7 @@ TEST(
 
   EXPECT_CALL(*mock_robot, getModel()).WillOnce(testing::Return(model_address));
   EXPECT_CALL(*mock_robot, readOnce()).WillOnce(testing::Return(robot_state));
+
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
 
   const auto hardware_info = createHardwareInfo();
@@ -226,8 +227,8 @@ TEST(
 
   MockModel mock_model;
   MockModel* model_address = &mock_model;
-
   EXPECT_CALL(*mock_robot, readOnce()).WillOnce(testing::Return(robot_state));
+
   EXPECT_CALL(*mock_robot, getModel()).WillOnce(testing::Return(model_address));
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
 
@@ -258,7 +259,6 @@ TEST(
 
   MockModel mock_model;
   MockModel* model_address = &mock_model;
-
   EXPECT_CALL(*mock_robot, readOnce()).WillOnce(testing::Return(robot_state));
   EXPECT_CALL(*mock_robot, getModel()).WillOnce(testing::Return(model_address));
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
@@ -366,6 +366,20 @@ TEST(FrankaHardwareIntefaceTest, when_write_called_expect_ok) {
 
   const auto hardware_info = createHardwareInfo();
   franka_hardware_interface.on_init(hardware_info);
+  std::vector<std::string> start_interface;
+
+  for (size_t i = 0; i < hardware_info.joints.size(); i++) {
+    const std::string joint_name = k_joint_name + std::to_string(i);
+    start_interface.push_back(joint_name + "/" + k_effort_controller);
+  }
+
+  std::vector<std::string> stop_interface = {};
+
+  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+            hardware_interface::return_type::OK);
+  // can call write only after switching to the torque controller
+  EXPECT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
+            hardware_interface::return_type::OK);
 
   const auto time = rclcpp::Time(0, 0);
   const auto duration = rclcpp::Duration(0, 0);
@@ -382,7 +396,6 @@ TEST(FrankaHardwareInterfaceTest, when_on_activate_called_expect_success) {
   auto mock_robot = std::make_shared<MockRobot>();
   EXPECT_CALL(*mock_robot, readOnce()).WillOnce(testing::Return(robot_state));
   EXPECT_CALL(*mock_robot, getModel()).WillOnce(testing::Return(model_address));
-  EXPECT_CALL(*mock_robot, initializeReadWriteInterface());
 
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
 
@@ -424,6 +437,21 @@ TEST(FrankaHardwareInterfaceTest,
 
   EXPECT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
+}
+
+TEST(FrankaHardwareInterfaceTest,
+     given_effort_interface_not_claimed_when_write_called_expect_error_response) {
+  auto mock_robot = std::make_shared<MockRobot>();
+
+  franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
+
+  const auto time = rclcpp::Time(0, 0);
+  const auto duration = rclcpp::Duration(0, 0);
+
+  const auto hardware_info = createHardwareInfo();
+  franka_hardware_interface.on_init(hardware_info);
+  EXPECT_EQ(franka_hardware_interface.write(time, duration),
+            hardware_interface::return_type::ERROR);
 }
 
 TEST(FrankaHardwareInterfaceTest,

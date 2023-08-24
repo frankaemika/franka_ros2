@@ -60,11 +60,11 @@ class Robot {
   /// Starts a read / write communication with the connected robot
   virtual void initializeReadWriteInterface();
 
-  /// stops the read / write communication with the connected robot
+  /// stops the read continous communication with the connected robot
   virtual void stopRobot();
 
   /**
-   * Get the current robot state in a thread-safe way.
+   * Get the current robot state
    * @return current robot state.
    */
   virtual franka::RobotState readOnce();
@@ -192,7 +192,14 @@ class Robot {
   Robot() = default;
 
  private:
+  /**
+   * Get the current robot state, when the controller is active
+   * @return current robot state.
+   */
+  virtual franka::RobotState readOnceActiveControl();
+
   std::mutex write_mutex_;
+  std::mutex control_mutex_;
 
   std::unique_ptr<franka::Robot> robot_;
   std::unique_ptr<franka::ActiveControl> active_control_;
@@ -200,5 +207,7 @@ class Robot {
   std::unique_ptr<Model> franka_hardware_model_;
 
   std::array<double, 7> last_desired_torque_ = {0, 0, 0, 0, 0, 0, 0};
+  bool control_loop_active_{false};
+  franka::RobotState current_state_;
 };
 }  // namespace franka_hardware

@@ -39,7 +39,29 @@ Robot::Robot(const std::string& robot_ip, const rclcpp::Logger& logger) {
   franka_hardware_model_ = std::make_unique<Model>(model_.get());
 }
 
+Robot::~Robot() {
+  stopRobot();
+}
+
+franka::RobotState Robot::readOnce() {
+  std::lock_guard<std::mutex> lock(control_mutex_);
+  if (!control_loop_active_) {
+    return robot_->readOnce();
+  } else {
+    return readOnceActiveControl();
+  }
+}
+
+void Robot::stopRobot() {
+  if (control_loop_active_) {
+    control_loop_active_ = false;
+    active_control_.reset();
+  }
+}
+
 void Robot::writeOnce(const std::array<double, 7>& efforts) {
+  std::lock_guard<std::mutex> lock(control_mutex_);
+
   auto torque_command = franka::Torques(efforts);
   torque_command.tau_J =
       franka::limitRate(franka::kMaxTorqueRate, torque_command.tau_J, last_desired_torque_);
@@ -48,7 +70,8 @@ void Robot::writeOnce(const std::array<double, 7>& efforts) {
   active_control_->writeOnce(torque_command);
 }
 
-franka::RobotState Robot::readOnce() {
+franka::RobotState Robot::readOnceActiveControl() {
+  // When controller is active use active control to read the robot state
   const auto [robot_state, _] = active_control_->readOnce();
   return robot_state;
 }
@@ -57,11 +80,8 @@ franka_hardware::Model* Robot::getModel() {
   return franka_hardware_model_.get();
 }
 
-void Robot::stopRobot() {
-  active_control_.reset();
-}
-
 void Robot::initializeReadWriteInterface() {
+  control_loop_active_ = true;
   active_control_ = robot_->startTorqueControl();
 }
 
@@ -166,10 +186,6 @@ void Robot::setFullCollisionBehavior(
       lower_torque_thresholds_nominal, upper_torque_thresholds_nominal,
       lower_force_thresholds_acceleration, upper_force_thresholds_acceleration,
       lower_force_thresholds_nominal, upper_force_thresholds_nominal);
-}
-
-Robot::~Robot() {
-  stopRobot();
 }
 
 }  // namespace franka_hardware
