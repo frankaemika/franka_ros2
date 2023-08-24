@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3 - 2023-08-24
+
+Requires libfranka >= 0.11.0, required ROS 2 Humble
+
+* franka\_hardware: hotfix start controller when user claims the command interface
+
 ## 0.1.2 - 2023-08-21
 
 Requires libfranka >= 0.11.0, required ROS 2 Humble

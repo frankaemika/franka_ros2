@@ -69,7 +69,6 @@ std::vector<CommandInterface> FrankaHardwareInterface::export_command_interfaces
 
 CallbackReturn FrankaHardwareInterface::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
-  robot_->initializeReadWriteInterface();
   hw_commands_.fill(0);
   read(rclcpp::Time(0),
        rclcpp::Duration(0, 0));  // makes sure that the robot state is properly initialized.
@@ -105,8 +104,13 @@ hardware_interface::return_type FrankaHardwareInterface::write(const rclcpp::Tim
                   [](double hw_command) { return !std::isfinite(hw_command); })) {
     return hardware_interface::return_type::ERROR;
   }
-
-  robot_->writeOnce(hw_commands_);
+  if (effort_interface_running_) {
+    robot_->writeOnce(hw_commands_);
+  } else {
+    RCLCPP_FATAL(getLogger(),
+                 "Effort interface is not running. Did you claim the command interface?");
+    return hardware_interface::return_type::ERROR;
+  }
   return hardware_interface::return_type::OK;
 }
 
@@ -185,6 +189,14 @@ rclcpp::Logger FrankaHardwareInterface::getLogger() {
 hardware_interface::return_type FrankaHardwareInterface::perform_command_mode_switch(
     const std::vector<std::string>& /*start_interfaces*/,
     const std::vector<std::string>& /*stop_interfaces*/) {
+  if (!effort_interface_running_ && effort_interface_claimed_) {
+    robot_->stopRobot();
+    robot_->initializeReadWriteInterface();
+    effort_interface_running_ = true;
+  } else if (effort_interface_running_ && !effort_interface_claimed_) {
+    robot_->stopRobot();
+    effort_interface_running_ = false;
+  }
   return hardware_interface::return_type::OK;
 }
 
