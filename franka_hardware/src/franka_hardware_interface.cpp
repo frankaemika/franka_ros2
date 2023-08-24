@@ -106,10 +106,6 @@ hardware_interface::return_type FrankaHardwareInterface::write(const rclcpp::Tim
   }
   if (effort_interface_running_) {
     robot_->writeOnce(hw_commands_);
-  } else {
-    RCLCPP_FATAL(getLogger(),
-                 "Effort interface is not running. Did you claim the command interface?");
-    return hardware_interface::return_type::ERROR;
   }
   return hardware_interface::return_type::OK;
 }
