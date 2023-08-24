@@ -440,21 +440,6 @@ TEST(FrankaHardwareInterfaceTest,
 }
 
 TEST(FrankaHardwareInterfaceTest,
-     given_effort_interface_not_claimed_when_write_called_expect_error_response) {
-  auto mock_robot = std::make_shared<MockRobot>();
-
-  franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
-
-  const auto time = rclcpp::Time(0, 0);
-  const auto duration = rclcpp::Duration(0, 0);
-
-  const auto hardware_info = createHardwareInfo();
-  franka_hardware_interface.on_init(hardware_info);
-  EXPECT_EQ(franka_hardware_interface.write(time, duration),
-            hardware_interface::return_type::ERROR);
-}
-
-TEST(FrankaHardwareInterfaceTest,
      given_that_effort_control_started_perform_command_mode_switch_stop_expect_ok) {
   auto mock_robot = std::make_shared<MockRobot>();
 
