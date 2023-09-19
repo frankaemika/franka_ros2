@@ -63,6 +63,8 @@ std::vector<CommandInterface> FrankaHardwareInterface::export_command_interfaces
   for (auto i = 0U; i < info_.joints.size(); i++) {
     command_interfaces.emplace_back(CommandInterface(
         info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &hw_commands_.at(i)));
+    command_interfaces.emplace_back(CommandInterface(
+        info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_velocity_commands_.at(i)));
   }
   return command_interfaces;
 }
@@ -104,8 +106,14 @@ hardware_interface::return_type FrankaHardwareInterface::write(const rclcpp::Tim
                   [](double hw_command) { return !std::isfinite(hw_command); })) {
     return hardware_interface::return_type::ERROR;
   }
+  if (std::any_of(hw_velocity_commands_.begin(), hw_velocity_commands_.end(),
+                  [](double hw_command) { return !std::isfinite(hw_command); })) {
+    return hardware_interface::return_type::ERROR;
+  }
   if (effort_interface_running_) {
     robot_->writeOnce(hw_commands_);
+  } else if (velocity_interface_running_) {
+    robot_->writeOnceVelocities(hw_velocity_commands_);
   }
   return hardware_interface::return_type::OK;
 }
@@ -193,6 +201,16 @@ hardware_interface::return_type FrankaHardwareInterface::perform_command_mode_sw
     robot_->stopRobot();
     effort_interface_running_ = false;
   }
+
+  if (!velocity_interface_running_ && velocity_interface_claimed_) {
+    robot_->stopRobot();
+    robot_->initializeJointVelocityInterface();
+    velocity_interface_running_ = true;
+  } else if (velocity_interface_running_ && !velocity_interface_claimed_) {
+    robot_->stopRobot();
+    hw_velocity_commands_ = {0, 0, 0, 0, 0, 0, 0};
+    velocity_interface_running_ = false;
+  }
   return hardware_interface::return_type::OK;
 }
 
@@ -201,6 +219,10 @@ hardware_interface::return_type FrankaHardwareInterface::prepare_command_mode_sw
     const std::vector<std::string>& stop_interfaces) {
   auto is_effort_interface = [](const std::string& interface) {
     return interface.find(hardware_interface::HW_IF_EFFORT) != std::string::npos;
+  };
+
+  auto is_velocity_interface = [](const std::string& interface) {
+    return interface.find(hardware_interface::HW_IF_VELOCITY) != std::string::npos;
   };
 
   int64_t num_stop_effort_interfaces =
@@ -226,6 +248,33 @@ hardware_interface::return_type FrankaHardwareInterface::prepare_command_mode_sw
     error_string += std::to_string(kNumberOfJoints);
     throw std::invalid_argument(error_string);
   }
+
+  int64_t num_stop_velocity_interfaces =
+      std::count_if(stop_interfaces.begin(), stop_interfaces.end(), is_velocity_interface);
+  if (num_stop_velocity_interfaces == kNumberOfJoints) {
+    velocity_interface_claimed_ = false;
+  } else if (num_stop_velocity_interfaces != 0) {
+    RCLCPP_FATAL(this->getLogger(),
+                 "Expected %ld velocity interfaces to stop, but got %ld instead.", kNumberOfJoints,
+                 num_stop_velocity_interfaces);
+    std::string error_string = "Invalid number of velocity interfaces to stop. Expected ";
+    error_string += std::to_string(kNumberOfJoints);
+    throw std::invalid_argument(error_string);
+  }
+
+  int64_t num_start_velocity_interfaces =
+      std::count_if(start_interfaces.begin(), start_interfaces.end(), is_velocity_interface);
+  if (num_start_velocity_interfaces == kNumberOfJoints) {
+    velocity_interface_claimed_ = true;
+  } else if (num_start_velocity_interfaces != 0) {
+    RCLCPP_FATAL(this->getLogger(),
+                 "Expected %ld velocity interfaces to start, but got %ld instead.", kNumberOfJoints,
+                 num_start_velocity_interfaces);
+    std::string error_string = "Invalid number of velocity interfaces to start. Expected ";
+    error_string += std::to_string(kNumberOfJoints);
+    throw std::invalid_argument(error_string);
+  }
+
   return hardware_interface::return_type::OK;
 }
 }  // namespace franka_hardware

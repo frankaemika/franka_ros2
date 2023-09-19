@@ -23,6 +23,7 @@
 #include <thread>
 
 #include <franka/active_control.h>
+#include <franka/active_motion_generator.h>
 #include <franka/active_torque_control.h>
 
 #include <franka/model.h>
@@ -62,6 +63,9 @@ class Robot {
   /// Starts a read / write communication with the connected robot
   virtual void initializeReadWriteInterface();
 
+  /// Starts a read / write communication with the connected robot
+  virtual void initializeJointVelocityInterface();
+
   /// stops the read continous communication with the connected robot
   virtual void stopRobot();
 
@@ -78,11 +82,16 @@ class Robot {
   virtual franka_hardware::Model* getModel();
 
   /**
-   * Sends new desired torque commands to the control loop in a thread-safe way.
    * The robot will use these torques until a different set of torques are commanded.
    * @param[in] efforts torque command for each joint.
    */
   virtual void writeOnce(const std::array<double, 7>& efforts);
+
+  /**
+   * The robot will use these velocities until a different set of velocities are commanded.
+   * @param[in] velocities torque command for each joint.
+   */
+  virtual void writeOnceVelocities(const std::array<double, 7>& velocities);
 
   /**
    * Sets the impedance for each joint in the internal controller.

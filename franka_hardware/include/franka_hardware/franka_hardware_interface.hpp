@@ -63,6 +63,7 @@ class FrankaHardwareInterface : public hardware_interface::SystemInterface {
   std::shared_ptr<FrankaExecutor> executor_;
 
   std::array<double, kNumberOfJoints> hw_commands_{0, 0, 0, 0, 0, 0, 0};
+  std::array<double, kNumberOfJoints> hw_velocity_commands_{0, 0, 0, 0, 0, 0, 0};
   std::array<double, kNumberOfJoints> hw_positions_{0, 0, 0, 0, 0, 0, 0};
   std::array<double, kNumberOfJoints> hw_velocities_{0, 0, 0, 0, 0, 0, 0};
   std::array<double, kNumberOfJoints> hw_efforts_{0, 0, 0, 0, 0, 0, 0};
@@ -72,6 +73,9 @@ class FrankaHardwareInterface : public hardware_interface::SystemInterface {
 
   bool effort_interface_claimed_ = false;
   bool effort_interface_running_ = false;
+
+  bool velocity_interface_claimed_ = false;
+  bool velocity_interface_running_ = false;
 
   static rclcpp::Logger getLogger();
 

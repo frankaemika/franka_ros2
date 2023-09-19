@@ -17,6 +17,7 @@
 
 #include <franka/control_tools.h>
 #include <franka/rate_limiting.h>
+#include <research_interface/robot/rbk_types.h>
 #include <rclcpp/logging.hpp>
 
 #include "franka_hardware/robot.hpp"
@@ -46,7 +47,8 @@ Robot::~Robot() {
 franka::RobotState Robot::readOnce() {
   std::lock_guard<std::mutex> lock(control_mutex_);
   if (!control_loop_active_) {
-    return robot_->readOnce();
+    current_state_ = robot_->readOnce();
+    return current_state_;
   } else {
     return readOnceActiveControl();
   }
@@ -70,10 +72,23 @@ void Robot::writeOnce(const std::array<double, 7>& efforts) {
   active_control_->writeOnce(torque_command);
 }
 
+void Robot::writeOnceVelocities(const std::array<double, 7>& velocities) {
+  std::lock_guard<std::mutex> lock(control_mutex_);
+
+  auto velocity_command = franka::JointVelocities(velocities);
+
+  velocity_command.dq = franka::limitRate(
+      franka::computeUpperLimitsJointVelocity(current_state_.q_d),
+      franka::computeLowerLimitsJointVelocity(current_state_.q_d), franka::kMaxJointAcceleration,
+      franka::kMaxJointJerk, velocity_command.dq, current_state_.dq_d, current_state_.ddq_d);
+
+  active_control_->writeOnce(velocity_command);
+}
+
 franka::RobotState Robot::readOnceActiveControl() {
   // When controller is active use active control to read the robot state
-  const auto [robot_state, _] = active_control_->readOnce();
-  return robot_state;
+  const auto [current_state_, _] = active_control_->readOnce();
+  return current_state_;
 }
 
 franka_hardware::Model* Robot::getModel() {
@@ -83,6 +98,12 @@ franka_hardware::Model* Robot::getModel() {
 void Robot::initializeReadWriteInterface() {
   control_loop_active_ = true;
   active_control_ = robot_->startTorqueControl();
+}
+
+void Robot::initializeJointVelocityInterface() {
+  control_loop_active_ = true;
+  active_control_ = robot_->startJointVelocityControl(
+      research_interface::robot::Move::ControllerMode::kJointImpedance);
 }
 
 void Robot::setJointStiffness(const franka_msgs::srv::SetJointStiffness::Request::SharedPtr& req) {

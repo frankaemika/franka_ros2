@@ -8,6 +8,9 @@ controller_manager:
     joint_impedance_example_controller:
       type: franka_example_controllers/JointImpedanceExampleController
 
+    joint_velocity_example_controller:
+      type: franka_example_controllers/JointVelocityExampleController
+
     move_to_start_example_controller:
       type: franka_example_controllers/MoveToStartExampleController
 

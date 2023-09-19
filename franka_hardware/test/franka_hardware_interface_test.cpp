@@ -85,8 +85,8 @@ auto createHardwareInfo() -> hardware_interface::HardwareInfo {
   hw_params["robot_ip"] = "dummy_ip";
 
   info.hardware_parameters = hw_params;
-  hardware_interface::InterfaceInfo command_interface, effort_state_interface,
-      position_state_interface, velocity_state_interface;
+  hardware_interface::InterfaceInfo command_effort_interface, command_velocity_interface,
+      effort_state_interface, position_state_interface, velocity_state_interface;
 
   effort_state_interface.name = hardware_interface::HW_IF_EFFORT;
   position_state_interface.name = hardware_interface::HW_IF_POSITION;
@@ -95,14 +95,17 @@ auto createHardwareInfo() -> hardware_interface::HardwareInfo {
   std::vector<hardware_interface::InterfaceInfo> state_interfaces = {
       position_state_interface, velocity_state_interface, effort_state_interface};
 
+  command_effort_interface.name = k_effort_controller;
+  command_velocity_interface.name = k_velocity_controller;
+
   for (auto i = 0U; i < k_number_of_joints; i++) {
     hardware_interface::ComponentInfo joint;
 
     joint.name = k_joint_name + std::to_string(i + 1);
 
-    command_interface.name = k_effort_controller;
+    joint.command_interfaces.push_back(command_effort_interface);
+    joint.command_interfaces.push_back(command_velocity_interface);
 
-    joint.command_interfaces.push_back(command_interface);
     joint.state_interfaces = state_interfaces;
 
     info.joints.push_back(joint);
