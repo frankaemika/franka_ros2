@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.4 - 2023-09-26
+
+Requires libfranka >= 0.12.1, required ROS 2 Humble
+
+* franka\_hardware: adapt to libfranka active control v0.12.1
+
+
 ## 0.1.3 - 2023-08-24
 
 Requires libfranka >= 0.11.0, required ROS 2 Humble
