@@ -23,6 +23,8 @@
 #include <thread>
 
 #include <franka/active_control.h>
+#include <franka/active_torque_control.h>
+
 #include <franka/model.h>
 #include <franka/robot.h>
 #include <franka_hardware/model.hpp>
