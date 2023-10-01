@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Franka Emika GmbH
+// Copyright (c) 2023 Franka Emika GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -35,34 +35,29 @@ GravityCompensationExampleController::state_interface_configuration() const {
   return {};
 }
 
-controller_interface::return_type GravityCompensationExampleController::update() {
+controller_interface::return_type GravityCompensationExampleController::update(
+    const rclcpp::Time& /*time*/,
+    const rclcpp::Duration& /*period*/) {
   for (auto& command_interface : command_interfaces_) {
     command_interface.set_value(0);
   }
   return controller_interface::return_type::OK;
 }
 
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-GravityCompensationExampleController::on_configure(
+CallbackReturn GravityCompensationExampleController::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
-  arm_id_ = node_->get_parameter("arm_id").as_string();
+  arm_id_ = get_node()->get_parameter("arm_id").as_string();
   return CallbackReturn::SUCCESS;
 }
 
-controller_interface::return_type GravityCompensationExampleController::init(
-    const std::string& controller_name) {
-  auto ret = ControllerInterface::init(controller_name);
-  if (ret != controller_interface::return_type::OK) {
-    return ret;
-  }
-
+CallbackReturn GravityCompensationExampleController::on_init() {
   try {
     auto_declare<std::string>("arm_id", "panda");
   } catch (const std::exception& e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return controller_interface::return_type::ERROR;
+    return CallbackReturn::ERROR;
   }
-  return controller_interface::return_type::OK;
+  return CallbackReturn::SUCCESS;
 }
 }  // namespace franka_example_controllers
 #include "pluginlib/class_list_macros.hpp"

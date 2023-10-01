@@ -1,6 +1,6 @@
 pipeline {
     agent {
-         dockerfile true 
+        dockerfile true 
     }
     triggers {
         pollSCM('H/5 * * * *')
@@ -17,7 +17,7 @@ pipeline {
         stage('Build') {
             steps {
                 sh '''
-                    . /opt/ros/foxy/setup.sh
+                    . /opt/ros/humble/setup.sh
                     colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCHECK_TIDY=ON
                 '''
             }
@@ -25,7 +25,7 @@ pipeline {
         stage('Test') {
             steps {
                 sh '''
-                    . /opt/ros/foxy/setup.sh
+                    . /opt/ros/humble/setup.sh
                     . install/setup.sh
                     colcon test
                     colcon test-result

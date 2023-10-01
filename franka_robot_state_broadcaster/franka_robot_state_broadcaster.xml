@@ -1,0 +1,9 @@
+<library path="franka_robot_state_broadcaster">
+  <class name="franka_robot_state_broadcaster/FrankaRobotStateBroadcaster"
+         type="franka_robot_state_broadcaster::FrankaRobotStateBroadcaster"
+         base_class_type="controller_interface::ControllerInterface">
+  <description>
+    The franka state broadcaster publishes the full states of franka robots from ros2_control system.
+  </description>
+  </class>
+</library>

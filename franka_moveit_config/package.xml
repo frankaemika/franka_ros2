@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>franka_moveit_config</name>
-  <version>0.0.0</version>
+  <version>0.1.4</version>
   <description>Contains Moveit2 configuration files for Franka Emika research robots</description>
   <maintainer email="support@franka.de">Franka Emika GmbH</maintainer>
   <license>Apache 2.0</license>
@@ -15,7 +15,6 @@
   <exec_depend>joint_state_publisher</exec_depend>
   <exec_depend>robot_state_publisher</exec_depend>
   <exec_depend>joint_state_broadcaster</exec_depend>
-  <exec_depend>warehouse_ros_mongo</exec_depend>
   <exec_depend>controller_manager</exec_depend>
   <exec_depend>moveit_ros_move_group</exec_depend>
   <exec_depend>moveit_kinematics</exec_depend>

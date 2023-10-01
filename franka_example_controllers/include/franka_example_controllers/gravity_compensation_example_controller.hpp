@@ -1,4 +1,4 @@
-// Copyright (c) 2021 Franka Emika GmbH
+// Copyright (c) 2023 Franka Emika GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,8 +17,12 @@
 #include <string>
 
 #include <controller_interface/controller_interface.hpp>
+#include "franka_example_controllers/visibility_control.h"
+
 #include <rclcpp/duration.hpp>
 #include <rclcpp/time.hpp>
+
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 namespace franka_example_controllers {
 
@@ -28,11 +32,23 @@ namespace franka_example_controllers {
  */
 class GravityCompensationExampleController : public controller_interface::ControllerInterface {
  public:
+  FRANKA_EXAMPLE_CONTROLLERS_PUBLIC
   CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
-  controller_interface::return_type init(const std::string& controller_name) override;
-  controller_interface::InterfaceConfiguration command_interface_configuration() const override;
-  controller_interface::InterfaceConfiguration state_interface_configuration() const override;
-  controller_interface::return_type update() override;
+
+  FRANKA_EXAMPLE_CONTROLLERS_PUBLIC
+  CallbackReturn on_init() override;
+
+  FRANKA_EXAMPLE_CONTROLLERS_PUBLIC
+  [[nodiscard]] controller_interface::InterfaceConfiguration command_interface_configuration()
+      const override;
+
+  FRANKA_EXAMPLE_CONTROLLERS_PUBLIC
+  [[nodiscard]] controller_interface::InterfaceConfiguration state_interface_configuration()
+      const override;
+
+  FRANKA_EXAMPLE_CONTROLLERS_PUBLIC
+  controller_interface::return_type update(const rclcpp::Time& time,
+                                           const rclcpp::Duration& period) override;
 
  private:
   std::string arm_id_;

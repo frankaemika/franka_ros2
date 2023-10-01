@@ -1,21 +1,45 @@
-FROM ros:foxy
+FROM ros:humble
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+ARG USER_UID=1001
+ARG USER_GID=1001
+ARG USERNAME=user
+
+WORKDIR /tmp
+
+RUN groupadd --gid $USER_GID $USERNAME \
+    && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME \
+    #
+    # [Optional] Add sudo support. Omit if you don't need to install software after connecting.
+    && apt-get update \
+    && apt-get install -y sudo \
+    && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME \
+    && chmod 0440 /etc/sudoers.d/$USERNAME
+
 RUN apt-get update -y && apt-get install -y --allow-unauthenticated \
-    clang-6.0 \
-    clang-format-6.0 \
-    clang-tidy-6.0 \
+    clang-14 \
+    clang-format-14 \
+    clang-tidy-14 \
     python3-pip \
     libpoco-dev \
     libeigen3-dev \
-    ros-foxy-control-msgs \
-    ros-foxy-xacro \
-    ros-foxy-ament-cmake-clang-format \
-    ros-foxy-ament-clang-format \
-    ros-foxy-ament-flake8 \
-    ros-foxy-ament-cmake-clang-tidy \
-    ros-foxy-angles \
-    ros-foxy-ros2-control \
-    ros-foxy-realtime-tools \
-    ros-foxy-control-toolbox \
+    ros-humble-control-msgs \
+    ros-humble-xacro \
+    ros-humble-ament-cmake-clang-format \
+    ros-humble-ament-clang-format \
+    ros-humble-ament-flake8 \
+    ros-humble-ament-cmake-clang-tidy \
+    ros-humble-angles \
+    ros-humble-ros2-control \
+    ros-humble-realtime-tools \
+    ros-humble-control-toolbox \    
+    ros-humble-controller-manager \
+    ros-humble-hardware-interface \
+    ros-humble-generate-parameter-library \
+    ros-humble-controller-interface \
+    ros-humble-ros2-control-test-assets \
+    ros-humble-controller-manager \
     && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m pip install -U \
@@ -35,12 +59,14 @@ RUN python3 -m pip install -U \
 RUN mkdir ~/source_code    
 RUN cd ~/source_code && git clone https://github.com/frankaemika/libfranka.git \
     && cd libfranka \
+    && git checkout 0.12.1 \
     && git submodule init \
     && git submodule update \
     && mkdir build && cd build \
     && cmake -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=OFF  .. \
     && make franka -j$(nproc) \
-    && make install
+    && cpack -G DEB \
+    && sudo dpkg -i libfranka*.deb
 
-
-
+# set the default user to the newly created user
+USER $USERNAME

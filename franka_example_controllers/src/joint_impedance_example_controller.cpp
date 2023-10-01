@@ -45,10 +45,12 @@ JointImpedanceExampleController::state_interface_configuration() const {
   return config;
 }
 
-controller_interface::return_type JointImpedanceExampleController::update() {
+controller_interface::return_type JointImpedanceExampleController::update(
+    const rclcpp::Time& /*time*/,
+    const rclcpp::Duration& /*period*/) {
   updateJointStates();
   Vector7d q_goal = initial_q_;
-  auto time = this->node_->now() - start_time_;
+  auto time = this->get_node()->now() - start_time_;
   double delta_angle = M_PI / 8.0 * (1 - std::cos(M_PI / 2.5 * time.seconds()));
   q_goal(3) += delta_angle;
   q_goal(4) += delta_angle;
@@ -63,44 +65,39 @@ controller_interface::return_type JointImpedanceExampleController::update() {
   return controller_interface::return_type::OK;
 }
 
-controller_interface::return_type JointImpedanceExampleController::init(
-    const std::string& controller_name) {
-  auto ret = ControllerInterface::init(controller_name);
-  if (ret != controller_interface::return_type::OK) {
-    return ret;
-  }
+CallbackReturn JointImpedanceExampleController::on_init() {
   try {
     auto_declare<std::string>("arm_id", "panda");
     auto_declare<std::vector<double>>("k_gains", {});
     auto_declare<std::vector<double>>("d_gains", {});
   } catch (const std::exception& e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return controller_interface::return_type::ERROR;
+    return CallbackReturn::ERROR;
   }
-  return controller_interface::return_type::OK;
+  return CallbackReturn::SUCCESS;
 }
 
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-JointImpedanceExampleController::on_configure(const rclcpp_lifecycle::State& /*previous_state*/) {
-  arm_id_ = node_->get_parameter("arm_id").as_string();
-  auto k_gains = node_->get_parameter("k_gains").as_double_array();
-  auto d_gains = node_->get_parameter("d_gains").as_double_array();
+CallbackReturn JointImpedanceExampleController::on_configure(
+    const rclcpp_lifecycle::State& /*previous_state*/) {
+  arm_id_ = get_node()->get_parameter("arm_id").as_string();
+  auto k_gains = get_node()->get_parameter("k_gains").as_double_array();
+  auto d_gains = get_node()->get_parameter("d_gains").as_double_array();
   if (k_gains.empty()) {
-    RCLCPP_FATAL(node_->get_logger(), "k_gains parameter not set");
+    RCLCPP_FATAL(get_node()->get_logger(), "k_gains parameter not set");
     return CallbackReturn::FAILURE;
   }
   if (k_gains.size() != static_cast<uint>(num_joints)) {
-    RCLCPP_FATAL(node_->get_logger(), "k_gains should be of size %d but is of size %d", num_joints,
-                 k_gains.size());
+    RCLCPP_FATAL(get_node()->get_logger(), "k_gains should be of size %d but is of size %ld",
+                 num_joints, k_gains.size());
     return CallbackReturn::FAILURE;
   }
   if (d_gains.empty()) {
-    RCLCPP_FATAL(node_->get_logger(), "d_gains parameter not set");
+    RCLCPP_FATAL(get_node()->get_logger(), "d_gains parameter not set");
     return CallbackReturn::FAILURE;
   }
   if (d_gains.size() != static_cast<uint>(num_joints)) {
-    RCLCPP_FATAL(node_->get_logger(), "d_gains should be of size %d but is of size %d", num_joints,
-                 d_gains.size());
+    RCLCPP_FATAL(get_node()->get_logger(), "d_gains should be of size %d but is of size %ld",
+                 num_joints, d_gains.size());
     return CallbackReturn::FAILURE;
   }
   for (int i = 0; i < num_joints; ++i) {
@@ -111,11 +108,11 @@ JointImpedanceExampleController::on_configure(const rclcpp_lifecycle::State& /*p
   return CallbackReturn::SUCCESS;
 }
 
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-JointImpedanceExampleController::on_activate(const rclcpp_lifecycle::State& /*previous_state*/) {
+CallbackReturn JointImpedanceExampleController::on_activate(
+    const rclcpp_lifecycle::State& /*previous_state*/) {
   updateJointStates();
   initial_q_ = q_;
-  start_time_ = this->node_->now();
+  start_time_ = this->get_node()->now();
   return CallbackReturn::SUCCESS;
 }
 

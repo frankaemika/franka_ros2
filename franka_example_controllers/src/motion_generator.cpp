@@ -35,7 +35,7 @@ MotionGenerator::MotionGenerator(double speed_factor,
   calculateSynchronizedValues();
 }
 
-bool MotionGenerator::calculateDesiredValues(double t, Vector7d* delta_q_d) const {
+bool MotionGenerator::calculateDesiredValues(double time, Vector7d* delta_q_d) const {
   Vector7i sign_delta_q;
   sign_delta_q << delta_q_.cwiseSign().cast<int>();
   Vector7d t_d = t_2_sync_ - t_1_sync_;
@@ -47,19 +47,20 @@ bool MotionGenerator::calculateDesiredValues(double t, Vector7d* delta_q_d) cons
       (*delta_q_d)[i] = 0;
       joint_motion_finished.at(i) = true;
     } else {
-      if (t < t_1_sync_[i]) {
+      if (time < t_1_sync_[i]) {
         (*delta_q_d)[i] = -1.0 / std::pow(t_1_sync_[i], 3.0) * dq_max_sync_[i] * sign_delta_q[i] *
-                          (0.5 * t - t_1_sync_[i]) * std::pow(t, 3.0);
-      } else if (t >= t_1_sync_[i] && t < t_2_sync_[i]) {
-        (*delta_q_d)[i] = q_1_[i] + (t - t_1_sync_[i]) * dq_max_sync_[i] * sign_delta_q[i];
-      } else if (t >= t_2_sync_[i] && t < t_f_sync_[i]) {
+                          (0.5 * time - t_1_sync_[i]) * std::pow(time, 3.0);
+      } else if (time >= t_1_sync_[i] && time < t_2_sync_[i]) {
+        (*delta_q_d)[i] = q_1_[i] + (time - t_1_sync_[i]) * dq_max_sync_[i] * sign_delta_q[i];
+      } else if (time >= t_2_sync_[i] && time < t_f_sync_[i]) {
         (*delta_q_d)[i] =
-            delta_q_[i] + 0.5 *
-                              (1.0 / std::pow(delta_t_2_sync[i], 3.0) *
-                                   (t - t_1_sync_[i] - 2.0 * delta_t_2_sync[i] - t_d[i]) *
-                                   std::pow((t - t_1_sync_[i] - t_d[i]), 3.0) +
-                               (2.0 * t - 2.0 * t_1_sync_[i] - delta_t_2_sync[i] - 2.0 * t_d[i])) *
-                              dq_max_sync_[i] * sign_delta_q[i];
+            delta_q_[i] +
+            0.5 *
+                (1.0 / std::pow(delta_t_2_sync[i], 3.0) *
+                     (time - t_1_sync_[i] - 2.0 * delta_t_2_sync[i] - t_d[i]) *
+                     std::pow((time - t_1_sync_[i] - t_d[i]), 3.0) +
+                 (2.0 * time - 2.0 * t_1_sync_[i] - delta_t_2_sync[i] - 2.0 * t_d[i])) *
+                dq_max_sync_[i] * sign_delta_q[i];
       } else {
         (*delta_q_d)[i] = delta_q_[i];
         joint_motion_finished.at(i) = true;
@@ -67,7 +68,7 @@ bool MotionGenerator::calculateDesiredValues(double t, Vector7d* delta_q_d) cons
     }
   }
   return std::all_of(joint_motion_finished.cbegin(), joint_motion_finished.cend(),
-                     [](bool x) { return x; });
+                     [](bool each_joint_finished) { return each_joint_finished; });
 }
 
 void MotionGenerator::calculateSynchronizedValues() {
@@ -95,14 +96,14 @@ void MotionGenerator::calculateSynchronizedValues() {
   double max_t_f = t_f.maxCoeff();
   for (auto i = 0; i < kJoints; i++) {
     if (std::abs(delta_q_[i]) > kDeltaQMotionFinished) {
-      double a = 1.5 / 2.0 * (ddq_max_goal_[i] + ddq_max_start_[i]);
-      double b = -1.0 * max_t_f * ddq_max_goal_[i] * ddq_max_start_[i];
-      double c = std::abs(delta_q_[i]) * ddq_max_goal_[i] * ddq_max_start_[i];
-      double delta = b * b - 4.0 * a * c;
+      double param_a = 1.5 / 2.0 * (ddq_max_goal_[i] + ddq_max_start_[i]);
+      double param_b = -1.0 * max_t_f * ddq_max_goal_[i] * ddq_max_start_[i];
+      double param_c = std::abs(delta_q_[i]) * ddq_max_goal_[i] * ddq_max_start_[i];
+      double delta = param_b * param_b - 4.0 * param_a * param_c;
       if (delta < 0.0) {
         delta = 0.0;
       }
-      dq_max_sync_[i] = (-1.0 * b - std::sqrt(delta)) / (2.0 * a);
+      dq_max_sync_[i] = (-1.0 * param_b - std::sqrt(delta)) / (2.0 * param_a);
       t_1_sync_[i] = 1.5 * dq_max_sync_[i] / ddq_max_start_[i];
       delta_t_2_sync[i] = 1.5 * dq_max_sync_[i] / ddq_max_goal_[i];
       t_f_sync_[i] =
@@ -121,6 +122,6 @@ std::pair<MotionGenerator::Vector7d, bool> MotionGenerator::getDesiredJointPosit
   bool motion_finished = calculateDesiredValues(time_, &delta_q_d);
 
   std::array<double, kJoints> joint_positions{};
-  Eigen::VectorXd::Map(&joint_positions[0], kJoints) = (q_start_ + delta_q_d);
+  Eigen::VectorXd::Map(joint_positions.data(), kJoints) = (q_start_ + delta_q_d);
   return std::make_pair(q_start_ + delta_q_d, motion_finished);
 }
