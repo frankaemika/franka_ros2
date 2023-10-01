@@ -9,7 +9,16 @@ rosidl_generate_interfaces(${PROJECT_NAME}
   "action/Grasp.action"
   "action/Homing.action"
   "action/Move.action"
+  "msg/Errors.msg"
   "msg/GraspEpsilon.msg"
+  "msg/FrankaRobotState.msg"
+  "srv/SetCartesianStiffness.srv"
+  "srv/SetTCPFrame.srv"
+  "srv/SetForceTorqueCollisionBehavior.srv"
+  "srv/SetFullCollisionBehavior.srv"
+  "srv/SetJointStiffness.srv"
+  "srv/SetStiffnessFrame.srv"
+  "srv/SetLoad.srv"
   DEPENDENCIES std_msgs builtin_interfaces
 )
 

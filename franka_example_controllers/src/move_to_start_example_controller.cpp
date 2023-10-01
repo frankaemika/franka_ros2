@@ -45,9 +45,11 @@ MoveToStartExampleController::state_interface_configuration() const {
   return config;
 }
 
-controller_interface::return_type MoveToStartExampleController::update() {
+controller_interface::return_type MoveToStartExampleController::update(
+    const rclcpp::Time& /*time*/,
+    const rclcpp::Duration& /*period*/) {
   updateJointStates();
-  auto trajectory_time = this->node_->now() - start_time_;
+  auto trajectory_time = this->get_node()->now() - start_time_;
   auto motion_generator_output = motion_generator_->getDesiredJointPositions(trajectory_time);
   Vector7d q_desired = motion_generator_output.first;
   bool finished = motion_generator_output.second;
@@ -63,49 +65,46 @@ controller_interface::return_type MoveToStartExampleController::update() {
     for (auto& command_interface : command_interfaces_) {
       command_interface.set_value(0);
     }
+    this->get_node()->set_parameter({"process_finished", true});
   }
   return controller_interface::return_type::OK;
 }
 
-controller_interface::return_type MoveToStartExampleController::init(
-    const std::string& controller_name) {
-  auto ret = ControllerInterface::init(controller_name);
-  if (ret != controller_interface::return_type::OK) {
-    return ret;
-  }
+CallbackReturn MoveToStartExampleController::on_init() {
   q_goal_ << 0, -M_PI_4, 0, -3 * M_PI_4, 0, M_PI_2, M_PI_4;
   try {
+    auto_declare<bool>("process_finished", false);
     auto_declare<std::string>("arm_id", "panda");
     auto_declare<std::vector<double>>("k_gains", {});
     auto_declare<std::vector<double>>("d_gains", {});
   } catch (const std::exception& e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return controller_interface::return_type::ERROR;
+    return CallbackReturn::ERROR;
   }
-  return controller_interface::return_type::OK;
+  return CallbackReturn::SUCCESS;
 }
 
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-MoveToStartExampleController::on_configure(const rclcpp_lifecycle::State& /*previous_state*/) {
-  arm_id_ = node_->get_parameter("arm_id").as_string();
-  auto k_gains = node_->get_parameter("k_gains").as_double_array();
-  auto d_gains = node_->get_parameter("d_gains").as_double_array();
+CallbackReturn MoveToStartExampleController::on_configure(
+    const rclcpp_lifecycle::State& /*previous_state*/) {
+  arm_id_ = get_node()->get_parameter("arm_id").as_string();
+  auto k_gains = get_node()->get_parameter("k_gains").as_double_array();
+  auto d_gains = get_node()->get_parameter("d_gains").as_double_array();
   if (k_gains.empty()) {
-    RCLCPP_FATAL(node_->get_logger(), "k_gains parameter not set");
+    RCLCPP_FATAL(get_node()->get_logger(), "k_gains parameter not set");
     return CallbackReturn::FAILURE;
   }
   if (k_gains.size() != static_cast<uint>(num_joints)) {
-    RCLCPP_FATAL(node_->get_logger(), "k_gains should be of size %d but is of size %d", num_joints,
-                 k_gains.size());
+    RCLCPP_FATAL(get_node()->get_logger(), "k_gains should be of size %d but is of size %ld",
+                 num_joints, k_gains.size());
     return CallbackReturn::FAILURE;
   }
   if (d_gains.empty()) {
-    RCLCPP_FATAL(node_->get_logger(), "d_gains parameter not set");
+    RCLCPP_FATAL(get_node()->get_logger(), "d_gains parameter not set");
     return CallbackReturn::FAILURE;
   }
   if (d_gains.size() != static_cast<uint>(num_joints)) {
-    RCLCPP_FATAL(node_->get_logger(), "d_gains should be of size %d but is of size %d", num_joints,
-                 d_gains.size());
+    RCLCPP_FATAL(get_node()->get_logger(), "d_gains should be of size %d but is of size %ld",
+                 num_joints, d_gains.size());
     return CallbackReturn::FAILURE;
   }
   for (int i = 0; i < num_joints; ++i) {
@@ -116,11 +115,11 @@ MoveToStartExampleController::on_configure(const rclcpp_lifecycle::State& /*prev
   return CallbackReturn::SUCCESS;
 }
 
-rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn
-MoveToStartExampleController::on_activate(const rclcpp_lifecycle::State& /*previous_state*/) {
+CallbackReturn MoveToStartExampleController::on_activate(
+    const rclcpp_lifecycle::State& /*previous_state*/) {
   updateJointStates();
   motion_generator_ = std::make_unique<MotionGenerator>(0.2, q_, q_goal_);
-  start_time_ = this->node_->now();
+  start_time_ = this->get_node()->now();
   return CallbackReturn::SUCCESS;
 }
 

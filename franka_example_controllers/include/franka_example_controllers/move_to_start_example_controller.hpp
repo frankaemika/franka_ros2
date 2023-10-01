@@ -23,16 +23,21 @@
 
 #include "motion_generator.hpp"
 
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
+
 namespace franka_example_controllers {
 
 /// The move to start example controller moves the robot into default pose.
 class MoveToStartExampleController : public controller_interface::ControllerInterface {
  public:
   using Vector7d = Eigen::Matrix<double, 7, 1>;
-  controller_interface::InterfaceConfiguration command_interface_configuration() const override;
-  controller_interface::InterfaceConfiguration state_interface_configuration() const override;
-  controller_interface::return_type update() override;
-  controller_interface::return_type init(const std::string& controller_name) override;
+  [[nodiscard]] controller_interface::InterfaceConfiguration command_interface_configuration()
+      const override;
+  [[nodiscard]] controller_interface::InterfaceConfiguration state_interface_configuration()
+      const override;
+  controller_interface::return_type update(const rclcpp::Time& time,
+                                           const rclcpp::Duration& period) override;
+  CallbackReturn on_init() override;
   CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
   CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
 

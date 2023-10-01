@@ -21,7 +21,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (DeclareLaunchArgument, ExecuteProcess, IncludeLaunchDescription,
                             Shutdown)
-from launch.conditions import IfCondition
+from launch.conditions import UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
 from launch_ros.actions import Node
@@ -186,25 +186,11 @@ def generate_launch_description():
     for controller in ['panda_arm_controller', 'joint_state_broadcaster']:
         load_controllers += [
             ExecuteProcess(
-                cmd=['ros2 run controller_manager spawner.py {}'.format(controller)],
+                cmd=['ros2 run controller_manager spawner {}'.format(controller)],
                 shell=True,
                 output='screen',
             )
         ]
-
-    # Warehouse mongodb server
-    db_config = LaunchConfiguration('db')
-    mongodb_server_node = Node(
-        package='warehouse_ros_mongo',
-        executable='mongo_wrapper_ros.py',
-        parameters=[
-            {'warehouse_port': 33829},
-            {'warehouse_host': 'localhost'},
-            {'warehouse_plugin': 'warehouse_ros_mongo::MongoDatabaseConnection'},
-        ],
-        output='screen',
-        condition=IfCondition(db_config)
-    )
 
     joint_state_publisher = Node(
         package='joint_state_publisher',
@@ -213,6 +199,15 @@ def generate_launch_description():
         parameters=[
             {'source_list': ['franka/joint_states', 'panda_gripper/joint_states'], 'rate': 30}],
     )
+
+    franka_robot_state_broadcaster = Node(
+            package='controller_manager',
+            executable='spawner',
+            arguments=['franka_robot_state_broadcaster'],
+            output='screen',
+            condition=UnlessCondition(use_fake_hardware),
+    )
+
     robot_arg = DeclareLaunchArgument(
         robot_ip_parameter_name,
         description='Hostname or IP address of the robot.')
@@ -241,8 +236,8 @@ def generate_launch_description():
          robot_state_publisher,
          run_move_group_node,
          ros2_control_node,
-         mongodb_server_node,
          joint_state_publisher,
+         franka_robot_state_broadcaster,
          gripper_launch_file
          ]
         + load_controllers

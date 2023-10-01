@@ -19,21 +19,27 @@
 #include <vector>
 
 #include <hardware_interface/visibility_control.h>
-#include <franka_hardware/robot.hpp>
-#include <hardware_interface/base_interface.hpp>
 #include <hardware_interface/hardware_info.hpp>
 #include <hardware_interface/system_interface.hpp>
 #include <hardware_interface/types/hardware_interface_return_values.hpp>
-#include <hardware_interface/types/hardware_interface_status_values.hpp>
 #include <rclcpp/logger.hpp>
 #include <rclcpp/macros.hpp>
 #include <rclcpp/rclcpp.hpp>
+#include <rclcpp_lifecycle/state.hpp>
+
+#include "franka_hardware/franka_executor.hpp"
+#include "franka_hardware/franka_param_service_server.hpp"
+#include "franka_hardware/robot.hpp"
+
+using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 namespace franka_hardware {
 
-class FrankaHardwareInterface
-    : public hardware_interface::BaseInterface<hardware_interface::SystemInterface> {
+class FrankaHardwareInterface : public hardware_interface::SystemInterface {
  public:
+  explicit FrankaHardwareInterface(std::shared_ptr<Robot> robot);
+  FrankaHardwareInterface() = default;
+
   hardware_interface::return_type prepare_command_mode_switch(
       const std::vector<std::string>& start_interfaces,
       const std::vector<std::string>& stop_interfaces) override;
@@ -42,21 +48,35 @@ class FrankaHardwareInterface
       const std::vector<std::string>& stop_interfaces) override;
   std::vector<hardware_interface::StateInterface> export_state_interfaces() override;
   std::vector<hardware_interface::CommandInterface> export_command_interfaces() override;
-  hardware_interface::return_type start() override;
-  hardware_interface::return_type stop() override;
-  hardware_interface::return_type read() override;
-  hardware_interface::return_type write() override;
-  hardware_interface::return_type configure(const hardware_interface::HardwareInfo& info) override;
+  CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
+  hardware_interface::return_type read(const rclcpp::Time& time,
+                                       const rclcpp::Duration& period) override;
+  hardware_interface::return_type write(const rclcpp::Time& time,
+                                        const rclcpp::Duration& period) override;
+  CallbackReturn on_init(const hardware_interface::HardwareInfo& info) override;
   static const size_t kNumberOfJoints = 7;
 
  private:
-  std::unique_ptr<Robot> robot_;
+  std::shared_ptr<Robot> robot_;
+  std::shared_ptr<FrankaParamServiceServer> node_;
+  std::shared_ptr<FrankaExecutor> executor_;
+
   std::array<double, kNumberOfJoints> hw_commands_{0, 0, 0, 0, 0, 0, 0};
   std::array<double, kNumberOfJoints> hw_positions_{0, 0, 0, 0, 0, 0, 0};
   std::array<double, kNumberOfJoints> hw_velocities_{0, 0, 0, 0, 0, 0, 0};
   std::array<double, kNumberOfJoints> hw_efforts_{0, 0, 0, 0, 0, 0, 0};
+  franka::RobotState hw_franka_robot_state_;
+  franka::RobotState* hw_franka_robot_state_addr_ = &hw_franka_robot_state_;
+  Model* hw_franka_model_ptr_ = nullptr;
+
   bool effort_interface_claimed_ = false;
   bool effort_interface_running_ = false;
+
   static rclcpp::Logger getLogger();
+
+  const std::string k_robot_name{"panda"};
+  const std::string k_robot_state_interface_name{"robot_state"};
+  const std::string k_robot_model_interface_name{"robot_model"};
 };
 }  // namespace franka_hardware
