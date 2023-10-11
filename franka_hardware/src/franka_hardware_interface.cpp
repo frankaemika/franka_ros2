@@ -64,7 +64,7 @@ std::vector<CommandInterface> FrankaHardwareInterface::export_command_interfaces
     command_interfaces.emplace_back(CommandInterface(
         info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &hw_commands_.at(i)));
     command_interfaces.emplace_back(CommandInterface(
-        info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_velocity_commands_.at(i)));
+        info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_commands_.at(i)));
   }
   return command_interfaces;
 }
@@ -106,15 +106,9 @@ hardware_interface::return_type FrankaHardwareInterface::write(const rclcpp::Tim
                   [](double hw_command) { return !std::isfinite(hw_command); })) {
     return hardware_interface::return_type::ERROR;
   }
-  if (std::any_of(hw_velocity_commands_.begin(), hw_velocity_commands_.end(),
-                  [](double hw_command) { return !std::isfinite(hw_command); })) {
-    return hardware_interface::return_type::ERROR;
-  }
-  if (effort_interface_running_) {
-    robot_->writeOnce(hw_commands_);
-  } else if (velocity_interface_running_) {
-    robot_->writeOnceVelocities(hw_velocity_commands_);
-  }
+
+  robot_->writeOnce(hw_commands_);
+
   return hardware_interface::return_type::OK;
 }
 
@@ -134,8 +128,9 @@ CallbackReturn FrankaHardwareInterface::on_init(const hardware_interface::Hardwa
                    joint.name.c_str(), joint.command_interfaces.size());
       return CallbackReturn::ERROR;
     }
-    if (joint.command_interfaces[0].name != hardware_interface::HW_IF_EFFORT) {
-      RCLCPP_FATAL(getLogger(), "Joint '%s' has unexpected command interface '%s'. Expected '%s'",
+    if (joint.command_interfaces[0].name != hardware_interface::HW_IF_EFFORT &&
+        joint.command_interfaces[0].name != hardware_interface::HW_IF_VELOCITY) {
+      RCLCPP_FATAL(getLogger(), "Joint '%s' has unexpected command interface '%s'. Expected '%s' ",
                    joint.name.c_str(), joint.command_interfaces[0].name.c_str(),
                    hardware_interface::HW_IF_EFFORT);
       return CallbackReturn::ERROR;
@@ -195,7 +190,7 @@ hardware_interface::return_type FrankaHardwareInterface::perform_command_mode_sw
     const std::vector<std::string>& /*stop_interfaces*/) {
   if (!effort_interface_running_ && effort_interface_claimed_) {
     robot_->stopRobot();
-    robot_->initializeReadWriteInterface();
+    robot_->initializeTorqueInterface();
     effort_interface_running_ = true;
   } else if (effort_interface_running_ && !effort_interface_claimed_) {
     robot_->stopRobot();
@@ -208,7 +203,6 @@ hardware_interface::return_type FrankaHardwareInterface::perform_command_mode_sw
     velocity_interface_running_ = true;
   } else if (velocity_interface_running_ && !velocity_interface_claimed_) {
     robot_->stopRobot();
-    hw_velocity_commands_ = {0, 0, 0, 0, 0, 0, 0};
     velocity_interface_running_ = false;
   }
   return hardware_interface::return_type::OK;

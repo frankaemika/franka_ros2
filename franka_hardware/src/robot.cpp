@@ -46,7 +46,7 @@ Robot::~Robot() {
 
 franka::RobotState Robot::readOnce() {
   std::lock_guard<std::mutex> lock(control_mutex_);
-  if (!control_loop_active_) {
+  if (!isControlLoopActive()) {
     current_state_ = robot_->readOnce();
     return current_state_;
   } else {
@@ -55,13 +55,22 @@ franka::RobotState Robot::readOnce() {
 }
 
 void Robot::stopRobot() {
-  if (control_loop_active_) {
-    control_loop_active_ = false;
+  if (isControlLoopActive()) {
+    effort_interface_active_ = false;
+    joint_velocity_interface_active_ = false;
     active_control_.reset();
   }
 }
 
-void Robot::writeOnce(const std::array<double, 7>& efforts) {
+void Robot::writeOnce(const std::array<double, 7>& joint_commands) {
+  if (effort_interface_active_) {
+    writeOnceEfforts(joint_commands);
+  } else if (joint_velocity_interface_active_) {
+    writeOnceJointVelocities(joint_commands);
+  }
+}
+
+void Robot::writeOnceEfforts(const std::array<double, 7>& efforts) {
   std::lock_guard<std::mutex> lock(control_mutex_);
 
   auto torque_command = franka::Torques(efforts);
@@ -72,15 +81,19 @@ void Robot::writeOnce(const std::array<double, 7>& efforts) {
   active_control_->writeOnce(torque_command);
 }
 
-void Robot::writeOnceVelocities(const std::array<double, 7>& velocities) {
+void Robot::writeOnceJointVelocities(const std::array<double, 7>& velocities) {
   std::lock_guard<std::mutex> lock(control_mutex_);
 
   auto velocity_command = franka::JointVelocities(velocities);
 
-  velocity_command.dq = franka::limitRate(
-      franka::computeUpperLimitsJointVelocity(current_state_.q_d),
-      franka::computeLowerLimitsJointVelocity(current_state_.q_d), franka::kMaxJointAcceleration,
-      franka::kMaxJointJerk, velocity_command.dq, current_state_.dq_d, current_state_.ddq_d);
+  // If you are experiencing issues with robot error. You can try activating the rate limiter.
+  // Rate limiter is default deactivated.
+  if (velocity_command_rate_limit_active_) {
+    velocity_command.dq = franka::limitRate(
+        franka::computeUpperLimitsJointVelocity(current_state_.q_d),
+        franka::computeLowerLimitsJointVelocity(current_state_.q_d), franka::kMaxJointAcceleration,
+        franka::kMaxJointJerk, velocity_command.dq, current_state_.dq_d, current_state_.ddq_d);
+  }
 
   active_control_->writeOnce(velocity_command);
 }
@@ -95,15 +108,19 @@ franka_hardware::Model* Robot::getModel() {
   return franka_hardware_model_.get();
 }
 
-void Robot::initializeReadWriteInterface() {
-  control_loop_active_ = true;
+void Robot::initializeTorqueInterface() {
   active_control_ = robot_->startTorqueControl();
+  effort_interface_active_ = true;
 }
 
 void Robot::initializeJointVelocityInterface() {
-  control_loop_active_ = true;
   active_control_ = robot_->startJointVelocityControl(
       research_interface::robot::Move::ControllerMode::kJointImpedance);
+  joint_velocity_interface_active_ = true;
+}
+
+bool Robot::isControlLoopActive() {
+  return joint_velocity_interface_active_ || effort_interface_active_;
 }
 
 void Robot::setJointStiffness(const franka_msgs::srv::SetJointStiffness::Request::SharedPtr& req) {

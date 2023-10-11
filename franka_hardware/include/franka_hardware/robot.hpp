@@ -60,10 +60,10 @@ class Robot {
   /// Stops the currently running loop and closes the connection with the robot.
   virtual ~Robot();
 
-  /// Starts a read / write communication with the connected robot
-  virtual void initializeReadWriteInterface();
+  /// Starts the active control for torque control
+  virtual void initializeTorqueInterface();
 
-  /// Starts a read / write communication with the connected robot
+  /// Starts the active control for joint velocity control
   virtual void initializeJointVelocityInterface();
 
   /// stops the read continous communication with the connected robot
@@ -82,16 +82,31 @@ class Robot {
   virtual franka_hardware::Model* getModel();
 
   /**
+   * @brief Checks if control loop is activated for active control.
+   *
+   * @return true when active control started either with effort or velocity command.
+   * @return false when active control is not started.
+   */
+  virtual bool isControlLoopActive();
+
+  /**
+   * This function will receive automatically propagate the received hardware active command
+   * interface
+   * @param[in] joint_hardware_command joint hardware command either efforts or velocities
+   */
+  virtual void writeOnce(const std::array<double, 7>& joint_hardware_command);
+
+  /**
    * The robot will use these torques until a different set of torques are commanded.
    * @param[in] efforts torque command for each joint.
    */
-  virtual void writeOnce(const std::array<double, 7>& efforts);
+  virtual void writeOnceEfforts(const std::array<double, 7>& efforts);
 
   /**
    * The robot will use these velocities until a different set of velocities are commanded.
-   * @param[in] velocities torque command for each joint.
+   * @param[in] joint_velocities joint velocity command.
    */
-  virtual void writeOnceVelocities(const std::array<double, 7>& velocities);
+  virtual void writeOnceJointVelocities(const std::array<double, 7>& joint_velocities);
 
   /**
    * Sets the impedance for each joint in the internal controller.
@@ -218,7 +233,11 @@ class Robot {
   std::unique_ptr<Model> franka_hardware_model_;
 
   std::array<double, 7> last_desired_torque_ = {0, 0, 0, 0, 0, 0, 0};
-  bool control_loop_active_{false};
+
+  bool effort_interface_active_{false};
+  bool joint_velocity_interface_active_{false};
+  bool velocity_command_rate_limit_active_{false};
+
   franka::RobotState current_state_;
 };
 }  // namespace franka_hardware
