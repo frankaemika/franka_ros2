@@ -14,7 +14,7 @@
     <class name="franka_example_controllers/JointVelocityExampleController"
            type="franka_example_controllers::JointVelocityExampleController" base_class_type="controller_interface::ControllerInterface">
         <description>
-            The joint velocity example controller.
+            The joint velocity example controller moves joint 4 and 5 in a periodic movement.
         </description>
     </class>
     <class name="franka_example_controllers/MoveToStartExampleController"
