@@ -82,7 +82,7 @@ class MockRobot : public franka_hardware::Robot {
               (override));
 };
 
-auto createHardwareInfo(const std::string& command_interface) -> hardware_interface::HardwareInfo {
+auto createHardwareInfo() -> hardware_interface::HardwareInfo {
   hardware_interface::HardwareInfo info;
   std::unordered_map<std::string, std::string> hw_params;
   hw_params["robot_ip"] = "dummy_ip";
@@ -106,11 +106,9 @@ auto createHardwareInfo(const std::string& command_interface) -> hardware_interf
 
     joint.name = k_joint_name + std::to_string(i + 1);
 
-    if (command_interface == k_effort_controller) {
-      joint.command_interfaces.push_back(command_effort_interface);
-    } else if (command_interface == k_velocity_controller) {
-      joint.command_interfaces.push_back(command_velocity_interface);
-    }
+    joint.command_interfaces.push_back(command_effort_interface);
+    joint.command_interfaces.push_back(command_velocity_interface);
+
     joint.state_interfaces = state_interfaces;
 
     info.joints.push_back(joint);
@@ -131,7 +129,7 @@ void get_param_service_response(
 
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
 
-  const auto hardware_info = createHardwareInfo(k_effort_controller);
+  const auto hardware_info = createHardwareInfo();
   franka_hardware_interface.on_init(hardware_info);
 
   auto node = rclcpp::Node::make_shared("test_node");
@@ -158,7 +156,7 @@ void get_param_service_response(
 TEST_P(FrankaHardwareInterfaceTest, when_on_init_called_expect_success) {
   std::string command_interface = GetParam();
   auto mock_robot = std::make_shared<MockRobot>();
-  const hardware_interface::HardwareInfo info = createHardwareInfo(command_interface);
+  const hardware_interface::HardwareInfo info = createHardwareInfo();
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
   auto return_type = franka_hardware_interface.on_init(info);
 
@@ -200,7 +198,7 @@ TEST_P(
 
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
 
-  const auto hardware_info = createHardwareInfo(command_interface);
+  const auto hardware_info = createHardwareInfo();
   franka_hardware_interface.on_init(hardware_info);
   auto time = rclcpp::Time(0);
   auto duration = rclcpp::Duration(0, 0);
@@ -245,7 +243,7 @@ TEST_P(
   EXPECT_CALL(*mock_robot, getModel()).WillOnce(testing::Return(model_address));
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
 
-  const auto hardware_info = createHardwareInfo(command_interface);
+  const auto hardware_info = createHardwareInfo();
   franka_hardware_interface.on_init(hardware_info);
   auto time = rclcpp::Time(0);
   auto duration = rclcpp::Duration(0, 0);
@@ -278,7 +276,7 @@ TEST_P(
   EXPECT_CALL(*mock_robot, getModel()).WillOnce(testing::Return(model_address));
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
 
-  const auto hardware_info = createHardwareInfo(command_interface);
+  const auto hardware_info = createHardwareInfo();
   franka_hardware_interface.on_init(hardware_info);
   auto time = rclcpp::Time(0);
   auto duration = rclcpp::Duration(0, 0);
@@ -300,7 +298,7 @@ TEST_P(FrankaHardwareInterfaceTest,
   auto mock_robot = std::make_shared<MockRobot>();
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
 
-  const auto hardware_info = createHardwareInfo(command_interface);
+  const auto hardware_info = createHardwareInfo();
   franka_hardware_interface.on_init(hardware_info);
   std::vector<std::string> stop_interface;
 
@@ -321,7 +319,7 @@ TEST_P(
   auto mock_robot = std::make_shared<MockRobot>();
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
 
-  const auto hardware_info = createHardwareInfo(command_interface);
+  const auto hardware_info = createHardwareInfo();
   franka_hardware_interface.on_init(hardware_info);
   std::vector<std::string> stop_interface;
 
@@ -342,7 +340,7 @@ TEST_P(FrankaHardwareInterfaceTest,
   auto mock_robot = std::make_shared<MockRobot>();
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
 
-  const auto hardware_info = createHardwareInfo(command_interface);
+  const auto hardware_info = createHardwareInfo();
   franka_hardware_interface.on_init(hardware_info);
   std::vector<std::string> start_interface;
 
@@ -365,16 +363,16 @@ TEST_P(
   auto mock_robot = std::make_shared<MockRobot>();
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
 
-  const auto hardware_info = createHardwareInfo(command_interface);
+  const auto hardware_info = createHardwareInfo();
   franka_hardware_interface.on_init(hardware_info);
-  std::vector<std::string> start_interface;
+  std::vector<std::string> start_interface, stop_interface;
 
   for (size_t i = 0; i < hardware_info.joints.size(); i++) {
     const std::string joint_name = k_joint_name + std::to_string(i);
-    start_interface.push_back(joint_name + "/" + command_interface);
+    stop_interface.push_back(joint_name + "/" + command_interface);
   }
 
-  std::vector<std::string> stop_interface = {"fr3_joint1/effort"};
+  start_interface = {"fr3_joint1/effort"};
 
   EXPECT_THROW(
       franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
@@ -389,7 +387,7 @@ TEST_P(FrankaHardwareInterfaceTest, when_write_called_expect_ok) {
 
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
 
-  const auto hardware_info = createHardwareInfo(command_interface);
+  const auto hardware_info = createHardwareInfo();
   franka_hardware_interface.on_init(hardware_info);
   std::vector<std::string> start_interface;
 
@@ -454,7 +452,7 @@ TEST_P(FrankaHardwareInterfaceTest,
 
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
 
-  const auto hardware_info = createHardwareInfo(command_interface);
+  const auto hardware_info = createHardwareInfo();
   franka_hardware_interface.on_init(hardware_info);
   std::vector<std::string> start_interface;
 
@@ -481,7 +479,7 @@ TEST_P(FrankaHardwareInterfaceTest,
 
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
 
-  const auto hardware_info = createHardwareInfo(command_interface);
+  const auto hardware_info = createHardwareInfo();
   franka_hardware_interface.on_init(hardware_info);
   std::vector<std::string> start_interface;
 

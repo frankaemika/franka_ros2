@@ -124,16 +124,17 @@ CallbackReturn FrankaHardwareInterface::on_init(const hardware_interface::Hardwa
   }
 
   for (const auto& joint : info_.joints) {
-    if (joint.command_interfaces.size() != 1) {
-      RCLCPP_FATAL(getLogger(), "Joint '%s' has %zu command interfaces found. 1 expected.",
+    if (joint.command_interfaces.size() != 2) {
+      RCLCPP_FATAL(getLogger(), "Joint '%s' has %zu command interfaces found. 2 expected.",
                    joint.name.c_str(), joint.command_interfaces.size());
       return CallbackReturn::ERROR;
     }
     if (joint.command_interfaces[0].name != hardware_interface::HW_IF_EFFORT &&
         joint.command_interfaces[0].name != hardware_interface::HW_IF_VELOCITY) {
-      RCLCPP_FATAL(getLogger(), "Joint '%s' has unexpected command interface '%s'. Expected '%s' ",
+      RCLCPP_FATAL(getLogger(),
+                   "Joint '%s' has unexpected command interface '%s'. Expected '%s' and '%s' ",
                    joint.name.c_str(), joint.command_interfaces[0].name.c_str(),
-                   hardware_interface::HW_IF_EFFORT);
+                   hardware_interface::HW_IF_EFFORT, hardware_interface::HW_IF_VELOCITY);
       return CallbackReturn::ERROR;
     }
     if (joint.state_interfaces.size() != 3) {
@@ -222,55 +223,43 @@ hardware_interface::return_type FrankaHardwareInterface::prepare_command_mode_sw
     return interface.find(hardware_interface::HW_IF_VELOCITY) != std::string::npos;
   };
 
-  int64_t num_stop_effort_interfaces =
-      std::count_if(stop_interfaces.begin(), stop_interfaces.end(), is_effort_interface);
-  if (num_stop_effort_interfaces == kNumberOfJoints) {
-    effort_interface_claimed_ = false;
-  } else if (num_stop_effort_interfaces != 0) {
-    RCLCPP_FATAL(this->getLogger(), "Expected %ld effort interfaces to stop, but got %ld instead.",
-                 kNumberOfJoints, num_stop_effort_interfaces);
-    std::string error_string = "Invalid number of effort interfaces to stop. Expected ";
-    error_string += std::to_string(kNumberOfJoints);
-    throw std::invalid_argument(error_string);
-  }
+  auto generate_error_message = [&](const std::string& start_stop_command,
+                                    const std::string& interface_name, int64_t num_interface) {
+    RCLCPP_FATAL(this->getLogger(), "Expected %ld %s interfaces to %s, but got %ld instead.",
+                 kNumberOfJoints, interface_name.c_str(), start_stop_command.c_str(),
+                 num_interface);
+    std::ostringstream error_message_stream;
+    error_message_stream << "Invalid number of " << interface_name << " interfaces to "
+                         << start_stop_command << ". Expected " << std::to_string(kNumberOfJoints);
+    std::string error_message = error_message_stream.str();
 
-  int64_t num_start_effort_interfaces =
-      std::count_if(start_interfaces.begin(), start_interfaces.end(), is_effort_interface);
-  if (num_start_effort_interfaces == kNumberOfJoints) {
-    effort_interface_claimed_ = true;
-  } else if (num_start_effort_interfaces != 0) {
-    RCLCPP_FATAL(this->getLogger(), "Expected %ld effort interfaces to start, but got %ld instead.",
-                 kNumberOfJoints, num_start_effort_interfaces);
-    std::string error_string = "Invalid number of effort interfaces to start. Expected ";
-    error_string += std::to_string(kNumberOfJoints);
-    throw std::invalid_argument(error_string);
-  }
+    throw std::invalid_argument(error_message);
+  };
 
-  int64_t num_stop_velocity_interfaces =
-      std::count_if(stop_interfaces.begin(), stop_interfaces.end(), is_velocity_interface);
-  if (num_stop_velocity_interfaces == kNumberOfJoints) {
-    velocity_joint_interface_claimed_ = false;
-  } else if (num_stop_velocity_interfaces != 0) {
-    RCLCPP_FATAL(this->getLogger(),
-                 "Expected %ld velocity interfaces to stop, but got %ld instead.", kNumberOfJoints,
-                 num_stop_velocity_interfaces);
-    std::string error_string = "Invalid number of velocity interfaces to stop. Expected ";
-    error_string += std::to_string(kNumberOfJoints);
-    throw std::invalid_argument(error_string);
-  }
+  auto start_stop_interface =
+      [&](const std::function<bool(const std::string& interface)>& find_interface_function,
+          const std::string& interface_name, bool& claim_flag) {
+        int64_t num_stop_interface =
+            std::count_if(stop_interfaces.begin(), stop_interfaces.end(), find_interface_function);
+        int64_t num_start_interface = std::count_if(
+            start_interfaces.begin(), start_interfaces.end(), find_interface_function);
 
-  int64_t num_start_velocity_interfaces =
-      std::count_if(start_interfaces.begin(), start_interfaces.end(), is_velocity_interface);
-  if (num_start_velocity_interfaces == kNumberOfJoints) {
-    velocity_joint_interface_claimed_ = true;
-  } else if (num_start_velocity_interfaces != 0) {
-    RCLCPP_FATAL(this->getLogger(),
-                 "Expected %ld velocity interfaces to start, but got %ld instead.", kNumberOfJoints,
-                 num_start_velocity_interfaces);
-    std::string error_string = "Invalid number of velocity interfaces to start. Expected ";
-    error_string += std::to_string(kNumberOfJoints);
-    throw std::invalid_argument(error_string);
-  }
+        if (num_stop_interface == kNumberOfJoints) {
+          claim_flag = false;
+        } else if (num_stop_interface != 0) {
+          generate_error_message("stop", interface_name, num_stop_interface);
+        }
+        if (num_start_interface == kNumberOfJoints) {
+          claim_flag = true;
+        } else if (num_start_interface != 0) {
+          generate_error_message("start", interface_name, num_start_interface);
+        }
+      };
+
+  start_stop_interface(is_effort_interface, hardware_interface::HW_IF_EFFORT,
+                       effort_interface_claimed_);
+  start_stop_interface(is_velocity_interface, hardware_interface::HW_IF_VELOCITY,
+                       velocity_joint_interface_claimed_);
 
   return hardware_interface::return_type::OK;
 }

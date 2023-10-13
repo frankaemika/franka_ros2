@@ -1,11 +1,18 @@
 # Changelog
 
+## 0.1.5 - 2023-10-13
+
+Requires libfranka >= 0.12.1, required ROS 2 Humble
+
+* franka\_hardware: support joint velocity command interface
+* franka\_example\_controllers: implement joint velocity example controller
+* franka\_description: add velocity command interface to the control tag
+
 ## 0.1.4 - 2023-09-26
 
 Requires libfranka >= 0.12.1, required ROS 2 Humble
 
 * franka\_hardware: adapt to libfranka active control v0.12.1
-
 
 ## 0.1.3 - 2023-08-24
 

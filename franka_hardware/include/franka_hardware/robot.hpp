@@ -82,31 +82,11 @@ class Robot {
   virtual franka_hardware::Model* getModel();
 
   /**
-   * @brief Checks if control loop is activated for active control.
-   *
-   * @return true when active control started either with effort or velocity command.
-   * @return false when active control is not started.
-   */
-  virtual bool isControlLoopActive();
-
-  /**
-   * This function will receive automatically propagate the received hardware active command
+   * This function will automatically propagate the received hardware active command
    * interface
    * @param[in] joint_hardware_command joint hardware command either efforts or velocities
    */
   virtual void writeOnce(const std::array<double, 7>& joint_hardware_command);
-
-  /**
-   * The robot will use these torques until a different set of torques are commanded.
-   * @param[in] efforts torque command for each joint.
-   */
-  virtual void writeOnceEfforts(const std::array<double, 7>& efforts);
-
-  /**
-   * The robot will use these velocities until a different set of velocities are commanded.
-   * @param[in] joint_velocities joint velocity command.
-   */
-  virtual void writeOnceJointVelocities(const std::array<double, 7>& joint_velocities);
 
   /**
    * Sets the impedance for each joint in the internal controller.
@@ -223,6 +203,26 @@ class Robot {
    * @return current robot state.
    */
   virtual franka::RobotState readOnceActiveControl();
+
+  /**
+   * The robot will use these torques until a different set of torques are commanded.
+   * @param[in] efforts torque command for each joint.
+   */
+  virtual void writeOnceEfforts(const std::array<double, 7>& efforts);
+
+  /**
+   * The robot will use these velocities until a different set of velocities are commanded.
+   * @param[in] joint_velocities joint velocity command.
+   */
+  virtual void writeOnceJointVelocities(const std::array<double, 7>& joint_velocities);
+
+  /**
+   * @brief Checks if control loop is activated for active control.
+   *
+   * @return true when active control started either with effort or velocity command.
+   * @return false when active control is not started.
+   */
+  virtual bool isControlLoopActive();
 
   std::mutex write_mutex_;
   std::mutex control_mutex_;
