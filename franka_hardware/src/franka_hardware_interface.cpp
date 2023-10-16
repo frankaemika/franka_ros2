@@ -63,6 +63,8 @@ std::vector<CommandInterface> FrankaHardwareInterface::export_command_interfaces
   for (auto i = 0U; i < info_.joints.size(); i++) {
     command_interfaces.emplace_back(CommandInterface(
         info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &hw_commands_.at(i)));
+    command_interfaces.emplace_back(CommandInterface(
+        info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_commands_.at(i)));
   }
   return command_interfaces;
 }
@@ -104,9 +106,10 @@ hardware_interface::return_type FrankaHardwareInterface::write(const rclcpp::Tim
                   [](double hw_command) { return !std::isfinite(hw_command); })) {
     return hardware_interface::return_type::ERROR;
   }
-  if (effort_interface_running_) {
+  if (velocity_joint_interface_running_ || effort_interface_running_) {
     robot_->writeOnce(hw_commands_);
   }
+
   return hardware_interface::return_type::OK;
 }
 
@@ -121,15 +124,17 @@ CallbackReturn FrankaHardwareInterface::on_init(const hardware_interface::Hardwa
   }
 
   for (const auto& joint : info_.joints) {
-    if (joint.command_interfaces.size() != 1) {
-      RCLCPP_FATAL(getLogger(), "Joint '%s' has %zu command interfaces found. 1 expected.",
+    if (joint.command_interfaces.size() != 2) {
+      RCLCPP_FATAL(getLogger(), "Joint '%s' has %zu command interfaces found. 2 expected.",
                    joint.name.c_str(), joint.command_interfaces.size());
       return CallbackReturn::ERROR;
     }
-    if (joint.command_interfaces[0].name != hardware_interface::HW_IF_EFFORT) {
-      RCLCPP_FATAL(getLogger(), "Joint '%s' has unexpected command interface '%s'. Expected '%s'",
+    if (joint.command_interfaces[0].name != hardware_interface::HW_IF_EFFORT &&
+        joint.command_interfaces[0].name != hardware_interface::HW_IF_VELOCITY) {
+      RCLCPP_FATAL(getLogger(),
+                   "Joint '%s' has unexpected command interface '%s'. Expected '%s' and '%s' ",
                    joint.name.c_str(), joint.command_interfaces[0].name.c_str(),
-                   hardware_interface::HW_IF_EFFORT);
+                   hardware_interface::HW_IF_EFFORT, hardware_interface::HW_IF_VELOCITY);
       return CallbackReturn::ERROR;
     }
     if (joint.state_interfaces.size() != 3) {
@@ -186,12 +191,23 @@ hardware_interface::return_type FrankaHardwareInterface::perform_command_mode_sw
     const std::vector<std::string>& /*start_interfaces*/,
     const std::vector<std::string>& /*stop_interfaces*/) {
   if (!effort_interface_running_ && effort_interface_claimed_) {
+    hw_commands_.fill(0);
     robot_->stopRobot();
-    robot_->initializeReadWriteInterface();
+    robot_->initializeTorqueInterface();
     effort_interface_running_ = true;
   } else if (effort_interface_running_ && !effort_interface_claimed_) {
     robot_->stopRobot();
     effort_interface_running_ = false;
+  }
+
+  if (!velocity_joint_interface_running_ && velocity_joint_interface_claimed_) {
+    hw_commands_.fill(0);
+    robot_->stopRobot();
+    robot_->initializeJointVelocityInterface();
+    velocity_joint_interface_running_ = true;
+  } else if (velocity_joint_interface_running_ && !velocity_joint_interface_claimed_) {
+    robot_->stopRobot();
+    velocity_joint_interface_running_ = false;
   }
   return hardware_interface::return_type::OK;
 }
@@ -203,29 +219,48 @@ hardware_interface::return_type FrankaHardwareInterface::prepare_command_mode_sw
     return interface.find(hardware_interface::HW_IF_EFFORT) != std::string::npos;
   };
 
-  int64_t num_stop_effort_interfaces =
-      std::count_if(stop_interfaces.begin(), stop_interfaces.end(), is_effort_interface);
-  if (num_stop_effort_interfaces == kNumberOfJoints) {
-    effort_interface_claimed_ = false;
-  } else if (num_stop_effort_interfaces != 0) {
-    RCLCPP_FATAL(this->getLogger(), "Expected %ld effort interfaces to stop, but got %ld instead.",
-                 kNumberOfJoints, num_stop_effort_interfaces);
-    std::string error_string = "Invalid number of effort interfaces to stop. Expected ";
-    error_string += std::to_string(kNumberOfJoints);
-    throw std::invalid_argument(error_string);
-  }
+  auto is_velocity_interface = [](const std::string& interface) {
+    return interface.find(hardware_interface::HW_IF_VELOCITY) != std::string::npos;
+  };
 
-  int64_t num_start_effort_interfaces =
-      std::count_if(start_interfaces.begin(), start_interfaces.end(), is_effort_interface);
-  if (num_start_effort_interfaces == kNumberOfJoints) {
-    effort_interface_claimed_ = true;
-  } else if (num_start_effort_interfaces != 0) {
-    RCLCPP_FATAL(this->getLogger(), "Expected %ld effort interfaces to start, but got %ld instead.",
-                 kNumberOfJoints, num_start_effort_interfaces);
-    std::string error_string = "Invalid number of effort interfaces to start. Expected ";
-    error_string += std::to_string(kNumberOfJoints);
-    throw std::invalid_argument(error_string);
-  }
+  auto generate_error_message = [&](const std::string& start_stop_command,
+                                    const std::string& interface_name, int64_t num_interface) {
+    RCLCPP_FATAL(this->getLogger(), "Expected %ld %s interfaces to %s, but got %ld instead.",
+                 kNumberOfJoints, interface_name.c_str(), start_stop_command.c_str(),
+                 num_interface);
+    std::ostringstream error_message_stream;
+    error_message_stream << "Invalid number of " << interface_name << " interfaces to "
+                         << start_stop_command << ". Expected " << std::to_string(kNumberOfJoints);
+    std::string error_message = error_message_stream.str();
+
+    throw std::invalid_argument(error_message);
+  };
+
+  auto start_stop_interface =
+      [&](const std::function<bool(const std::string& interface)>& find_interface_function,
+          const std::string& interface_name, bool& claim_flag) {
+        int64_t num_stop_interface =
+            std::count_if(stop_interfaces.begin(), stop_interfaces.end(), find_interface_function);
+        int64_t num_start_interface = std::count_if(
+            start_interfaces.begin(), start_interfaces.end(), find_interface_function);
+
+        if (num_stop_interface == kNumberOfJoints) {
+          claim_flag = false;
+        } else if (num_stop_interface != 0) {
+          generate_error_message("stop", interface_name, num_stop_interface);
+        }
+        if (num_start_interface == kNumberOfJoints) {
+          claim_flag = true;
+        } else if (num_start_interface != 0) {
+          generate_error_message("start", interface_name, num_start_interface);
+        }
+      };
+
+  start_stop_interface(is_effort_interface, hardware_interface::HW_IF_EFFORT,
+                       effort_interface_claimed_);
+  start_stop_interface(is_velocity_interface, hardware_interface::HW_IF_VELOCITY,
+                       velocity_joint_interface_claimed_);
+
   return hardware_interface::return_type::OK;
 }
 }  // namespace franka_hardware

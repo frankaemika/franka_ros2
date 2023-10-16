@@ -23,6 +23,7 @@
 #include <thread>
 
 #include <franka/active_control.h>
+#include <franka/active_motion_generator.h>
 #include <franka/active_torque_control.h>
 
 #include <franka/model.h>
@@ -59,8 +60,11 @@ class Robot {
   /// Stops the currently running loop and closes the connection with the robot.
   virtual ~Robot();
 
-  /// Starts a read / write communication with the connected robot
-  virtual void initializeReadWriteInterface();
+  /// Starts the active control for torque control
+  virtual void initializeTorqueInterface();
+
+  /// Starts the active control for joint velocity control
+  virtual void initializeJointVelocityInterface();
 
   /// stops the read continous communication with the connected robot
   virtual void stopRobot();
@@ -78,11 +82,11 @@ class Robot {
   virtual franka_hardware::Model* getModel();
 
   /**
-   * Sends new desired torque commands to the control loop in a thread-safe way.
-   * The robot will use these torques until a different set of torques are commanded.
-   * @param[in] efforts torque command for each joint.
+   * This function will automatically propagate the received hardware active command
+   * interface
+   * @param[in] joint_hardware_command joint hardware command either efforts or velocities
    */
-  virtual void writeOnce(const std::array<double, 7>& efforts);
+  virtual void writeOnce(const std::array<double, 7>& joint_hardware_command);
 
   /**
    * Sets the impedance for each joint in the internal controller.
@@ -200,6 +204,26 @@ class Robot {
    */
   virtual franka::RobotState readOnceActiveControl();
 
+  /**
+   * The robot will use these torques until a different set of torques are commanded.
+   * @param[in] efforts torque command for each joint.
+   */
+  virtual void writeOnceEfforts(const std::array<double, 7>& efforts);
+
+  /**
+   * The robot will use these velocities until a different set of velocities are commanded.
+   * @param[in] joint_velocities joint velocity command.
+   */
+  virtual void writeOnceJointVelocities(const std::array<double, 7>& joint_velocities);
+
+  /**
+   * @brief Checks if control loop is activated for active control.
+   *
+   * @return true when active control started either with effort or velocity command.
+   * @return false when active control is not started.
+   */
+  virtual bool isControlLoopActive();
+
   std::mutex write_mutex_;
   std::mutex control_mutex_;
 
@@ -209,7 +233,11 @@ class Robot {
   std::unique_ptr<Model> franka_hardware_model_;
 
   std::array<double, 7> last_desired_torque_ = {0, 0, 0, 0, 0, 0, 0};
-  bool control_loop_active_{false};
+
+  bool effort_interface_active_{false};
+  bool joint_velocity_interface_active_{false};
+  bool velocity_command_rate_limit_active_{false};
+
   franka::RobotState current_state_;
 };
 }  // namespace franka_hardware
