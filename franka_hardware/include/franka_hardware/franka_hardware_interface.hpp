@@ -63,9 +63,19 @@ class FrankaHardwareInterface : public hardware_interface::SystemInterface {
   std::shared_ptr<FrankaExecutor> executor_;
 
   std::array<double, kNumberOfJoints> hw_commands_{0, 0, 0, 0, 0, 0, 0};
+
   std::array<double, kNumberOfJoints> hw_positions_{0, 0, 0, 0, 0, 0, 0};
   std::array<double, kNumberOfJoints> hw_velocities_{0, 0, 0, 0, 0, 0, 0};
   std::array<double, kNumberOfJoints> hw_efforts_{0, 0, 0, 0, 0, 0, 0};
+
+  std::array<double, 6> hw_cartesian_velocities_{0, 0, 0, 0, 0, 0};
+  std::array<std::string, 6> hw_cartesian_velocities_names_{"vx", "vy", "vz", "wx", "wy", "wz"};
+  std::array<double, 2> hw_elbow_command_{0, 0};
+  std::array<std::string, 2> hw_elbow_command_names_{"joint_3_position", "joint_4_sign"};
+
+  const std::string k_HW_IF_CARTESIAN_VELOCITY = "cartesian_velocity";
+  const std::string k_HW_IF_ELBOW_COMMAND = "elbow_command";
+  const std::string k_joint_velocity_interface = "/velocity";
 
   franka::RobotState hw_franka_robot_state_;
   franka::RobotState* hw_franka_robot_state_addr_ = &hw_franka_robot_state_;
@@ -76,6 +86,12 @@ class FrankaHardwareInterface : public hardware_interface::SystemInterface {
 
   bool velocity_joint_interface_claimed_ = false;
   bool velocity_joint_interface_running_ = false;
+
+  bool velocity_cartesian_interface_claimed_ = false;
+  bool velocity_cartesian_interface_running_ = false;
+
+  bool elbow_command_interface_claimed_ = false;
+  bool elbow_command_interface_running_ = false;
 
   static rclcpp::Logger getLogger();
 

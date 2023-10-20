@@ -34,6 +34,8 @@
 #include <franka_msgs/srv/set_stiffness_frame.hpp>
 #include <franka_msgs/srv/set_tcp_frame.hpp>
 
+#include "test_utils.hpp"
+
 const std::string k_position_controller{"position"};
 const std::string k_velocity_controller{"velocity"};
 const std::string k_effort_controller{"effort"};
@@ -44,43 +46,6 @@ const double k_EPS{1e-5};
 using namespace std::chrono_literals;
 
 class FrankaHardwareInterfaceTest : public ::testing::TestWithParam<std::string> {};
-
-class MockModel : public franka_hardware::Model {};
-
-class MockRobot : public franka_hardware::Robot {
- public:
-  MOCK_METHOD(void, initializeTorqueInterface, (), (override));
-  MOCK_METHOD(void, initializeJointVelocityInterface, (), (override));
-  MOCK_METHOD(void, stopRobot, (), (override));
-  MOCK_METHOD(franka::RobotState, readOnce, (), (override));
-  MOCK_METHOD(MockModel*, getModel, (), (override));
-  MOCK_METHOD(void, writeOnce, ((const std::array<double, 7>&)efforts), (override));
-  MOCK_METHOD(void,
-              setJointStiffness,
-              (const franka_msgs::srv::SetJointStiffness::Request::SharedPtr&),
-              (override));
-  MOCK_METHOD(void,
-              setCartesianStiffness,
-              (const franka_msgs::srv::SetCartesianStiffness::Request::SharedPtr&),
-              (override));
-  MOCK_METHOD(void, setLoad, (const franka_msgs::srv::SetLoad::Request::SharedPtr&), (override));
-  MOCK_METHOD(void,
-              setTCPFrame,
-              (const franka_msgs::srv::SetTCPFrame::Request::SharedPtr&),
-              (override));
-  MOCK_METHOD(void,
-              setStiffnessFrame,
-              (const franka_msgs::srv::SetStiffnessFrame::Request::SharedPtr&),
-              (override));
-  MOCK_METHOD(void,
-              setForceTorqueCollisionBehavior,
-              (const franka_msgs::srv::SetForceTorqueCollisionBehavior::Request::SharedPtr&),
-              (override));
-  MOCK_METHOD(void,
-              setFullCollisionBehavior,
-              (const franka_msgs::srv::SetFullCollisionBehavior::Request::SharedPtr&),
-              (override));
-};
 
 auto createHardwareInfo() -> hardware_interface::HardwareInfo {
   hardware_interface::HardwareInfo info;
@@ -153,8 +118,7 @@ void get_param_service_response(
   response = *result.get();
 }
 
-TEST_P(FrankaHardwareInterfaceTest, when_on_init_called_expect_success) {
-  std::string command_interface = GetParam();
+TEST_F(FrankaHardwareInterfaceTest, when_on_init_called_expect_success) {
   auto mock_robot = std::make_shared<MockRobot>();
   const hardware_interface::HardwareInfo info = createHardwareInfo();
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
@@ -164,7 +128,8 @@ TEST_P(FrankaHardwareInterfaceTest, when_on_init_called_expect_success) {
             rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 }
 
-TEST(FrankaHardwareInterfaceTest, given_that_the_robot_interfaces_set_when_read_called_return_ok) {
+TEST_F(FrankaHardwareInterfaceTest,
+       given_that_the_robot_interfaces_set_when_read_called_return_ok) {
   franka::RobotState robot_state;
   MockModel mock_model;
   MockModel* model_address = &mock_model;
@@ -181,11 +146,9 @@ TEST(FrankaHardwareInterfaceTest, given_that_the_robot_interfaces_set_when_read_
   EXPECT_EQ(return_type, hardware_interface::return_type::OK);
 }
 
-TEST_P(
+TEST_F(
     FrankaHardwareInterfaceTest,
     given_that_the_robot_interfaces_are_set_when_call_export_state_return_zero_values_and_correct_interface_names) {
-  std::string command_interface = GetParam();
-
   franka::RobotState robot_state;
   const size_t state_interface_size = 23;  // position, effort and velocity states for
                                            // every joint + robot state and model
@@ -226,11 +189,9 @@ TEST_P(
   EXPECT_EQ(states.size(), state_interface_size);
 }
 
-TEST_P(
+TEST_F(
     FrankaHardwareInterfaceTest,
     given_that_the_robot_interfaces_are_set_when_call_export_state_interface_robot_model_interface_exists) {
-  std::string command_interface = GetParam();
-
   franka::RobotState robot_state;
   const size_t state_interface_size = 23;  // position, effort and velocity states for
                                            // every joint + robot state and model
@@ -258,11 +219,9 @@ TEST_P(
                        // is correctly pushed to state interface
 }
 
-TEST_P(
+TEST_F(
     FrankaHardwareInterfaceTest,
     given_that_the_robot_interfaces_are_set_when_call_export_state_interface_robot_state_interface_exists) {
-  std::string command_interface = GetParam();
-
   const size_t state_interface_size = 23;  // position, effort and velocity states for
                                            // every joint + robot state and model
   auto mock_robot = std::make_shared<MockRobot>();
@@ -383,7 +342,7 @@ TEST_P(FrankaHardwareInterfaceTest, when_write_called_expect_ok) {
   std::string command_interface = GetParam();
 
   auto mock_robot = std::make_shared<MockRobot>();
-  EXPECT_CALL(*mock_robot, writeOnce(testing::_));
+  EXPECT_CALL(*mock_robot, writeOnce(std::array<double, 7>{}));
 
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
 
@@ -410,7 +369,7 @@ TEST_P(FrankaHardwareInterfaceTest, when_write_called_expect_ok) {
   EXPECT_EQ(franka_hardware_interface.write(time, duration), hardware_interface::return_type::OK);
 }
 
-TEST(FrankaHardwareInterfaceTest, when_on_activate_called_expect_success) {
+TEST_F(FrankaHardwareInterfaceTest, when_on_activate_called_expect_success) {
   franka::RobotState robot_state;
 
   MockModel mock_model;
@@ -426,7 +385,7 @@ TEST(FrankaHardwareInterfaceTest, when_on_activate_called_expect_success) {
             rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 }
 
-TEST(FrankaHardwareInterfaceTest, when_on_deactivate_called_expect_success) {
+TEST_F(FrankaHardwareInterfaceTest, when_on_deactivate_called_expect_success) {
   franka::RobotState robot_state;
 
   auto mock_robot = std::make_shared<MockRobot>();
@@ -510,7 +469,7 @@ TEST_P(FrankaHardwareInterfaceTest,
             hardware_interface::return_type::OK);
 }
 
-TEST(
+TEST_F(
     FrankaHardwareInterfaceTest,
     given_param_service_server_setup_when_set_joint_stiffness_service_called_expect_robot_set_joint_stiffness_to_be_called) {
   auto expect_call_set_joint_stiffness = [&](std::shared_ptr<MockRobot> mock_robot) {
@@ -525,7 +484,7 @@ TEST(
   ASSERT_TRUE(response.success);
 }
 
-TEST(
+TEST_F(
     FrankaHardwareInterfaceTest,
     given_param_service_server_setup_when_set_joint_cartesian_service_called_expect_robot_set_joint_cartesian_to_be_called) {
   auto expect_call_set_cartesian_stiffness = [&](std::shared_ptr<MockRobot> mock_robot) {
@@ -540,7 +499,7 @@ TEST(
   ASSERT_TRUE(response.success);
 }
 
-TEST(
+TEST_F(
     FrankaHardwareInterfaceTest,
     given_param_service_server_setup_when_set_load_service_called_expect_robot_set_load_to_be_called) {
   auto expect_call_set_load = [&](std::shared_ptr<MockRobot> mock_robot) {
@@ -554,7 +513,7 @@ TEST(
   ASSERT_TRUE(response.success);
 }
 
-TEST(
+TEST_F(
     FrankaHardwareInterfaceTest,
     given_param_service_server_setup_when_set_tcp_frame_service_called_expect_robot_set_tcp_frame_to_be_called) {
   auto expect_call_set_tcp_frame = [&](std::shared_ptr<MockRobot> mock_robot) {
@@ -568,7 +527,7 @@ TEST(
   ASSERT_TRUE(response.success);
 }
 
-TEST(
+TEST_F(
     FrankaHardwareInterfaceTest,
     given_param_service_server_setup_when_set_stiffness_frame_service_called_expect_robot_set_stiffness_frame_to_be_called) {
   auto expect_call_set_stiffness_frame = [&](std::shared_ptr<MockRobot> mock_robot) {
@@ -583,7 +542,7 @@ TEST(
   ASSERT_TRUE(response.success);
 }
 
-TEST(
+TEST_F(
     FrankaHardwareInterfaceTest,
     given_param_service_server_setup_when_set_force_torque_collision_behavior_service_called_expect_same_function_in_robot_class_to_be_called) {
   auto expect_call_set_force_torque_collision_behavior =
@@ -600,7 +559,7 @@ TEST(
   ASSERT_TRUE(response.success);
 }
 
-TEST(
+TEST_F(
     FrankaHardwareInterfaceTest,
     given_param_service_server_setup_when_set_full_collision_behavior_service_called_expect_same_function_in_robot_class_to_be_called) {
   auto expect_call_set_full_collision_behavior = [&](std::shared_ptr<MockRobot> mock_robot) {
@@ -616,7 +575,7 @@ TEST(
   ASSERT_TRUE(response.success);
 }
 
-TEST(FrankaHardwareInterfaceTest, set_joint_stiffness_throws_error) {
+TEST_F(FrankaHardwareInterfaceTest, set_joint_stiffness_throws_error) {
   auto set_joint_stiffness_mock_throw = [&](std::shared_ptr<MockRobot> mock_robot) {
     EXPECT_CALL(*mock_robot, setJointStiffness(testing::_))
         .Times(1)
@@ -632,7 +591,7 @@ TEST(FrankaHardwareInterfaceTest, set_joint_stiffness_throws_error) {
   ASSERT_EQ(response.error, "network exception error");
 }
 
-TEST(FrankaHardwareInterfaceTest, set_cartesian_stiffness_throws_error) {
+TEST_F(FrankaHardwareInterfaceTest, set_cartesian_stiffness_throws_error) {
   auto set_cartesian_stiffness_mock_throw = [&](std::shared_ptr<MockRobot> mock_robot) {
     EXPECT_CALL(*mock_robot, setCartesianStiffness(testing::_))
         .Times(1)
@@ -647,7 +606,7 @@ TEST(FrankaHardwareInterfaceTest, set_cartesian_stiffness_throws_error) {
   ASSERT_EQ(response.error, "network exception error");
 }
 
-TEST(FrankaHardwareInterfaceTest, set_load_throws_error) {
+TEST_F(FrankaHardwareInterfaceTest, set_load_throws_error) {
   auto set_load_mock_throw = [&](std::shared_ptr<MockRobot> mock_robot) {
     EXPECT_CALL(*mock_robot, setLoad(testing::_))
         .Times(1)
@@ -662,7 +621,7 @@ TEST(FrankaHardwareInterfaceTest, set_load_throws_error) {
   ASSERT_EQ(response.error, "network exception error");
 }
 
-TEST(FrankaHardwareInterfaceTest, set_EE_frame_throws_error) {
+TEST_F(FrankaHardwareInterfaceTest, set_EE_frame_throws_error) {
   auto set_tcp_frame_mock_throw = [&](std::shared_ptr<MockRobot> mock_robot) {
     EXPECT_CALL(*mock_robot, setTCPFrame(testing::_))
         .Times(1)
@@ -676,7 +635,7 @@ TEST(FrankaHardwareInterfaceTest, set_EE_frame_throws_error) {
   ASSERT_EQ(response.error, "network exception error");
 }
 
-TEST(FrankaHardwareInterfaceTest, set_K_frame_throws_error) {
+TEST_F(FrankaHardwareInterfaceTest, set_K_frame_throws_error) {
   auto set_stiffness_frame_mock_throw = [&](std::shared_ptr<MockRobot> mock_robot) {
     EXPECT_CALL(*mock_robot, setStiffnessFrame(testing::_))
         .Times(1)
@@ -691,7 +650,7 @@ TEST(FrankaHardwareInterfaceTest, set_K_frame_throws_error) {
   ASSERT_EQ(response.error, "network exception error");
 }
 
-TEST(FrankaHardwareInterfaceTest, set_force_torque_collision_behavior_throws_error) {
+TEST_F(FrankaHardwareInterfaceTest, set_force_torque_collision_behavior_throws_error) {
   auto set_force_torque_collision_behavior_mock_throw = [&](std::shared_ptr<MockRobot> mock_robot) {
     EXPECT_CALL(*mock_robot, setForceTorqueCollisionBehavior(testing::_))
         .Times(1)
@@ -708,7 +667,7 @@ TEST(FrankaHardwareInterfaceTest, set_force_torque_collision_behavior_throws_err
   ASSERT_EQ(response.error, "network exception error");
 }
 
-TEST(FrankaHardwareInterfaceTest, set_full_collision_behavior_throws_error) {
+TEST_F(FrankaHardwareInterfaceTest, set_full_collision_behavior_throws_error) {
   auto set_full_collision_behavior_mock_throw = [&](std::shared_ptr<MockRobot> mock_robot) {
     EXPECT_CALL(*mock_robot, setFullCollisionBehavior(testing::_))
         .Times(1)

@@ -31,6 +31,7 @@ add_library(
         src/gravity_compensation_example_controller.cpp
         src/joint_impedance_example_controller.cpp
         src/joint_velocity_example_controller.cpp
+        src/cartesian_velocity_example_controller.cpp
         src/model_example_controller.cpp
         src/move_to_start_example_controller.cpp
         src/motion_generator.cpp)
