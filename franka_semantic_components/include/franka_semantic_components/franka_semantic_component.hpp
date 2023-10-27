@@ -39,7 +39,7 @@ class FrankaSemanticComponentInterface {
     command_interfaces_.reserve(command_interface_size);
   }
 
-  ~FrankaSemanticComponentInterface() = default;
+  virtual ~FrankaSemanticComponentInterface() = default;
 
   /// Assign loaned state interfaces from the hardware.
   /**
@@ -107,11 +107,11 @@ class FrankaSemanticComponentInterface {
     return command_interface_names_;
   }
 
-  /// Return all values.
+  /// Return all values of the state interfaces.
   /**
    * \return true if it gets all the values, else false
    */
-  bool get_values(std::vector<double>& values) const {
+  bool get_values_state_interfaces(std::vector<double>& values) const {
     // check we have sufficient memory
     if (values.capacity() != state_interfaces_.size()) {
       return false;
@@ -119,6 +119,22 @@ class FrankaSemanticComponentInterface {
     // insert all the values
     for (size_t i = 0; i < state_interfaces_.size(); ++i) {
       values.emplace_back(state_interfaces_[i].get().get_value());
+    }
+    return true;
+  }
+
+  /// Return all values for the command interfaces
+  /**
+   * \return true if it gets all the values, else false
+   */
+  bool get_values_command_interfaces(std::vector<double>& values) const {
+    // check we have sufficient memory
+    if (values.capacity() != command_interfaces_.size()) {
+      return false;
+    }
+    // insert all the values
+    for (size_t i = 0; i < command_interfaces_.size(); ++i) {
+      values.emplace_back(command_interfaces_[i].get().get_value());
     }
     return true;
   }

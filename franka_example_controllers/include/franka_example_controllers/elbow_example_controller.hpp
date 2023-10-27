@@ -26,9 +26,9 @@ using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
 namespace franka_example_controllers {
 
 /**
- * The cartesian velocity example controller
+ * The elbow example controller
  */
-class CartesianVelocityExampleController : public controller_interface::ControllerInterface {
+class ElbowExampleController : public controller_interface::ControllerInterface {
  public:
   [[nodiscard]] controller_interface::InterfaceConfiguration command_interface_configuration()
       const override;
@@ -45,12 +45,10 @@ class CartesianVelocityExampleController : public controller_interface::Controll
   std::unique_ptr<franka_semantic_components::FrankaCartesianVelocityInterface>
       franka_cartesian_velocity_;
 
-  const double k_time_max_{4.0};
-  const double k_v_max_{0.05};
-  const double k_angle_{M_PI / 4.0};
-  const bool k_elbow_activated_{false};
+  const bool k_elbow_activated_{true};
+  std::vector<double> initial_cartesian_velocity_and_elbow;
 
-  rclcpp::Duration elapsed_time_ = rclcpp::Duration(0, 0);
+  double elapsed_time_{0.0};
 };
 
 }  // namespace franka_example_controllers

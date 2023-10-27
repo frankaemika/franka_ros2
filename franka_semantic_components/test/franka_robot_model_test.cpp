@@ -67,11 +67,11 @@ TEST_F(FrankaRobotModelTest, validate_state_names_and_size) {
   franka_robot_model_friend->assign_loaned_state_interfaces(temp_state_interfaces);
 
   franka_robot_model_friend->initialize();
-  ASSERT_EQ(franka_robot_model_friend->interface_names_.size(), size);
+  ASSERT_EQ(franka_robot_model_friend->state_interface_names_.size(), size);
   ASSERT_EQ(franka_robot_model_friend->state_interfaces_.capacity(), size);
 
-  ASSERT_TRUE(std::equal(franka_robot_model_friend->interface_names_.begin(),
-                         franka_robot_model_friend->interface_names_.end(),
+  ASSERT_TRUE(std::equal(franka_robot_model_friend->state_interface_names_.begin(),
+                         franka_robot_model_friend->state_interface_names_.end(),
                          full_interface_names.begin(), full_interface_names.end()));
   ASSERT_EQ(franka_robot_model_friend->state_interfaces_.size(), size);
   franka_robot_model_friend->release_interfaces();

@@ -23,6 +23,12 @@
             The cartesian velocity example controller commands linear velocity with x and z components.
         </description>
     </class>
+    <class name="franka_example_controllers/ElbowExampleController"
+           type="franka_example_controllers::ElbowExampleController" base_class_type="controller_interface::ControllerInterface">
+        <description>
+            The elbow example controller commands elbow position with zero cartesian velocity. Nullspace of the robot is actuated.
+        </description>
+    </class>
     <class name="franka_example_controllers/MoveToStartExampleController"
            type="franka_example_controllers::MoveToStartExampleController" base_class_type="controller_interface::ControllerInterface">
         <description>

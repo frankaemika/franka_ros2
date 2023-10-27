@@ -118,15 +118,14 @@ TEST_P(
       std::invalid_argument);
 }
 
-TEST_F(
-    FrankaCartesianCommandInterfaceTest,
-    given_cartesian_velocity_and_elbow_commands_are_claimed_when_perform_mode_switch_is_called_expect_success) {
+TEST_F(FrankaCartesianCommandInterfaceTest,
+       given_read_is_not_called_when_write_is_called_expec_robot_writeOnce_is_not_called) {
   auto mock_robot = std::make_shared<MockRobot>();
 
   EXPECT_CALL(*mock_robot, stopRobot());
   EXPECT_CALL(*mock_robot, initializeCartesianVelocityInterface());
 
-  EXPECT_CALL(*mock_robot, writeOnce(_, _));
+  EXPECT_CALL(*mock_robot, writeOnce(_, _)).Times(0);
 
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
 
@@ -152,6 +151,44 @@ TEST_F(
   const auto time = rclcpp::Time(0, 0);
   const auto duration = rclcpp::Duration(0, 0);
 
+  EXPECT_EQ(franka_hardware_interface.write(time, duration), hardware_interface::return_type::OK);
+}
+
+TEST_F(FrankaCartesianCommandInterfaceTest,
+       given_cartesian_velocity_and_elbow_set_when_read_and_write_called_expect_success) {
+  auto mock_robot = std::make_shared<MockRobot>();
+
+  EXPECT_CALL(*mock_robot, stopRobot());
+  EXPECT_CALL(*mock_robot, initializeCartesianVelocityInterface());
+
+  EXPECT_CALL(*mock_robot, readOnce()).Times(1);
+  EXPECT_CALL(*mock_robot, writeOnce(_, _)).Times(1);
+
+  franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
+
+  std::vector<std::string> start_interface;
+
+  for (size_t i = 0; i < k_hw_cartesian_velocities_names.size(); i++) {
+    const std::string name = k_hw_cartesian_velocities_names[i];
+    start_interface.push_back(name + "/" + k_cartesian_velocity_command_interface_name);
+  }
+  for (size_t i = 0; i < k_hw_elbow_command_names.size(); i++) {
+    const std::string name = k_hw_elbow_command_names[i];
+    start_interface.push_back(name + "/" + k_elbow_command_interface_name);
+  }
+
+  std::vector<std::string> stop_interface = {};
+
+  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+            hardware_interface::return_type::OK);
+  // can call write only after performing command mode switch
+  EXPECT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
+            hardware_interface::return_type::OK);
+
+  const auto time = rclcpp::Time(0, 0);
+  const auto duration = rclcpp::Duration(0, 0);
+
+  EXPECT_EQ(franka_hardware_interface.read(time, duration), hardware_interface::return_type::OK);
   EXPECT_EQ(franka_hardware_interface.write(time, duration), hardware_interface::return_type::OK);
 }
 

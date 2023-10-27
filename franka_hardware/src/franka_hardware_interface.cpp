@@ -138,7 +138,8 @@ hardware_interface::return_type FrankaHardwareInterface::write(const rclcpp::Tim
     robot_->writeOnce(hw_commands_);
   } else if (velocity_cartesian_interface_running_ && elbow_command_interface_running_ &&
              !first_pass) {
-    // Wait until the first_pass is done to write the elbow command to the robot
+    // Wait until the first read pass after robot controller is activated to write the elbow
+    // command to the robot
     robot_->writeOnce(hw_cartesian_velocities_, hw_elbow_command_);
   } else if (velocity_cartesian_interface_running_ && !elbow_command_interface_running_) {
     robot_->writeOnce(hw_cartesian_velocities_);

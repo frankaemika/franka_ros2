@@ -51,8 +51,9 @@ class FrankaCartesianVelocityInterface : public FrankaSemanticComponentInterface
                   const std::array<double, 2>& elbow) noexcept;
 
  private:
-  std::array<std::string, 6> hw_cartesian_velocities_names_{"vx", "vy", "vz", "wx", "wy", "wz"};
-  std::array<std::string, 2> hw_elbow_command_names_{"joint_3_position", "joint_4_sign"};
+  const std::array<std::string, 6> hw_cartesian_velocities_names_{"vx", "vy", "vz",
+                                                                  "wx", "wy", "wz"};
+  const std::array<std::string, 2> hw_elbow_command_names_{"joint_3_position", "joint_4_sign"};
   const size_t state_interface_size_{0};
   const size_t command_interface_size_{8};
   bool command_elbow_active_;
