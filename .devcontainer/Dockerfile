@@ -43,10 +43,7 @@ RUN apt-get update && \
     ros-humble-joint-trajectory-controller \
     libpoco-dev \
     libeigen3-dev \
-    ament-cmake-clang-tidy \
     && rm -rf /var/lib/apt/lists/*
-
-ENV XDG_RUNTIME_DIR=/run/user/"${USER_UID}"
 
 RUN mkdir ~/source_code
 RUN cd ~/source_code && git clone https://github.com/frankaemika/libfranka.git \
@@ -59,8 +56,14 @@ RUN cd ~/source_code && git clone https://github.com/frankaemika/libfranka.git \
     && make franka -j$(nproc) \
     && cpack -G DEB \
     && sudo dpkg -i libfranka*.deb
-    
+
+RUN addgroup realtime
+RUN usermod -a -G realtime $USERNAME
+
+ENV XDG_RUNTIME_DIR=/run/user/"${USER_UID}"
+
 # set the default user to the newly created user
 USER $USERNAME
 
-RUN echo 'source "/opt/ros/$ROS_DISTRO/setup.bash"' >>~/.bashrc
+RUN echo "source /ros_entrypoint.sh" >>~/.bashrc
+RUN echo "export ROS_DOMAIN_ID=100" >>~/.bashrc
