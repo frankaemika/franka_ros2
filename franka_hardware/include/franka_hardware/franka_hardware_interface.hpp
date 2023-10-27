@@ -39,6 +39,7 @@ class FrankaHardwareInterface : public hardware_interface::SystemInterface {
  public:
   explicit FrankaHardwareInterface(std::shared_ptr<Robot> robot);
   FrankaHardwareInterface() = default;
+  virtual ~FrankaHardwareInterface() = default;
 
   hardware_interface::return_type prepare_command_mode_switch(
       const std::vector<std::string>& start_interfaces,
@@ -62,16 +63,38 @@ class FrankaHardwareInterface : public hardware_interface::SystemInterface {
   std::shared_ptr<FrankaParamServiceServer> node_;
   std::shared_ptr<FrankaExecutor> executor_;
 
+  // Initialize joint position commands in the first pass
+  bool first_pass{true};
+
   std::array<double, kNumberOfJoints> hw_commands_{0, 0, 0, 0, 0, 0, 0};
 
+  // Robot joint states
   std::array<double, kNumberOfJoints> hw_positions_{0, 0, 0, 0, 0, 0, 0};
   std::array<double, kNumberOfJoints> hw_velocities_{0, 0, 0, 0, 0, 0, 0};
   std::array<double, kNumberOfJoints> hw_efforts_{0, 0, 0, 0, 0, 0, 0};
 
-  std::array<double, 6> hw_cartesian_velocities_{0, 0, 0, 0, 0, 0};
+  /**
+   * Desired Cartesian velocity with respect to the o-frame
+   * "base frame O" with (vx, vy, vz)\ in [m/s] and
+   * (wx, wy, wz) in [rad/s].
+   */
   std::array<std::string, 6> hw_cartesian_velocities_names_{"vx", "vy", "vz", "wx", "wy", "wz"};
-  std::array<double, 2> hw_elbow_command_{0, 0};
+  std::array<double, 6> hw_cartesian_velocities_{0, 0, 0, 0, 0, 0};
+
+  /**
+   * Elbow configuration.
+   *
+   * The values of the array are:
+   *  - elbow[0]: Position of the 3rd joint in \f$[rad]\f$.
+   *  - elbow[1]: Flip direction of the elbow (4th joint):
+   *    - +1 if \f$q_4 > \alpha\f$
+   *    - 0 if \f$q_4 == \alpha \f$
+   *    - -1 if \f$q_4 < \alpha \f$
+   *    .
+   *    with \f$\alpha = -0.467002423653011\f$ \f$rad\f$
+   */
   std::array<std::string, 2> hw_elbow_command_names_{"joint_3_position", "joint_4_sign"};
+  std::array<double, 2> hw_elbow_command_{0, 0};
 
   const std::string k_HW_IF_CARTESIAN_VELOCITY = "cartesian_velocity";
   const std::string k_HW_IF_ELBOW_COMMAND = "elbow_command";

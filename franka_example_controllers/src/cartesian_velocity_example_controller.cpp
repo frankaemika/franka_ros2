@@ -73,7 +73,7 @@ CallbackReturn CartesianVelocityExampleController::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   franka_cartesian_velocity_ =
       std::make_unique<franka_semantic_components::FrankaCartesianVelocityInterface>(
-          franka_semantic_components::FrankaCartesianVelocityInterface(true));
+          franka_semantic_components::FrankaCartesianVelocityInterface(k_elbow_activated_));
 
   auto client = get_node()->create_client<franka_msgs::srv::SetFullCollisionBehavior>(
       "service_server/set_full_collision_behavior");

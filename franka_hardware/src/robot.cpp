@@ -130,9 +130,6 @@ void Robot::writeOnce(const std::array<double, 6>& cartesian_velocities,
                       const std::array<double, 2>& elbow_command) {
   std::lock_guard<std::mutex> lock(control_mutex_);
 
-  // check if the elbow is zeros. If full zeros call writeOnce(cartesian_velocities)
-  // std::cout << "WRITING CART VEL WITH ELBOW" << std::endl;
-  // writeOnce(cartesian_velocities);
   auto velocity_command = franka::CartesianVelocities(cartesian_velocities, elbow_command);
 
   if (cartesian_velocity_low_pass_filter_active) {
@@ -140,9 +137,11 @@ void Robot::writeOnce(const std::array<double, 6>& cartesian_velocities,
       velocity_command.O_dP_EE[i] =
           franka::lowpassFilter(franka::kDeltaT, velocity_command.O_dP_EE[i],
                                 current_state_.O_dP_EE_c[i], low_pass_filter_cut_off_freq);
+      velocity_command.elbow[0] =
+          franka::lowpassFilter(franka::kDeltaT, velocity_command.elbow[0],
+                                current_state_.elbow_c[0], low_pass_filter_cut_off_freq);
     }
   }
-
   // If you are experiencing issues with robot error. You can try activating the rate
   // limiter. Rate limiter is default deactivated (cartesian_velocity_command_rate_limit_active_)
   if (cartesian_velocity_command_rate_limit_active_) {
@@ -151,8 +150,13 @@ void Robot::writeOnce(const std::array<double, 6>& cartesian_velocities,
         franka::kMaxTranslationalJerk, franka::kMaxRotationalVelocity,
         franka::kMaxRotationalAcceleration, franka::kMaxRotationalJerk, velocity_command.O_dP_EE,
         current_state_.O_dP_EE_c, current_state_.O_ddP_EE_c);
+    velocity_command.elbow[0] = franka::limitRate(
+        franka::kMaxElbowVelocity, franka::kMaxElbowAcceleration, franka::kMaxElbowJerk,
+        velocity_command.elbow[0], current_state_.elbow_c[0], current_state_.delbow_c[0],
+        current_state_.ddelbow_c[0]);
   }
   franka::checkFinite(velocity_command.O_dP_EE);
+  franka::checkElbow(velocity_command.elbow);
 
   active_control_->writeOnce(velocity_command);
 }
