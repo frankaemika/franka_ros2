@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.6 - 2023-11-03
+
+Requires libfranka >= 0.12.1, required ROS 2 Humble
+
+* franka\_hardware: support for cartesian velocity command interface
+* franka\_semantic\_component: implemented cartesian velocity interface
+* franka\_example\_controllers: implement cartesian velocity example controller
+* franka\_example\_controllers: implement elbow example controller
+
 ## 0.1.5 - 2023-10-13
 
 Requires libfranka >= 0.12.1, required ROS 2 Humble

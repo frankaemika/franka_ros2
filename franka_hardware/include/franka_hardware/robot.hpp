@@ -66,6 +66,9 @@ class Robot {
   /// Starts the active control for joint velocity control
   virtual void initializeJointVelocityInterface();
 
+  /// Starts the active control for joint velocity control
+  virtual void initializeCartesianVelocityInterface();
+
   /// stops the read continous communication with the connected robot
   virtual void stopRobot();
 
@@ -87,6 +90,29 @@ class Robot {
    * @param[in] joint_hardware_command joint hardware command either efforts or velocities
    */
   virtual void writeOnce(const std::array<double, 7>& joint_hardware_command);
+
+  /**
+   * @brief Preprocessing includes rate limiting and low pass filtering, if activated
+   *
+   * @param cartesian_velocities cartesian velocity in libfranka format
+   */
+  virtual void preProcessCartesianVelocities(franka::CartesianVelocities& cartesian_velocities);
+
+  /**
+   * Cartesian velocity command
+   * @param[in] cartesian_velocity_command cartesian level velocity command in format
+   *  [vx, vy, vz, wx, wy, wz]
+   */
+  virtual void writeOnce(const std::array<double, 6>& cartesian_velocity_command);
+
+  /**
+   * Cartesian velocity command with elbow command
+   * @param[in] cartesian_velocity_command cartesian level velocity command in format
+   *  [vx, vy, vz, wx, wy, wz]
+   * @param[in] elbow_command elbow command representing joint3_position in rad and joint4 sign
+   */
+  virtual void writeOnce(const std::array<double, 6>& cartesian_velocity_command,
+                         const std::array<double, 2>& elbow_command);
 
   /**
    * Sets the impedance for each joint in the internal controller.
@@ -236,7 +262,12 @@ class Robot {
 
   bool effort_interface_active_{false};
   bool joint_velocity_interface_active_{false};
+  bool cartesian_velocity_interface_active_{false};
+
   bool velocity_command_rate_limit_active_{false};
+  bool cartesian_velocity_command_rate_limit_active_{false};
+  bool cartesian_velocity_low_pass_filter_active{false};
+  double low_pass_filter_cut_off_freq{1000.0};
 
   franka::RobotState current_state_;
 };

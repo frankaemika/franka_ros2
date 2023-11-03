@@ -22,7 +22,11 @@ endforeach()
 
 find_package(Franka REQUIRED)
 
-add_library(franka_semantic_components SHARED src/franka_robot_state.cpp src/franka_robot_model.cpp)
+add_library(franka_semantic_components SHARED
+            src/franka_robot_state.cpp
+            src/franka_robot_model.cpp
+            src/franka_cartesian_velocity_interface.cpp
+            src/franka_semantic_component_interface.cpp)
 target_include_directories(franka_semantic_components PRIVATE include)
 target_link_libraries(franka_semantic_components Franka::Franka)
 ament_target_dependencies(franka_semantic_components
@@ -80,6 +84,37 @@ if(BUILD_TESTING)
     hardware_interface
     franka_msgs
     Franka
+  )
+
+  ament_add_gmock(
+    franka_semantic_component_interface_test
+    test/franka_semantic_interface_test.cpp
+  )
+  target_include_directories(franka_semantic_component_interface_test PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+  target_link_libraries(franka_semantic_component_interface_test
+    franka_semantic_components
+  )
+
+  ament_target_dependencies(
+    franka_semantic_component_interface_test
+    hardware_interface
+  )
+
+  ament_add_gmock(
+    franka_cartesian_velocity_interface_test
+    test/franka_cartesian_velocity_interface_test.cpp
+  )
+
+  target_include_directories(franka_cartesian_velocity_interface_test PRIVATE  ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+  target_link_libraries(franka_cartesian_velocity_interface_test
+    franka_semantic_components
+  )
+
+  ament_target_dependencies(
+    franka_cartesian_velocity_interface_test
+    hardware_interface
   )
 endif()
 

@@ -12,7 +12,14 @@ services:
       - ../:/workspaces/src
       - /tmp/.X11-unix:/tmp/.X11-unix
       - $XAUTHORITY:$XAUTHORITY
+      - ./limits.conf:/etc/security/limits.conf
     environment:
       QT_X11_NO_MITSHM: 1
       DISPLAY: $DISPLAY
     user: $UID:$UID
+    cap_add:
+      - SYS_NICE
+    ulimits:
+      rtprio: 99
+      rttime: -1
+      memlock: 8428281856

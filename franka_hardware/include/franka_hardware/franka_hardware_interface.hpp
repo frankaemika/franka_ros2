@@ -38,7 +38,12 @@ namespace franka_hardware {
 class FrankaHardwareInterface : public hardware_interface::SystemInterface {
  public:
   explicit FrankaHardwareInterface(std::shared_ptr<Robot> robot);
-  FrankaHardwareInterface() = default;
+  FrankaHardwareInterface();
+  FrankaHardwareInterface(const FrankaHardwareInterface&) = delete;
+  FrankaHardwareInterface& operator=(const FrankaHardwareInterface& other) = delete;
+  FrankaHardwareInterface& operator=(FrankaHardwareInterface&& other) = delete;
+  FrankaHardwareInterface(FrankaHardwareInterface&& other) = delete;
+  ~FrankaHardwareInterface() override = default;
 
   hardware_interface::return_type prepare_command_mode_switch(
       const std::vector<std::string>& start_interfaces,
@@ -58,14 +63,53 @@ class FrankaHardwareInterface : public hardware_interface::SystemInterface {
   static const size_t kNumberOfJoints = 7;
 
  private:
+  struct InterfaceInfo {
+    std::string interface_type;
+    size_t size;
+    bool& claim_flag;
+  };
+
   std::shared_ptr<Robot> robot_;
   std::shared_ptr<FrankaParamServiceServer> node_;
   std::shared_ptr<FrankaExecutor> executor_;
 
+  // Initialize joint position commands in the first pass
+  bool first_pass_{true};
+
   std::array<double, kNumberOfJoints> hw_commands_{0, 0, 0, 0, 0, 0, 0};
+
+  // Robot joint states
   std::array<double, kNumberOfJoints> hw_positions_{0, 0, 0, 0, 0, 0, 0};
   std::array<double, kNumberOfJoints> hw_velocities_{0, 0, 0, 0, 0, 0, 0};
   std::array<double, kNumberOfJoints> hw_efforts_{0, 0, 0, 0, 0, 0, 0};
+
+  /**
+   * Desired Cartesian velocity with respect to the o-frame
+   * "base frame O" with (vx, vy, vz)\ in [m/s] and
+   * (wx, wy, wz) in [rad/s].
+   */
+  std::array<std::string, 6> hw_cartesian_velocities_names_{"vx", "vy", "vz", "wx", "wy", "wz"};
+  std::array<double, 6> hw_cartesian_velocities_{0, 0, 0, 0, 0, 0};
+
+  /**
+   * Elbow configuration.
+   *
+   * The values of the array are:
+   *  - elbow[0]: Position of the 3rd joint in \f$[rad]\f$.
+   *  - elbow[1]: Flip direction of the elbow (4th joint):
+   *    - +1 if \f$q_4 > \alpha\f$
+   *    - 0 if \f$q_4 == \alpha \f$
+   *    - -1 if \f$q_4 < \alpha \f$
+   *    .
+   *    with \f$\alpha = -0.467002423653011\f$ \f$rad\f$
+   */
+  std::array<std::string, 2> hw_elbow_command_names_{"joint_3_position", "joint_4_sign"};
+  std::array<double, 2> hw_elbow_command_{0, 0};
+
+  const std::string k_HW_IF_CARTESIAN_VELOCITY = "cartesian_velocity";
+  const std::string k_HW_IF_ELBOW_COMMAND = "elbow_command";
+
+  const std::vector<InterfaceInfo> command_interfaces_info_;
 
   franka::RobotState hw_franka_robot_state_;
   franka::RobotState* hw_franka_robot_state_addr_ = &hw_franka_robot_state_;
@@ -76,6 +120,12 @@ class FrankaHardwareInterface : public hardware_interface::SystemInterface {
 
   bool velocity_joint_interface_claimed_ = false;
   bool velocity_joint_interface_running_ = false;
+
+  bool velocity_cartesian_interface_claimed_ = false;
+  bool velocity_cartesian_interface_running_ = false;
+
+  bool elbow_command_interface_claimed_ = false;
+  bool elbow_command_interface_running_ = false;
 
   static rclcpp::Logger getLogger();
 

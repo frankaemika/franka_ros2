@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <fmt/core.h>
 #include <algorithm>
 #include <cmath>
 #include <exception>
@@ -33,7 +34,18 @@ using StateInterface = hardware_interface::StateInterface;
 using CommandInterface = hardware_interface::CommandInterface;
 
 FrankaHardwareInterface::FrankaHardwareInterface(std::shared_ptr<Robot> robot)
-    : robot_{std::move(robot)} {}
+    : FrankaHardwareInterface() {
+  robot_ = std::move(robot);  // NOLINT(cppcoreguidelines-prefer-member-initializer)
+}
+
+FrankaHardwareInterface::FrankaHardwareInterface()
+    : command_interfaces_info_({
+          {hardware_interface::HW_IF_EFFORT, kNumberOfJoints, effort_interface_claimed_},
+          {hardware_interface::HW_IF_VELOCITY, kNumberOfJoints, velocity_joint_interface_claimed_},
+          {k_HW_IF_ELBOW_COMMAND, hw_elbow_command_names_.size(), elbow_command_interface_claimed_},
+          {k_HW_IF_CARTESIAN_VELOCITY, hw_cartesian_velocities_.size(),
+           velocity_cartesian_interface_claimed_},
+      }) {}
 
 std::vector<StateInterface> FrankaHardwareInterface::export_state_interfaces() {
   std::vector<StateInterface> state_interfaces;
@@ -66,6 +78,20 @@ std::vector<CommandInterface> FrankaHardwareInterface::export_command_interfaces
     command_interfaces.emplace_back(CommandInterface(
         info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_commands_.at(i)));
   }
+
+  // cartesian velocity command interface 6 in order: dx, dy, dz, wx, wy, wz
+  for (auto i = 0U; i < hw_cartesian_velocities_.size(); i++) {
+    command_interfaces.emplace_back(CommandInterface(hw_cartesian_velocities_names_.at(i),
+                                                     k_HW_IF_CARTESIAN_VELOCITY,
+                                                     &hw_cartesian_velocities_.at(i)));
+  }
+
+  // elbow command interface
+  for (auto i = 0U; i < hw_elbow_command_names_.size(); i++) {
+    command_interfaces.emplace_back(CommandInterface(
+        hw_elbow_command_names_.at(i), k_HW_IF_ELBOW_COMMAND, &hw_elbow_command_.at(i)));
+  }
+
   return command_interfaces;
 }
 
@@ -93,6 +119,13 @@ hardware_interface::return_type FrankaHardwareInterface::read(const rclcpp::Time
   }
 
   hw_franka_robot_state_ = robot_->readOnce();
+
+  if (first_pass_ && elbow_command_interface_running_) {
+    // elbow command should be initialized with the first elbow_c read from the robot
+    hw_elbow_command_ = hw_franka_robot_state_.elbow_c;
+    first_pass_ = false;
+  }
+
   hw_positions_ = hw_franka_robot_state_.q;
   hw_velocities_ = hw_franka_robot_state_.dq;
   hw_efforts_ = hw_franka_robot_state_.tau_J;
@@ -106,8 +139,22 @@ hardware_interface::return_type FrankaHardwareInterface::write(const rclcpp::Tim
                   [](double hw_command) { return !std::isfinite(hw_command); })) {
     return hardware_interface::return_type::ERROR;
   }
+
+  if (std::any_of(
+          hw_cartesian_velocities_.begin(), hw_cartesian_velocities_.end(),
+          [](double hw_cartesian_velocity) { return !std::isfinite(hw_cartesian_velocity); })) {
+    return hardware_interface::return_type::ERROR;
+  }
+
   if (velocity_joint_interface_running_ || effort_interface_running_) {
     robot_->writeOnce(hw_commands_);
+  } else if (velocity_cartesian_interface_running_ && elbow_command_interface_running_ &&
+             !first_pass_) {
+    // Wait until the first read pass after robot controller is activated to write the elbow
+    // command to the robot
+    robot_->writeOnce(hw_cartesian_velocities_, hw_elbow_command_);
+  } else if (velocity_cartesian_interface_running_ && !elbow_command_interface_running_) {
+    robot_->writeOnce(hw_cartesian_velocities_);
   }
 
   return hardware_interface::return_type::OK;
@@ -209,57 +256,84 @@ hardware_interface::return_type FrankaHardwareInterface::perform_command_mode_sw
     robot_->stopRobot();
     velocity_joint_interface_running_ = false;
   }
+
+  if (!velocity_cartesian_interface_running_ && velocity_cartesian_interface_claimed_) {
+    hw_cartesian_velocities_.fill(0);
+    robot_->stopRobot();
+    robot_->initializeCartesianVelocityInterface();
+    if (!elbow_command_interface_running_ && elbow_command_interface_claimed_) {
+      elbow_command_interface_running_ = true;
+    }
+    velocity_cartesian_interface_running_ = true;
+  } else if (velocity_cartesian_interface_running_ && !velocity_cartesian_interface_claimed_) {
+    robot_->stopRobot();
+    // Elbow command interface can't be commanded without cartesian velocity or pose interface
+    if (elbow_command_interface_running_) {
+      elbow_command_interface_running_ = false;
+      elbow_command_interface_claimed_ = false;
+    }
+    velocity_cartesian_interface_running_ = false;
+  }
+
+  // check if the elbow command is activated without cartesian command interface
+  if (elbow_command_interface_claimed_ && !velocity_cartesian_interface_claimed_) {
+    RCLCPP_FATAL(getLogger(),
+                 "Elbow cannot be commanded without cartesian velocity or pose interface");
+    return hardware_interface::return_type::ERROR;
+  }
+
   return hardware_interface::return_type::OK;
 }
 
 hardware_interface::return_type FrankaHardwareInterface::prepare_command_mode_switch(
     const std::vector<std::string>& start_interfaces,
     const std::vector<std::string>& stop_interfaces) {
-  auto is_effort_interface = [](const std::string& interface) {
-    return interface.find(hardware_interface::HW_IF_EFFORT) != std::string::npos;
+  auto contains_interface_type = [](const std::string& interface,
+                                    const std::string& interface_type) {
+    size_t slash_position = interface.find('/');
+    if (slash_position != std::string::npos && slash_position + 1 < interface.size()) {
+      std::string after_slash = interface.substr(slash_position + 1);
+      return after_slash == interface_type;
+    }
+    return false;
   };
 
-  auto is_velocity_interface = [](const std::string& interface) {
-    return interface.find(hardware_interface::HW_IF_VELOCITY) != std::string::npos;
-  };
-
-  auto generate_error_message = [&](const std::string& start_stop_command,
-                                    const std::string& interface_name, int64_t num_interface) {
-    RCLCPP_FATAL(this->getLogger(), "Expected %ld %s interfaces to %s, but got %ld instead.",
-                 kNumberOfJoints, interface_name.c_str(), start_stop_command.c_str(),
-                 num_interface);
-    std::ostringstream error_message_stream;
-    error_message_stream << "Invalid number of " << interface_name << " interfaces to "
-                         << start_stop_command << ". Expected " << std::to_string(kNumberOfJoints);
-    std::string error_message = error_message_stream.str();
+  auto generate_error_message = [this](const std::string& start_stop_command,
+                                       const std::string& interface_name,
+                                       size_t actual_interface_size,
+                                       size_t expected_interface_size) {
+    std::string error_message =
+        fmt::format("Invalid number of {} interfaces to {}. Expected {}, given {}", interface_name,
+                    start_stop_command, expected_interface_size, actual_interface_size);
+    RCLCPP_FATAL(this->getLogger(), "%s", error_message.c_str());
 
     throw std::invalid_argument(error_message);
   };
 
-  auto start_stop_interface =
-      [&](const std::function<bool(const std::string& interface)>& find_interface_function,
-          const std::string& interface_name, bool& claim_flag) {
-        int64_t num_stop_interface =
-            std::count_if(stop_interfaces.begin(), stop_interfaces.end(), find_interface_function);
-        int64_t num_start_interface = std::count_if(
-            start_interfaces.begin(), start_interfaces.end(), find_interface_function);
+  for (const auto& interface : command_interfaces_info_) {
+    size_t num_stop_interface =
+        std::count_if(stop_interfaces.begin(), stop_interfaces.end(),
+                      [contains_interface_type, &interface](const std::string& interface_given) {
+                        return contains_interface_type(interface_given, interface.interface_type);
+                      });
+    size_t num_start_interface =
+        std::count_if(start_interfaces.begin(), start_interfaces.end(),
+                      [contains_interface_type, &interface](const std::string& interface_given) {
+                        return contains_interface_type(interface_given, interface.interface_type);
+                      });
 
-        if (num_stop_interface == kNumberOfJoints) {
-          claim_flag = false;
-        } else if (num_stop_interface != 0) {
-          generate_error_message("stop", interface_name, num_stop_interface);
-        }
-        if (num_start_interface == kNumberOfJoints) {
-          claim_flag = true;
-        } else if (num_start_interface != 0) {
-          generate_error_message("start", interface_name, num_start_interface);
-        }
-      };
-
-  start_stop_interface(is_effort_interface, hardware_interface::HW_IF_EFFORT,
-                       effort_interface_claimed_);
-  start_stop_interface(is_velocity_interface, hardware_interface::HW_IF_VELOCITY,
-                       velocity_joint_interface_claimed_);
+    if (num_stop_interface == interface.size) {
+      interface.claim_flag = false;
+    } else if (num_stop_interface != 0U) {
+      generate_error_message("stop", interface.interface_type, num_stop_interface, interface.size);
+    }
+    if (num_start_interface == interface.size) {
+      interface.claim_flag = true;
+    } else if (num_start_interface != 0U) {
+      generate_error_message("start", interface.interface_type, num_start_interface,
+                             interface.size);
+    }
+  }
 
   return hardware_interface::return_type::OK;
 }

@@ -11,6 +11,12 @@ controller_manager:
     joint_velocity_example_controller:
       type: franka_example_controllers/JointVelocityExampleController
 
+    cartesian_velocity_example_controller:
+      type: franka_example_controllers/CartesianVelocityExampleController
+
+    elbow_example_controller:
+      type: franka_example_controllers/ElbowExampleController
+
     move_to_start_example_controller:
       type: franka_example_controllers/MoveToStartExampleController
 
