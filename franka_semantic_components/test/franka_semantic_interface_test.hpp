@@ -24,7 +24,7 @@
 #include <memory>
 #include <string>
 
-#include "franka_semantic_components/franka_semantic_component.hpp"
+#include "franka_semantic_components/franka_semantic_component_interface.hpp"
 #include "gmock/gmock.h"
 
 // implementing and friending so we can access member variables

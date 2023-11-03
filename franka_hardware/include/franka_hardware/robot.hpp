@@ -92,6 +92,13 @@ class Robot {
   virtual void writeOnce(const std::array<double, 7>& joint_hardware_command);
 
   /**
+   * @brief Preprocessing includes rate limiting and low pass filtering, if activated
+   *
+   * @param cartesian_velocities cartesian velocity in libfranka format
+   */
+  virtual void preProcessCartesianVelocities(franka::CartesianVelocities& cartesian_velocities);
+
+  /**
    * Cartesian velocity command
    * @param[in] cartesian_velocity_command cartesian level velocity command in format
    *  [vx, vy, vz, wx, wy, wz]

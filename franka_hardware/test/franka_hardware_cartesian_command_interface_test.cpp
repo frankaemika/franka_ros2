@@ -12,7 +12,7 @@ TEST_F(FrankaCartesianCommandInterfaceTest, cartesian_command_interface_number_i
   const auto number_cartesian_velocity_command_interface =
       k_hw_cartesian_velocities_names.size() + k_hw_elbow_command_names.size();
 
-  EXPECT_EQ(command_interfaces.size(), number_cartesian_velocity_command_interface);
+  ASSERT_EQ(command_interfaces.size(), number_cartesian_velocity_command_interface);
 }
 
 TEST_P(
@@ -32,7 +32,7 @@ TEST_P(
   }
 
   std::vector<std::string> stop_interface = {};
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 
   start_interface.clear();
@@ -41,7 +41,7 @@ TEST_P(
     stop_interface.push_back(name + "/" + command_interface_name);
   }
 
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 }
 
@@ -61,7 +61,7 @@ TEST_P(
   }
 
   std::vector<std::string> stop_interface = {};
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 
   start_interface.clear();
@@ -70,7 +70,7 @@ TEST_P(
     const std::string name = command_interfaces[i];
     stop_interface.push_back(name + "/" + command_interface_name);
   }
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 }
 
@@ -142,16 +142,16 @@ TEST_F(FrankaCartesianCommandInterfaceTest,
 
   std::vector<std::string> stop_interface = {};
 
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
   // can call write only after performing command mode switch
-  EXPECT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 
   const auto time = rclcpp::Time(0, 0);
   const auto duration = rclcpp::Duration(0, 0);
 
-  EXPECT_EQ(franka_hardware_interface.write(time, duration), hardware_interface::return_type::OK);
+  ASSERT_EQ(franka_hardware_interface.write(time, duration), hardware_interface::return_type::OK);
 }
 
 TEST_F(FrankaCartesianCommandInterfaceTest,
@@ -163,6 +163,7 @@ TEST_F(FrankaCartesianCommandInterfaceTest,
 
   EXPECT_CALL(*mock_robot, readOnce()).Times(1);
   EXPECT_CALL(*mock_robot, writeOnce(_, _)).Times(1);
+  EXPECT_CALL(*mock_robot, writeOnce(std::array<double, 6>{})).Times(0);
 
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
 
@@ -179,17 +180,17 @@ TEST_F(FrankaCartesianCommandInterfaceTest,
 
   std::vector<std::string> stop_interface = {};
 
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
   // can call write only after performing command mode switch
-  EXPECT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 
   const auto time = rclcpp::Time(0, 0);
   const auto duration = rclcpp::Duration(0, 0);
 
-  EXPECT_EQ(franka_hardware_interface.read(time, duration), hardware_interface::return_type::OK);
-  EXPECT_EQ(franka_hardware_interface.write(time, duration), hardware_interface::return_type::OK);
+  ASSERT_EQ(franka_hardware_interface.read(time, duration), hardware_interface::return_type::OK);
+  ASSERT_EQ(franka_hardware_interface.write(time, duration), hardware_interface::return_type::OK);
 }
 
 TEST_F(FrankaCartesianCommandInterfaceTest,
@@ -213,16 +214,16 @@ TEST_F(FrankaCartesianCommandInterfaceTest,
 
   std::vector<std::string> stop_interface = {};
 
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
   // can call write only after performing command mode switch
-  EXPECT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 
   const auto time = rclcpp::Time(0, 0);
   const auto duration = rclcpp::Duration(0, 0);
 
-  EXPECT_EQ(franka_hardware_interface.write(time, duration), hardware_interface::return_type::OK);
+  ASSERT_EQ(franka_hardware_interface.write(time, duration), hardware_interface::return_type::OK);
 }
 
 TEST_F(
@@ -241,9 +242,9 @@ TEST_F(
 
   std::vector<std::string> stop_interface = {};
 
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
   // can call write only after performing command mode switch
-  EXPECT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::ERROR);
 }

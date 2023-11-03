@@ -35,11 +35,11 @@ std::vector<double> combineArraysToVector(const std::array<double, 6>& cartesian
 namespace franka_semantic_components {
 
 FrankaCartesianVelocityInterface::FrankaCartesianVelocityInterface(bool command_elbow_active)
-    : FrankaSemanticComponentInterface("cartesian_velocity_command", 0, 6) {
-  command_elbow_active_ = command_elbow_active;
+    : FrankaSemanticComponentInterface("cartesian_velocity_command", 0, 6),
+      command_elbow_active_(command_elbow_active) {
   if (command_elbow_active_) {
-    command_interface_names_.reserve(command_interface_size_);
-    command_interfaces_.reserve(command_interface_size_);
+    command_interface_names_.reserve(full_command_interface_size_);
+    command_interfaces_.reserve(full_command_interface_size_);
   }
 
   for (const auto& velocity_command_name : hw_cartesian_velocities_names_) {
@@ -62,7 +62,7 @@ FrankaCartesianVelocityInterface::FrankaCartesianVelocityInterface(bool command_
  */
 bool FrankaCartesianVelocityInterface::setCommand(
     const std::array<double, 6>& cartesian_velocity_command,
-    const std::array<double, 2>& elbow_command) noexcept {
+    const std::array<double, 2>& elbow_command) {
   if (!command_elbow_active_) {
     RCLCPP_ERROR(rclcpp::get_logger("franka_cartesian_velocity_interface"),
                  "Elbow command interface must be claimed to command elbow.");
@@ -74,7 +74,7 @@ bool FrankaCartesianVelocityInterface::setCommand(
 }
 
 bool FrankaCartesianVelocityInterface::setCommand(
-    const std::array<double, 6>& cartesian_velocity_command) noexcept {
+    const std::array<double, 6>& cartesian_velocity_command) {
   if (command_elbow_active_) {
     RCLCPP_ERROR(rclcpp::get_logger("franka_cartesian_velocity_interface"),
                  "Elbow command interface must not claimed, if elbow is not commanded.");
@@ -89,5 +89,23 @@ bool FrankaCartesianVelocityInterface::setCommand(
 
   return set_values(full_command);
 }
+
+bool FrankaCartesianVelocityInterface::getCommandedElbowConfiguration(
+    std::array<double, 2>& elbow_configuration) {
+  if (!command_elbow_active_) {
+    return false;
+  }
+  std::vector<double> full_configuration;
+
+  full_configuration.reserve(full_command_interface_size_);
+
+  get_values_command_interfaces(full_configuration);
+
+  for (size_t i = 0; i < hw_elbow_command_names_.size(); i++) {
+    elbow_configuration[i] = full_configuration[i + hw_cartesian_velocities_names_.size()];
+  }
+
+  return true;
+};
 
 }  // namespace franka_semantic_components

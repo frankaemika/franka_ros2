@@ -38,8 +38,12 @@ namespace franka_hardware {
 class FrankaHardwareInterface : public hardware_interface::SystemInterface {
  public:
   explicit FrankaHardwareInterface(std::shared_ptr<Robot> robot);
-  FrankaHardwareInterface() = default;
-  virtual ~FrankaHardwareInterface() = default;
+  FrankaHardwareInterface();
+  FrankaHardwareInterface(const FrankaHardwareInterface&) = delete;
+  FrankaHardwareInterface& operator=(const FrankaHardwareInterface& other) = delete;
+  FrankaHardwareInterface& operator=(FrankaHardwareInterface&& other) = delete;
+  FrankaHardwareInterface(FrankaHardwareInterface&& other) = delete;
+  ~FrankaHardwareInterface() override = default;
 
   hardware_interface::return_type prepare_command_mode_switch(
       const std::vector<std::string>& start_interfaces,
@@ -59,12 +63,18 @@ class FrankaHardwareInterface : public hardware_interface::SystemInterface {
   static const size_t kNumberOfJoints = 7;
 
  private:
+  struct InterfaceInfo {
+    std::string interface_type;
+    size_t size;
+    bool& claim_flag;
+  };
+
   std::shared_ptr<Robot> robot_;
   std::shared_ptr<FrankaParamServiceServer> node_;
   std::shared_ptr<FrankaExecutor> executor_;
 
   // Initialize joint position commands in the first pass
-  bool first_pass{true};
+  bool first_pass_{true};
 
   std::array<double, kNumberOfJoints> hw_commands_{0, 0, 0, 0, 0, 0, 0};
 
@@ -98,7 +108,8 @@ class FrankaHardwareInterface : public hardware_interface::SystemInterface {
 
   const std::string k_HW_IF_CARTESIAN_VELOCITY = "cartesian_velocity";
   const std::string k_HW_IF_ELBOW_COMMAND = "elbow_command";
-  const std::string k_joint_velocity_interface = "/velocity";
+
+  const std::vector<InterfaceInfo> command_interfaces_info_;
 
   franka::RobotState hw_franka_robot_state_;
   franka::RobotState* hw_franka_robot_state_addr_ = &hw_franka_robot_state_;

@@ -25,7 +25,8 @@ find_package(Franka REQUIRED)
 add_library(franka_semantic_components SHARED
             src/franka_robot_state.cpp
             src/franka_robot_model.cpp
-            src/franka_cartesian_velocity_interface.cpp)
+            src/franka_cartesian_velocity_interface.cpp
+            src/franka_semantic_component_interface.cpp)
 target_include_directories(franka_semantic_components PRIVATE include)
 target_link_libraries(franka_semantic_components Franka::Franka)
 ament_target_dependencies(franka_semantic_components

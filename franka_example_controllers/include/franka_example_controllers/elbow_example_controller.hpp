@@ -47,8 +47,10 @@ class ElbowExampleController : public controller_interface::ControllerInterface 
 
   const bool k_elbow_activated_{true};
   std::vector<double> initial_cartesian_velocity_and_elbow;
-
+  bool first_pass_{true};
+  std::array<double, 2> initial_elbow_configuration_{0.0, 0.0};
   double elapsed_time_{0.0};
+  const double traj_frequency_{0.001};
 };
 
 }  // namespace franka_example_controllers

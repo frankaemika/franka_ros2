@@ -20,16 +20,27 @@
 
 #include "franka/control_types.h"
 #include "franka/robot_state.h"
-#include "franka_semantic_components/franka_semantic_component.hpp"
+#include "franka_semantic_components/franka_semantic_component_interface.hpp"
 
+#include <iostream>
+
+namespace franka_semantic_components {
 /**
  * @brief Franka Cartesian Velocity interface abstraction on top of hardware_interface to set the
- * full cartesian velocity Command should have the form [linear_velocity, angular_velocity] = [vx,
- * vy, vz, wx, wy, wz] Optionally elbow can be commanded. [joint_3_position, joint_4_sign]
+ * full cartesian velocity. The Command should have the form [linear_velocity, angular_velocity] =
+ * [vx, vy, vz, wx, wy, wz]. Optionally, the elbow can be commanded. [joint_3_position,
+ * joint_4_sign]
  */
-namespace franka_semantic_components {
 class FrankaCartesianVelocityInterface : public FrankaSemanticComponentInterface {
  public:
+  /**
+   * Initializes the franka cartesian velocity interface with access to the hardware
+   * interface command interfaces.
+   *
+   * @param[in] command_elbow_active if true to activates the elbow commanding together with the
+   * cartesian velocity input, else elbow commanding is not allowed.
+   *
+   */
   explicit FrankaCartesianVelocityInterface(bool command_elbow_activate);
 
   virtual ~FrankaCartesianVelocityInterface() = default;
@@ -39,7 +50,7 @@ class FrankaCartesianVelocityInterface : public FrankaSemanticComponentInterface
    *
    * @param[in] command Command to set.
    */
-  bool setCommand(const std::array<double, 6>& command) noexcept;
+  bool setCommand(const std::array<double, 6>& command);
 
   /**
    * Sets the given command.
@@ -47,15 +58,23 @@ class FrankaCartesianVelocityInterface : public FrankaSemanticComponentInterface
    * @param[in] cartesian_velocity_command Command to set.
    * @param[in] elbow Elbow to set.
    */
-  bool setCommand(const std::array<double, 6>& command,
-                  const std::array<double, 2>& elbow) noexcept;
+  bool setCommand(const std::array<double, 6>& command, const std::array<double, 2>& elbow);
+
+  /**
+   * Get the commanded elbow interface elbow values.
+
+   * @param[in, out] elbow_configuration commanded elbow values.
+
+   * @return true, if elbow is activated else false
+   */
+  bool getCommandedElbowConfiguration(std::array<double, 2>& elbow_configuration);
 
  private:
   const std::array<std::string, 6> hw_cartesian_velocities_names_{"vx", "vy", "vz",
                                                                   "wx", "wy", "wz"};
   const std::array<std::string, 2> hw_elbow_command_names_{"joint_3_position", "joint_4_sign"};
   const size_t state_interface_size_{0};
-  const size_t command_interface_size_{8};
+  const size_t full_command_interface_size_{8};
   bool command_elbow_active_;
 
   const std::string cartesian_velocity_command_interface_name_{"cartesian_velocity"};

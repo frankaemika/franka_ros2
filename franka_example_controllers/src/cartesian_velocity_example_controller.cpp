@@ -59,7 +59,8 @@ controller_interface::return_type CartesianVelocityExampleController::update(
   if (franka_cartesian_velocity_->setCommand(cartesian_velocity_command)) {
     return controller_interface::return_type::OK;
   } else {
-    std::cout << "SET COMMAND FAILED" << std::endl;
+    RCLCPP_FATAL(get_node()->get_logger(),
+                 "Set command failed. Did you activate the elbow command interface?");
     return controller_interface::return_type::ERROR;
   }
 }

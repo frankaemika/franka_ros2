@@ -25,15 +25,15 @@
 class FrankaCartesianVelocityTestFriend
     : public franka_semantic_components::FrankaCartesianVelocityInterface {
  public:
-  explicit FrankaCartesianVelocityTestFriend()
-      : franka_semantic_components::FrankaCartesianVelocityInterface(true) {}
+  explicit FrankaCartesianVelocityTestFriend(const bool elbow_activate)
+      : franka_semantic_components::FrankaCartesianVelocityInterface(elbow_activate) {}
 
   virtual ~FrankaCartesianVelocityTestFriend() = default;
 };
 
 class FrankaCartesianVelocityTest : public ::testing::Test {
  public:
-  void setUpHWCommandInterfaces();
+  void setUpHWCommandInterfaces(bool elbow_active);
 
   void TearDown();
 
