@@ -24,6 +24,7 @@ class MockModel : public franka_hardware::Model {};
 
 class MockRobot : public franka_hardware::Robot {
  public:
+  MOCK_METHOD(void, initializeJointPositionInterface, (), (override));
   MOCK_METHOD(void, initializeCartesianVelocityInterface, (), (override));
   MOCK_METHOD(void, initializeTorqueInterface, (), (override));
   MOCK_METHOD(void, initializeJointVelocityInterface, (), (override));

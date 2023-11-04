@@ -121,6 +121,9 @@ class FrankaHardwareInterface : public hardware_interface::SystemInterface {
   bool velocity_joint_interface_claimed_ = false;
   bool velocity_joint_interface_running_ = false;
 
+  bool position_joint_interface_claimed_ = false;
+  bool position_joint_interface_running_ = false;
+
   bool velocity_cartesian_interface_claimed_ = false;
   bool velocity_cartesian_interface_running_ = false;
 

@@ -66,7 +66,10 @@ class Robot {
   /// Starts the active control for joint velocity control
   virtual void initializeJointVelocityInterface();
 
-  /// Starts the active control for joint velocity control
+  /// Starts the active control for joint position control
+  virtual void initializeJointPositionInterface();
+
+  /// Starts the active control for cartesian velocity control
   virtual void initializeCartesianVelocityInterface();
 
   /// stops the read continous communication with the connected robot
@@ -241,7 +244,12 @@ class Robot {
    * @param[in] joint_velocities joint velocity command.
    */
   virtual void writeOnceJointVelocities(const std::array<double, 7>& joint_velocities);
-
+  
+  /**
+   * The robot will use these position until a different set of position are commanded.
+   * @param[in] joint_position joint position command.
+   */
+  virtual void writeOnceJointPositions(const std::array<double, 7>& positions);
   /**
    * @brief Checks if control loop is activated for active control.
    *
@@ -262,6 +270,7 @@ class Robot {
 
   bool effort_interface_active_{false};
   bool joint_velocity_interface_active_{false};
+  bool joint_position_interface_active_{false};
   bool cartesian_velocity_interface_active_{false};
 
   bool velocity_command_rate_limit_active_{false};

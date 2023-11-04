@@ -42,6 +42,7 @@ FrankaHardwareInterface::FrankaHardwareInterface()
     : command_interfaces_info_({
           {hardware_interface::HW_IF_EFFORT, kNumberOfJoints, effort_interface_claimed_},
           {hardware_interface::HW_IF_VELOCITY, kNumberOfJoints, velocity_joint_interface_claimed_},
+          {hardware_interface::HW_IF_POSITION, kNumberOfJoints, position_joint_interface_claimed_},
           {k_HW_IF_ELBOW_COMMAND, hw_elbow_command_names_.size(), elbow_command_interface_claimed_},
           {k_HW_IF_CARTESIAN_VELOCITY, hw_cartesian_velocities_.size(),
            velocity_cartesian_interface_claimed_},
@@ -77,6 +78,8 @@ std::vector<CommandInterface> FrankaHardwareInterface::export_command_interfaces
         info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &hw_commands_.at(i)));
     command_interfaces.emplace_back(CommandInterface(
         info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_commands_.at(i)));
+    command_interfaces.emplace_back(CommandInterface(
+        info_.joints[i].name, hardware_interface::HW_IF_POSITION, &hw_commands_.at(i)));
   }
 
   // cartesian velocity command interface 6 in order: dx, dy, dz, wx, wy, wz
@@ -120,9 +123,10 @@ hardware_interface::return_type FrankaHardwareInterface::read(const rclcpp::Time
 
   hw_franka_robot_state_ = robot_->readOnce();
 
-  if (first_pass_ && elbow_command_interface_running_) {
-    // elbow command should be initialized with the first elbow_c read from the robot
+  if (first_pass_ && (elbow_command_interface_running_ || position_joint_interface_running_)) {
+    // position commands should be initialized with the first desired commands from the robot
     hw_elbow_command_ = hw_franka_robot_state_.elbow_c;
+    hw_commands_ = hw_franka_robot_state_.q_d;
     first_pass_ = false;
   }
 
@@ -148,6 +152,8 @@ hardware_interface::return_type FrankaHardwareInterface::write(const rclcpp::Tim
 
   if (velocity_joint_interface_running_ || effort_interface_running_) {
     robot_->writeOnce(hw_commands_);
+  } else if (position_joint_interface_running_ && !first_pass_) {
+    robot_->writeOnce(hw_commands_);
   } else if (velocity_cartesian_interface_running_ && elbow_command_interface_running_ &&
              !first_pass_) {
     // Wait until the first read pass after robot controller is activated to write the elbow
@@ -171,13 +177,14 @@ CallbackReturn FrankaHardwareInterface::on_init(const hardware_interface::Hardwa
   }
 
   for (const auto& joint : info_.joints) {
-    if (joint.command_interfaces.size() != 2) {
-      RCLCPP_FATAL(getLogger(), "Joint '%s' has %zu command interfaces found. 2 expected.",
+    if (joint.command_interfaces.size() != 3) {
+      RCLCPP_FATAL(getLogger(), "Joint '%s' has %zu command interfaces found. 3 expected.",
                    joint.name.c_str(), joint.command_interfaces.size());
       return CallbackReturn::ERROR;
     }
     if (joint.command_interfaces[0].name != hardware_interface::HW_IF_EFFORT &&
-        joint.command_interfaces[0].name != hardware_interface::HW_IF_VELOCITY) {
+        joint.command_interfaces[0].name != hardware_interface::HW_IF_VELOCITY &&
+        joint.command_interfaces[0].name != hardware_interface::HW_IF_POSITION) {
       RCLCPP_FATAL(getLogger(),
                    "Joint '%s' has unexpected command interface '%s'. Expected '%s' and '%s' ",
                    joint.name.c_str(), joint.command_interfaces[0].name.c_str(),
@@ -257,6 +264,16 @@ hardware_interface::return_type FrankaHardwareInterface::perform_command_mode_sw
     velocity_joint_interface_running_ = false;
   }
 
+  if (!position_joint_interface_running_ && position_joint_interface_claimed_) {
+    robot_->stopRobot();
+    robot_->initializeJointPositionInterface();
+    position_joint_interface_running_ = true;
+  } else if (position_joint_interface_running_ && !position_joint_interface_claimed_) {
+    robot_->stopRobot();
+    position_joint_interface_running_ = false;
+    first_pass_ = false;
+  }
+
   if (!velocity_cartesian_interface_running_ && velocity_cartesian_interface_claimed_) {
     hw_cartesian_velocities_.fill(0);
     robot_->stopRobot();
@@ -271,6 +288,7 @@ hardware_interface::return_type FrankaHardwareInterface::perform_command_mode_sw
     if (elbow_command_interface_running_) {
       elbow_command_interface_running_ = false;
       elbow_command_interface_claimed_ = false;
+      first_pass_ = false;
     }
     velocity_cartesian_interface_running_ = false;
   }

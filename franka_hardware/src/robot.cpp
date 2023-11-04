@@ -68,6 +68,8 @@ void Robot::writeOnce(const std::array<double, 7>& joint_commands) {
     writeOnceEfforts(joint_commands);
   } else if (joint_velocity_interface_active_) {
     writeOnceJointVelocities(joint_commands);
+  } else if(joint_position_interface_active_){
+    writeOnceJointPositions(joint_commands);
   }
 }
 
@@ -98,6 +100,25 @@ void Robot::writeOnceJointVelocities(const std::array<double, 7>& velocities) {
 
   active_control_->writeOnce(velocity_command);
 }
+
+
+void Robot::writeOnceJointPositions(const std::array<double, 7>& positions) {
+  std::lock_guard<std::mutex> lock(control_mutex_);
+
+  auto position_command = franka::JointPositions(positions);
+
+  // If you are experiencing issues with robot error. You can try activating the rate limiter.
+  // Rate limiter is default deactivated.
+  // if (position_command_rate_limit_active_) {
+  //   position_command.dq = franka::limitRate(
+  //       franka::computeUpperLimitsJointposition(current_state_.q_d),
+  //       franka::computeLowerLimitsJointposition(current_state_.q_d), franka::kMaxJointAcceleration,
+  //       franka::kMaxJointJerk, position_command.dq, current_state_.dq_d, current_state_.ddq_d);
+  // }
+
+  active_control_->writeOnce(position_command);
+}
+
 
 void Robot::preProcessCartesianVelocities(franka::CartesianVelocities& velocity_command) {
   if (cartesian_velocity_low_pass_filter_active) {
@@ -174,6 +195,12 @@ void Robot::initializeJointVelocityInterface() {
   joint_velocity_interface_active_ = true;
 }
 
+void Robot::initializeJointPositionInterface() {
+  active_control_ = robot_->startJointPositionControl(
+      research_interface::robot::Move::ControllerMode::kJointImpedance);
+  joint_position_interface_active_ = true;
+}
+
 void Robot::initializeCartesianVelocityInterface() {
   active_control_ = robot_->startCartesianVelocityControl(
       research_interface::robot::Move::ControllerMode::kJointImpedance);
@@ -181,7 +208,7 @@ void Robot::initializeCartesianVelocityInterface() {
 }
 
 bool Robot::isControlLoopActive() {
-  return joint_velocity_interface_active_ || effort_interface_active_ ||
+  return joint_position_interface_active_ || joint_velocity_interface_active_ || effort_interface_active_ ||
          cartesian_velocity_interface_active_;
 }
 
