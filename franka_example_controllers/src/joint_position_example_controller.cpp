@@ -35,7 +35,7 @@ JointPositionExampleController::command_interface_configuration() const {
 
 controller_interface::InterfaceConfiguration
 JointPositionExampleController::state_interface_configuration() const {
-   return controller_interface::InterfaceConfiguration{
+  return controller_interface::InterfaceConfiguration{
       controller_interface::interface_configuration_type::NONE};
 }
 
@@ -48,11 +48,8 @@ controller_interface::return_type JointPositionExampleController::update(
     }
     first_time_ = false;
   }
-  // std::cout << "initial q4: " << initial_q_[4] << "time: " << robot_state_ptr->time.toSec()
-  // << std::endl;
-  elapsed_time_ = elapsed_time_ + 0.001;
-  // std::cout << "Period: " << period << std::endl;
-  // std::cout << "Elapsed time: " << elapsed_time_ << std::endl;
+
+  elapsed_time_ = elapsed_time_ + trajectory_period;
   double delta_angle = M_PI / 16 * (1 - std::cos(M_PI / 5.0 * elapsed_time_)) * 0.2;
 
   for (size_t i = 0; i < 7; ++i) {
@@ -65,7 +62,6 @@ controller_interface::return_type JointPositionExampleController::update(
 
   return controller_interface::return_type::OK;
 }
-
 
 CallbackReturn JointPositionExampleController::on_init() {
   try {
@@ -89,7 +85,6 @@ CallbackReturn JointPositionExampleController::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   return CallbackReturn::SUCCESS;
 }
-
 
 }  // namespace franka_example_controllers
 #include "pluginlib/class_list_macros.hpp"

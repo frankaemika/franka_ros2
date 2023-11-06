@@ -45,6 +45,7 @@ class JointPositionExampleController : public controller_interface::ControllerIn
   std::string arm_id_;
   const int num_joints = 7;
   Vector7d initial_q_;
+  const double trajectory_period{0.001};
   double elapsed_time_ = 0.0;
   std::string arm_id{"panda"};
 

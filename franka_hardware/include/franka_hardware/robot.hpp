@@ -72,7 +72,7 @@ class Robot {
   /// Starts the active control for cartesian velocity control
   virtual void initializeCartesianVelocityInterface();
 
-  /// stops the read continous communication with the connected robot
+  /// stops the read continuous communication with the connected robot
   virtual void stopRobot();
 
   /**
@@ -276,6 +276,9 @@ class Robot {
   bool velocity_command_rate_limit_active_{false};
   bool cartesian_velocity_command_rate_limit_active_{false};
   bool cartesian_velocity_low_pass_filter_active{false};
+  bool joint_position_command_rate_limit_active_{false};
+  bool joint_position_command_low_pass_filter_active_{false};
+
   double low_pass_filter_cut_off_freq{1000.0};
 
   franka::RobotState current_state_;
