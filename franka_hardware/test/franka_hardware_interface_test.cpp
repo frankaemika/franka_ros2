@@ -54,7 +54,8 @@ auto createHardwareInfo() -> hardware_interface::HardwareInfo {
 
   info.hardware_parameters = hw_params;
   hardware_interface::InterfaceInfo command_effort_interface, command_velocity_interface,
-      effort_state_interface, position_state_interface, velocity_state_interface;
+      command_position_interface, effort_state_interface, position_state_interface,
+      velocity_state_interface;
 
   effort_state_interface.name = hardware_interface::HW_IF_EFFORT;
   position_state_interface.name = hardware_interface::HW_IF_POSITION;
@@ -65,6 +66,7 @@ auto createHardwareInfo() -> hardware_interface::HardwareInfo {
 
   command_effort_interface.name = k_effort_controller;
   command_velocity_interface.name = k_velocity_controller;
+  command_position_interface.name = k_position_controller;
 
   for (auto i = 0U; i < k_number_of_joints; i++) {
     hardware_interface::ComponentInfo joint;
@@ -73,6 +75,7 @@ auto createHardwareInfo() -> hardware_interface::HardwareInfo {
 
     joint.command_interfaces.push_back(command_effort_interface);
     joint.command_interfaces.push_back(command_velocity_interface);
+    joint.command_interfaces.push_back(command_position_interface);
 
     joint.state_interfaces = state_interfaces;
 
@@ -124,7 +127,7 @@ TEST_F(FrankaHardwareInterfaceTest, when_on_init_called_expect_success) {
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
   auto return_type = franka_hardware_interface.on_init(info);
 
-  EXPECT_EQ(return_type,
+  ASSERT_EQ(return_type,
             rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 }
 
@@ -143,7 +146,7 @@ TEST_F(FrankaHardwareInterfaceTest,
   auto time = rclcpp::Time(0, 0);
   auto duration = rclcpp::Duration(0, 0);
   auto return_type = franka_hardware_interface.read(time, duration);
-  EXPECT_EQ(return_type, hardware_interface::return_type::OK);
+  ASSERT_EQ(return_type, hardware_interface::return_type::OK);
 }
 
 TEST_F(
@@ -166,7 +169,7 @@ TEST_F(
   auto time = rclcpp::Time(0);
   auto duration = rclcpp::Duration(0, 0);
   auto return_type = franka_hardware_interface.read(time, duration);
-  EXPECT_EQ(return_type, hardware_interface::return_type::OK);
+  ASSERT_EQ(return_type, hardware_interface::return_type::OK);
   auto states = franka_hardware_interface.export_state_interfaces();
   size_t joint_index = 0;
 
@@ -177,16 +180,16 @@ TEST_F(
     }
     const std::string joint_name = k_joint_name + std::to_string(joint_index);
     if (i % 3 == 0) {
-      EXPECT_EQ(states[i].get_name(), joint_name + "/" + k_position_controller);
+      ASSERT_EQ(states[i].get_name(), joint_name + "/" + k_position_controller);
     } else if (i % 3 == 1) {
-      EXPECT_EQ(states[i].get_name(), joint_name + "/" + k_velocity_controller);
+      ASSERT_EQ(states[i].get_name(), joint_name + "/" + k_velocity_controller);
     } else {
-      EXPECT_EQ(states[i].get_name(), joint_name + "/" + k_effort_controller);
+      ASSERT_EQ(states[i].get_name(), joint_name + "/" + k_effort_controller);
     }
-    EXPECT_EQ(states[i].get_value(), 0.0);
+    ASSERT_EQ(states[i].get_value(), 0.0);
   }
 
-  EXPECT_EQ(states.size(), state_interface_size);
+  ASSERT_EQ(states.size(), state_interface_size);
 }
 
 TEST_F(
@@ -209,9 +212,9 @@ TEST_F(
   auto time = rclcpp::Time(0);
   auto duration = rclcpp::Duration(0, 0);
   auto return_type = franka_hardware_interface.read(time, duration);
-  EXPECT_EQ(return_type, hardware_interface::return_type::OK);
+  ASSERT_EQ(return_type, hardware_interface::return_type::OK);
   auto states = franka_hardware_interface.export_state_interfaces();
-  EXPECT_EQ(states[state_interface_size - 1].get_name(),
+  ASSERT_EQ(states[state_interface_size - 1].get_name(),
             "panda/robot_model");  // Last state interface is the robot model state
   EXPECT_NEAR(states[state_interface_size - 1].get_value(),
               *reinterpret_cast<double*>(&model_address),
@@ -240,9 +243,9 @@ TEST_F(
   auto time = rclcpp::Time(0);
   auto duration = rclcpp::Duration(0, 0);
   auto return_type = franka_hardware_interface.read(time, duration);
-  EXPECT_EQ(return_type, hardware_interface::return_type::OK);
+  ASSERT_EQ(return_type, hardware_interface::return_type::OK);
   auto states = franka_hardware_interface.export_state_interfaces();
-  EXPECT_EQ(states[state_interface_size - 2].get_name(),
+  ASSERT_EQ(states[state_interface_size - 2].get_name(),
             "panda/robot_state");  // Last state interface is the robot model state
   EXPECT_NEAR(states[state_interface_size - 2].get_value(),
               *reinterpret_cast<double*>(&robot_state_address),
@@ -266,7 +269,7 @@ TEST_P(FrankaHardwareInterfaceTest,
     stop_interface.push_back(joint_name + "/" + command_interface);
   }
   std::vector<std::string> start_interface = {};
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 }
 
@@ -310,7 +313,7 @@ TEST_P(FrankaHardwareInterfaceTest,
 
   std::vector<std::string> stop_interface = {};
 
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 }
 
@@ -357,16 +360,85 @@ TEST_P(FrankaHardwareInterfaceTest, when_write_called_expect_ok) {
 
   std::vector<std::string> stop_interface = {};
 
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
   // can call write only after performing command mode switch
-  EXPECT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 
   const auto time = rclcpp::Time(0, 0);
   const auto duration = rclcpp::Duration(0, 0);
 
-  EXPECT_EQ(franka_hardware_interface.write(time, duration), hardware_interface::return_type::OK);
+  if (command_interface == k_position_controller) {
+    ASSERT_EQ(franka_hardware_interface.read(time, duration), hardware_interface::return_type::OK);
+  }
+  ASSERT_EQ(franka_hardware_interface.write(time, duration), hardware_interface::return_type::OK);
+}
+
+TEST_F(FrankaHardwareInterfaceTest, when_write_called_with_inifite_command_expect_error) {
+  auto mock_robot = std::make_shared<MockRobot>();
+  franka::RobotState robot_state;
+  robot_state.q_d = std::array<double, 7>{std::numeric_limits<double>::infinity()};
+
+  EXPECT_CALL(*mock_robot, readOnce()).WillOnce(testing::Return(robot_state));
+  EXPECT_CALL(*mock_robot, writeOnce(std::array<double, 7>{})).Times(0);
+
+  franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
+
+  const auto hardware_info = createHardwareInfo();
+  franka_hardware_interface.on_init(hardware_info);
+  std::vector<std::string> start_interface;
+
+  for (size_t i = 0; i < hardware_info.joints.size(); i++) {
+    const std::string joint_name = k_joint_name + std::to_string(i);
+    start_interface.push_back(joint_name + "/" + k_position_controller);
+  }
+
+  std::vector<std::string> stop_interface = {};
+
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+            hardware_interface::return_type::OK);
+  // can call write only after performing command mode switch
+  ASSERT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
+            hardware_interface::return_type::OK);
+
+  const auto time = rclcpp::Time(0, 0);
+  const auto duration = rclcpp::Duration(0, 0);
+
+  ASSERT_EQ(franka_hardware_interface.read(time, duration), hardware_interface::return_type::OK);
+  ASSERT_EQ(franka_hardware_interface.write(time, duration),
+            hardware_interface::return_type::ERROR);
+}
+
+TEST_F(
+    FrankaHardwareInterfaceTest,
+    given_position_joint_command_interface_initialized_if_write_called_without_read_expect_write_once_not_to_called) {
+  auto mock_robot = std::make_shared<MockRobot>();
+  EXPECT_CALL(*mock_robot, writeOnce(std::array<double, 7>{})).Times(0);
+
+  franka_hardware::FrankaHardwareInterface franka_hardware_interface(std::move(mock_robot));
+
+  const auto hardware_info = createHardwareInfo();
+  franka_hardware_interface.on_init(hardware_info);
+  std::vector<std::string> start_interface;
+
+  for (size_t i = 0; i < hardware_info.joints.size(); i++) {
+    const std::string joint_name = k_joint_name + std::to_string(i);
+    start_interface.push_back(joint_name + "/" + k_position_controller);
+  }
+
+  std::vector<std::string> stop_interface = {};
+
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+            hardware_interface::return_type::OK);
+  // can call write only after performing command mode switch
+  ASSERT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
+            hardware_interface::return_type::OK);
+
+  const auto time = rclcpp::Time(0, 0);
+  const auto duration = rclcpp::Duration(0, 0);
+
+  ASSERT_EQ(franka_hardware_interface.write(time, duration), hardware_interface::return_type::OK);
 }
 
 TEST_F(FrankaHardwareInterfaceTest, when_on_activate_called_expect_success) {
@@ -381,7 +453,7 @@ TEST_F(FrankaHardwareInterfaceTest, when_on_activate_called_expect_success) {
 
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
 
-  EXPECT_EQ(franka_hardware_interface.on_activate(rclcpp_lifecycle::State()),
+  ASSERT_EQ(franka_hardware_interface.on_activate(rclcpp_lifecycle::State()),
             rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 }
 
@@ -393,7 +465,7 @@ TEST_F(FrankaHardwareInterfaceTest, when_on_deactivate_called_expect_success) {
 
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
 
-  EXPECT_EQ(franka_hardware_interface.on_deactivate(rclcpp_lifecycle::State()),
+  ASSERT_EQ(franka_hardware_interface.on_deactivate(rclcpp_lifecycle::State()),
             rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 }
 
@@ -407,6 +479,8 @@ TEST_P(FrankaHardwareInterfaceTest,
     EXPECT_CALL(*mock_robot, initializeTorqueInterface());
   } else if (command_interface == k_velocity_controller) {
     EXPECT_CALL(*mock_robot, initializeJointVelocityInterface());
+  } else if (command_interface == k_position_controller) {
+    EXPECT_CALL(*mock_robot, initializeJointPositionInterface());
   }
 
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
@@ -422,10 +496,10 @@ TEST_P(FrankaHardwareInterfaceTest,
 
   std::vector<std::string> stop_interface = {};
 
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 
-  EXPECT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 }
 
@@ -449,10 +523,10 @@ TEST_P(FrankaHardwareInterfaceTest,
 
   std::vector<std::string> stop_interface = {};
 
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 
-  EXPECT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 
   for (size_t i = 0; i < hardware_info.joints.size(); i++) {
@@ -462,10 +536,10 @@ TEST_P(FrankaHardwareInterfaceTest,
 
   start_interface.clear();
 
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 
-  EXPECT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 }
 
@@ -691,4 +765,6 @@ int main(int argc, char** argv) {
 
 INSTANTIATE_TEST_SUITE_P(FrankaHardwareTests,
                          FrankaHardwareInterfaceTest,
-                         ::testing::Values(k_velocity_controller, k_effort_controller));
+                         ::testing::Values(k_velocity_controller,
+                                           k_effort_controller,
+                                           k_position_controller));

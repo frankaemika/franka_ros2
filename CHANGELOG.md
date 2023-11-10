@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.7 - 2023-11-10
+
+Requires libfranka >= 0.12.1, required ROS 2 Humble
+
+* franka\_hardware: joint position command inteface supported
+* franka\_hardware: controller initializer automatically acknowledges error, if arm is in reflex mode
+* franka\_example\_controllers: joint position example controller provided
+* franka\_example\_controllers: fix second start bug with the example controllers
+
 ## 0.1.6 - 2023-11-03
 
 Requires libfranka >= 0.12.1, required ROS 2 Humble

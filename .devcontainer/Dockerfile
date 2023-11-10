@@ -38,7 +38,10 @@ RUN apt-get update && \
     ros-humble-ament-cmake \
     ros-humble-ament-cmake-clang-format \
     ros-humble-moveit \
+    ros-humble-ros2-control \
+    ros-humble-ros2-controllers \
     ros-humble-joint-state-broadcaster \
+    ros-humble-ament-cmake-clang-tidy \
     libignition-gazebo6-dev \
     ros-humble-joint-trajectory-controller \
     libpoco-dev \

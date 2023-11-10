@@ -17,6 +17,12 @@
             The joint velocity example controller moves joint 4 and 5 in a periodic movement.
         </description>
     </class>
+    <class name="franka_example_controllers/JointPositionExampleController"
+           type="franka_example_controllers::JointPositionExampleController" base_class_type="controller_interface::ControllerInterface">
+        <description>
+            The joint position example controller moves in a periodic movement.
+        </description>
+    </class>
     <class name="franka_example_controllers/CartesianVelocityExampleController"
            type="franka_example_controllers::CartesianVelocityExampleController" base_class_type="controller_interface::ControllerInterface">
         <description>

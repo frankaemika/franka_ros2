@@ -66,10 +66,13 @@ class Robot {
   /// Starts the active control for joint velocity control
   virtual void initializeJointVelocityInterface();
 
-  /// Starts the active control for joint velocity control
+  /// Starts the active control for joint position control
+  virtual void initializeJointPositionInterface();
+
+  /// Starts the active control for cartesian velocity control
   virtual void initializeCartesianVelocityInterface();
 
-  /// stops the read continous communication with the connected robot
+  /// stops the read continuous communication with the connected robot
   virtual void stopRobot();
 
   /**
@@ -231,17 +234,22 @@ class Robot {
   virtual franka::RobotState readOnceActiveControl();
 
   /**
-   * The robot will use these torques until a different set of torques are commanded.
+   * The robot will use set of torques until a different set of torques are commanded.
    * @param[in] efforts torque command for each joint.
    */
   virtual void writeOnceEfforts(const std::array<double, 7>& efforts);
 
   /**
-   * The robot will use these velocities until a different set of velocities are commanded.
+   * The robot will use set of velocities until a different set of velocities are commanded.
    * @param[in] joint_velocities joint velocity command.
    */
   virtual void writeOnceJointVelocities(const std::array<double, 7>& joint_velocities);
 
+  /**
+   * The robot will use set of positions until a different set of position are commanded.
+   * @param[in] joint_position joint position command.
+   */
+  virtual void writeOnceJointPositions(const std::array<double, 7>& positions);
   /**
    * @brief Checks if control loop is activated for active control.
    *
@@ -262,12 +270,18 @@ class Robot {
 
   bool effort_interface_active_{false};
   bool joint_velocity_interface_active_{false};
+  bool joint_position_interface_active_{false};
   bool cartesian_velocity_interface_active_{false};
 
   bool velocity_command_rate_limit_active_{false};
+
   bool cartesian_velocity_command_rate_limit_active_{false};
   bool cartesian_velocity_low_pass_filter_active{false};
-  double low_pass_filter_cut_off_freq{1000.0};
+
+  bool joint_position_command_rate_limit_active_{false};
+  bool joint_position_command_low_pass_filter_active_{false};
+
+  double low_pass_filter_cut_off_freq{100.0};
 
   franka::RobotState current_state_;
 };

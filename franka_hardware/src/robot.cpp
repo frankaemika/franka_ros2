@@ -48,16 +48,17 @@ franka::RobotState Robot::readOnce() {
   std::lock_guard<std::mutex> lock(control_mutex_);
   if (!isControlLoopActive()) {
     current_state_ = robot_->readOnce();
-    return current_state_;
   } else {
-    return readOnceActiveControl();
+    current_state_ = readOnceActiveControl();
   }
+  return current_state_;
 }
 
 void Robot::stopRobot() {
   if (isControlLoopActive()) {
     effort_interface_active_ = false;
     joint_velocity_interface_active_ = false;
+    joint_position_interface_active_ = false;
     cartesian_velocity_interface_active_ = false;
     active_control_.reset();
   }
@@ -68,6 +69,8 @@ void Robot::writeOnce(const std::array<double, 7>& joint_commands) {
     writeOnceEfforts(joint_commands);
   } else if (joint_velocity_interface_active_) {
     writeOnceJointVelocities(joint_commands);
+  } else if (joint_position_interface_active_) {
+    writeOnceJointPositions(joint_commands);
   }
 }
 
@@ -97,6 +100,30 @@ void Robot::writeOnceJointVelocities(const std::array<double, 7>& velocities) {
   }
 
   active_control_->writeOnce(velocity_command);
+}
+
+void Robot::writeOnceJointPositions(const std::array<double, 7>& positions) {
+  std::lock_guard<std::mutex> lock(control_mutex_);
+
+  auto position_command = franka::JointPositions(positions);
+
+  // If you are experiencing issues with robot error. You can try activating the rate limiter.
+  // Rate limiter is default deactivated.
+  if (joint_position_command_low_pass_filter_active_) {
+    for (size_t i = 0; i < 7; i++) {
+      position_command.q.at(i) =
+          franka::lowpassFilter(franka::kDeltaT, position_command.q.at(i), current_state_.q_d.at(i),
+                                low_pass_filter_cut_off_freq);
+    }
+  }
+  if (joint_position_command_rate_limit_active_) {
+    position_command.q =
+        franka::limitRate(franka::computeUpperLimitsJointVelocity(current_state_.q_d),
+                          franka::computeLowerLimitsJointVelocity(current_state_.q_d),
+                          franka::kMaxJointAcceleration, franka::kMaxJointJerk, position_command.q,
+                          current_state_.q_d, current_state_.dq_d, current_state_.ddq_d);
+  }
+  active_control_->writeOnce(position_command);
 }
 
 void Robot::preProcessCartesianVelocities(franka::CartesianVelocities& velocity_command) {
@@ -155,8 +182,8 @@ void Robot::writeOnce(const std::array<double, 6>& cartesian_velocities,
 
 franka::RobotState Robot::readOnceActiveControl() {
   // When controller is active use active control to read the robot state
-  const auto [current_state_, _] = active_control_->readOnce();
-  return current_state_;
+  const auto [current_state, _] = active_control_->readOnce();
+  return current_state;
 }
 
 franka_hardware::Model* Robot::getModel() {
@@ -164,25 +191,56 @@ franka_hardware::Model* Robot::getModel() {
 }
 
 void Robot::initializeTorqueInterface() {
-  active_control_ = robot_->startTorqueControl();
+  try {
+    active_control_ = robot_->startTorqueControl();
+  } catch (const franka::ControlException& e) {
+    robot_->automaticErrorRecovery();
+    active_control_ = robot_->startTorqueControl();
+  }
   effort_interface_active_ = true;
 }
 
 void Robot::initializeJointVelocityInterface() {
-  active_control_ = robot_->startJointVelocityControl(
-      research_interface::robot::Move::ControllerMode::kJointImpedance);
+  try {
+    active_control_ = robot_->startJointVelocityControl(
+        research_interface::robot::Move::ControllerMode::kJointImpedance);
+  } catch (const franka::ControlException& e) {
+    robot_->automaticErrorRecovery();
+    active_control_ = robot_->startJointVelocityControl(
+        research_interface::robot::Move::ControllerMode::kJointImpedance);
+  }
+
   joint_velocity_interface_active_ = true;
 }
 
+void Robot::initializeJointPositionInterface() {
+  try {
+    active_control_ = robot_->startJointPositionControl(
+        research_interface::robot::Move::ControllerMode::kJointImpedance);
+  } catch (const franka::ControlException& e) {
+    robot_->automaticErrorRecovery();
+    active_control_ = robot_->startJointPositionControl(
+        research_interface::robot::Move::ControllerMode::kJointImpedance);
+  }
+
+  joint_position_interface_active_ = true;
+}
+
 void Robot::initializeCartesianVelocityInterface() {
-  active_control_ = robot_->startCartesianVelocityControl(
-      research_interface::robot::Move::ControllerMode::kJointImpedance);
+  try {
+    active_control_ = robot_->startCartesianVelocityControl(
+        research_interface::robot::Move::ControllerMode::kJointImpedance);
+  } catch (const franka::ControlException& e) {
+    robot_->automaticErrorRecovery();
+    active_control_ = robot_->startCartesianVelocityControl(
+        research_interface::robot::Move::ControllerMode::kJointImpedance);
+  }
   cartesian_velocity_interface_active_ = true;
 }
 
 bool Robot::isControlLoopActive() {
-  return joint_velocity_interface_active_ || effort_interface_active_ ||
-         cartesian_velocity_interface_active_;
+  return joint_position_interface_active_ || joint_velocity_interface_active_ ||
+         effort_interface_active_ || cartesian_velocity_interface_active_;
 }
 
 void Robot::setJointStiffness(const franka_msgs::srv::SetJointStiffness::Request::SharedPtr& req) {

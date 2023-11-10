@@ -110,6 +110,7 @@ CallbackReturn JointVelocityExampleController::on_configure(
 
 CallbackReturn JointVelocityExampleController::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
+  elapsed_time_ = rclcpp::Duration(0, 0);
   return CallbackReturn::SUCCESS;
 }
 
