@@ -127,7 +127,7 @@ TEST_F(FrankaHardwareInterfaceTest, when_on_init_called_expect_success) {
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
   auto return_type = franka_hardware_interface.on_init(info);
 
-  EXPECT_EQ(return_type,
+  ASSERT_EQ(return_type,
             rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 }
 
@@ -146,7 +146,7 @@ TEST_F(FrankaHardwareInterfaceTest,
   auto time = rclcpp::Time(0, 0);
   auto duration = rclcpp::Duration(0, 0);
   auto return_type = franka_hardware_interface.read(time, duration);
-  EXPECT_EQ(return_type, hardware_interface::return_type::OK);
+  ASSERT_EQ(return_type, hardware_interface::return_type::OK);
 }
 
 TEST_F(
@@ -169,7 +169,7 @@ TEST_F(
   auto time = rclcpp::Time(0);
   auto duration = rclcpp::Duration(0, 0);
   auto return_type = franka_hardware_interface.read(time, duration);
-  EXPECT_EQ(return_type, hardware_interface::return_type::OK);
+  ASSERT_EQ(return_type, hardware_interface::return_type::OK);
   auto states = franka_hardware_interface.export_state_interfaces();
   size_t joint_index = 0;
 
@@ -180,16 +180,16 @@ TEST_F(
     }
     const std::string joint_name = k_joint_name + std::to_string(joint_index);
     if (i % 3 == 0) {
-      EXPECT_EQ(states[i].get_name(), joint_name + "/" + k_position_controller);
+      ASSERT_EQ(states[i].get_name(), joint_name + "/" + k_position_controller);
     } else if (i % 3 == 1) {
-      EXPECT_EQ(states[i].get_name(), joint_name + "/" + k_velocity_controller);
+      ASSERT_EQ(states[i].get_name(), joint_name + "/" + k_velocity_controller);
     } else {
-      EXPECT_EQ(states[i].get_name(), joint_name + "/" + k_effort_controller);
+      ASSERT_EQ(states[i].get_name(), joint_name + "/" + k_effort_controller);
     }
-    EXPECT_EQ(states[i].get_value(), 0.0);
+    ASSERT_EQ(states[i].get_value(), 0.0);
   }
 
-  EXPECT_EQ(states.size(), state_interface_size);
+  ASSERT_EQ(states.size(), state_interface_size);
 }
 
 TEST_F(
@@ -212,9 +212,9 @@ TEST_F(
   auto time = rclcpp::Time(0);
   auto duration = rclcpp::Duration(0, 0);
   auto return_type = franka_hardware_interface.read(time, duration);
-  EXPECT_EQ(return_type, hardware_interface::return_type::OK);
+  ASSERT_EQ(return_type, hardware_interface::return_type::OK);
   auto states = franka_hardware_interface.export_state_interfaces();
-  EXPECT_EQ(states[state_interface_size - 1].get_name(),
+  ASSERT_EQ(states[state_interface_size - 1].get_name(),
             "panda/robot_model");  // Last state interface is the robot model state
   EXPECT_NEAR(states[state_interface_size - 1].get_value(),
               *reinterpret_cast<double*>(&model_address),
@@ -243,9 +243,9 @@ TEST_F(
   auto time = rclcpp::Time(0);
   auto duration = rclcpp::Duration(0, 0);
   auto return_type = franka_hardware_interface.read(time, duration);
-  EXPECT_EQ(return_type, hardware_interface::return_type::OK);
+  ASSERT_EQ(return_type, hardware_interface::return_type::OK);
   auto states = franka_hardware_interface.export_state_interfaces();
-  EXPECT_EQ(states[state_interface_size - 2].get_name(),
+  ASSERT_EQ(states[state_interface_size - 2].get_name(),
             "panda/robot_state");  // Last state interface is the robot model state
   EXPECT_NEAR(states[state_interface_size - 2].get_value(),
               *reinterpret_cast<double*>(&robot_state_address),
@@ -269,7 +269,7 @@ TEST_P(FrankaHardwareInterfaceTest,
     stop_interface.push_back(joint_name + "/" + command_interface);
   }
   std::vector<std::string> start_interface = {};
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 }
 
@@ -313,7 +313,7 @@ TEST_P(FrankaHardwareInterfaceTest,
 
   std::vector<std::string> stop_interface = {};
 
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 }
 
@@ -360,19 +360,19 @@ TEST_P(FrankaHardwareInterfaceTest, when_write_called_expect_ok) {
 
   std::vector<std::string> stop_interface = {};
 
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
   // can call write only after performing command mode switch
-  EXPECT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 
   const auto time = rclcpp::Time(0, 0);
   const auto duration = rclcpp::Duration(0, 0);
 
   if (command_interface == k_position_controller) {
-    EXPECT_EQ(franka_hardware_interface.read(time, duration), hardware_interface::return_type::OK);
+    ASSERT_EQ(franka_hardware_interface.read(time, duration), hardware_interface::return_type::OK);
   }
-  EXPECT_EQ(franka_hardware_interface.write(time, duration), hardware_interface::return_type::OK);
+  ASSERT_EQ(franka_hardware_interface.write(time, duration), hardware_interface::return_type::OK);
 }
 
 TEST_F(FrankaHardwareInterfaceTest, when_write_called_with_inifite_command_expect_error) {
@@ -396,17 +396,17 @@ TEST_F(FrankaHardwareInterfaceTest, when_write_called_with_inifite_command_expec
 
   std::vector<std::string> stop_interface = {};
 
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
   // can call write only after performing command mode switch
-  EXPECT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 
   const auto time = rclcpp::Time(0, 0);
   const auto duration = rclcpp::Duration(0, 0);
 
-  EXPECT_EQ(franka_hardware_interface.read(time, duration), hardware_interface::return_type::OK);
-  EXPECT_EQ(franka_hardware_interface.write(time, duration),
+  ASSERT_EQ(franka_hardware_interface.read(time, duration), hardware_interface::return_type::OK);
+  ASSERT_EQ(franka_hardware_interface.write(time, duration),
             hardware_interface::return_type::ERROR);
 }
 
@@ -429,16 +429,16 @@ TEST_F(
 
   std::vector<std::string> stop_interface = {};
 
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
   // can call write only after performing command mode switch
-  EXPECT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 
   const auto time = rclcpp::Time(0, 0);
   const auto duration = rclcpp::Duration(0, 0);
 
-  EXPECT_EQ(franka_hardware_interface.write(time, duration), hardware_interface::return_type::OK);
+  ASSERT_EQ(franka_hardware_interface.write(time, duration), hardware_interface::return_type::OK);
 }
 
 TEST_F(FrankaHardwareInterfaceTest, when_on_activate_called_expect_success) {
@@ -453,7 +453,7 @@ TEST_F(FrankaHardwareInterfaceTest, when_on_activate_called_expect_success) {
 
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
 
-  EXPECT_EQ(franka_hardware_interface.on_activate(rclcpp_lifecycle::State()),
+  ASSERT_EQ(franka_hardware_interface.on_activate(rclcpp_lifecycle::State()),
             rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 }
 
@@ -465,7 +465,7 @@ TEST_F(FrankaHardwareInterfaceTest, when_on_deactivate_called_expect_success) {
 
   franka_hardware::FrankaHardwareInterface franka_hardware_interface(mock_robot);
 
-  EXPECT_EQ(franka_hardware_interface.on_deactivate(rclcpp_lifecycle::State()),
+  ASSERT_EQ(franka_hardware_interface.on_deactivate(rclcpp_lifecycle::State()),
             rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS);
 }
 
@@ -496,10 +496,10 @@ TEST_P(FrankaHardwareInterfaceTest,
 
   std::vector<std::string> stop_interface = {};
 
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 
-  EXPECT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 }
 
@@ -523,10 +523,10 @@ TEST_P(FrankaHardwareInterfaceTest,
 
   std::vector<std::string> stop_interface = {};
 
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 
-  EXPECT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 
   for (size_t i = 0; i < hardware_info.joints.size(); i++) {
@@ -536,10 +536,10 @@ TEST_P(FrankaHardwareInterfaceTest,
 
   start_interface.clear();
 
-  EXPECT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 
-  EXPECT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
+  ASSERT_EQ(franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface),
             hardware_interface::return_type::OK);
 }
 

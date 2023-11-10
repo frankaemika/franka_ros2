@@ -44,7 +44,7 @@ controller_interface::return_type JointPositionExampleController::update(
     const rclcpp::Duration& /*period*/) {
   if (initialization_flag_) {
     for (size_t i = 0; i < 7; ++i) {
-      initial_q_(i) = command_interfaces_[i].get_value();
+      initial_q_.at(i) = command_interfaces_[i].get_value();
     }
     initialization_flag_ = false;
   }
@@ -54,9 +54,9 @@ controller_interface::return_type JointPositionExampleController::update(
 
   for (size_t i = 0; i < 7; ++i) {
     if (i == 4) {
-      command_interfaces_[i].set_value(initial_q_(i) - delta_angle);
+      command_interfaces_[i].set_value(initial_q_.at(i) - delta_angle);
     } else {
-      command_interfaces_[i].set_value(initial_q_(i) + delta_angle);
+      command_interfaces_[i].set_value(initial_q_.at(i) + delta_angle);
     }
   }
 

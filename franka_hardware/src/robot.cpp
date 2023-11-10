@@ -111,8 +111,8 @@ void Robot::writeOnceJointPositions(const std::array<double, 7>& positions) {
   // Rate limiter is default deactivated.
   if (joint_position_command_low_pass_filter_active_) {
     for (size_t i = 0; i < 7; i++) {
-      position_command.q[i] =
-          franka::lowpassFilter(franka::kDeltaT, position_command.q[i], current_state_.q_d[i],
+      position_command.q.at(i) =
+          franka::lowpassFilter(franka::kDeltaT, position_command.q.at(i), current_state_.q_d.at(i),
                                 low_pass_filter_cut_off_freq);
     }
   }
