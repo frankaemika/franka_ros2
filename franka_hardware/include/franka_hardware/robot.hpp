@@ -234,19 +234,19 @@ class Robot {
   virtual franka::RobotState readOnceActiveControl();
 
   /**
-   * The robot will use these torques until a different set of torques are commanded.
+   * The robot will use set of torques until a different set of torques are commanded.
    * @param[in] efforts torque command for each joint.
    */
   virtual void writeOnceEfforts(const std::array<double, 7>& efforts);
 
   /**
-   * The robot will use these velocities until a different set of velocities are commanded.
+   * The robot will use set of velocities until a different set of velocities are commanded.
    * @param[in] joint_velocities joint velocity command.
    */
   virtual void writeOnceJointVelocities(const std::array<double, 7>& joint_velocities);
 
   /**
-   * The robot will use these position until a different set of position are commanded.
+   * The robot will use set of positions until a different set of position are commanded.
    * @param[in] joint_position joint position command.
    */
   virtual void writeOnceJointPositions(const std::array<double, 7>& positions);
