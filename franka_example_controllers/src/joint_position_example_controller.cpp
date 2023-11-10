@@ -42,11 +42,11 @@ JointPositionExampleController::state_interface_configuration() const {
 controller_interface::return_type JointPositionExampleController::update(
     const rclcpp::Time& /*time*/,
     const rclcpp::Duration& /*period*/) {
-  if (first_time_) {
+  if (initialization_flag_) {
     for (size_t i = 0; i < 7; ++i) {
       initial_q_(i) = command_interfaces_[i].get_value();
     }
-    first_time_ = false;
+    initialization_flag_ = false;
   }
 
   elapsed_time_ = elapsed_time_ + trajectory_period;
@@ -83,6 +83,8 @@ CallbackReturn JointPositionExampleController::on_configure(
 
 CallbackReturn JointPositionExampleController::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
+  initialization_flag_ = true;
+  elapsed_time_ = 0.0;
   return CallbackReturn::SUCCESS;
 }
 

@@ -96,7 +96,7 @@ CallbackReturn CartesianVelocityExampleController::on_configure(
 CallbackReturn CartesianVelocityExampleController::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   franka_cartesian_velocity_->assign_loaned_command_interfaces(command_interfaces_);
-
+  elapsed_time_ = rclcpp::Duration(0, 0);
   return CallbackReturn::SUCCESS;
 }
 

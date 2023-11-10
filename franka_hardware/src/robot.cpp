@@ -58,6 +58,7 @@ void Robot::stopRobot() {
   if (isControlLoopActive()) {
     effort_interface_active_ = false;
     joint_velocity_interface_active_ = false;
+    joint_position_interface_active_ = false;
     cartesian_velocity_interface_active_ = false;
     active_control_.reset();
   }
@@ -190,25 +191,50 @@ franka_hardware::Model* Robot::getModel() {
 }
 
 void Robot::initializeTorqueInterface() {
-  active_control_ = robot_->startTorqueControl();
+  try {
+    active_control_ = robot_->startTorqueControl();
+  } catch (const franka::ControlException& e) {
+    robot_->automaticErrorRecovery();
+    active_control_ = robot_->startTorqueControl();
+  }
   effort_interface_active_ = true;
 }
 
 void Robot::initializeJointVelocityInterface() {
-  active_control_ = robot_->startJointVelocityControl(
-      research_interface::robot::Move::ControllerMode::kJointImpedance);
+  try {
+    active_control_ = robot_->startJointVelocityControl(
+        research_interface::robot::Move::ControllerMode::kJointImpedance);
+  } catch (const franka::ControlException& e) {
+    robot_->automaticErrorRecovery();
+    active_control_ = robot_->startJointVelocityControl(
+        research_interface::robot::Move::ControllerMode::kJointImpedance);
+  }
+
   joint_velocity_interface_active_ = true;
 }
 
 void Robot::initializeJointPositionInterface() {
-  active_control_ = robot_->startJointPositionControl(
-      research_interface::robot::Move::ControllerMode::kJointImpedance);
+  try {
+    active_control_ = robot_->startJointPositionControl(
+        research_interface::robot::Move::ControllerMode::kJointImpedance);
+  } catch (const franka::ControlException& e) {
+    robot_->automaticErrorRecovery();
+    active_control_ = robot_->startJointPositionControl(
+        research_interface::robot::Move::ControllerMode::kJointImpedance);
+  }
+
   joint_position_interface_active_ = true;
 }
 
 void Robot::initializeCartesianVelocityInterface() {
-  active_control_ = robot_->startCartesianVelocityControl(
-      research_interface::robot::Move::ControllerMode::kJointImpedance);
+  try {
+    active_control_ = robot_->startCartesianVelocityControl(
+        research_interface::robot::Move::ControllerMode::kJointImpedance);
+  } catch (const franka::ControlException& e) {
+    robot_->automaticErrorRecovery();
+    active_control_ = robot_->startCartesianVelocityControl(
+        research_interface::robot::Move::ControllerMode::kJointImpedance);
+  }
   cartesian_velocity_interface_active_ = true;
 }
 

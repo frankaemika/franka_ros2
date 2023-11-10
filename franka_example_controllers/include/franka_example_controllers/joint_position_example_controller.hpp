@@ -49,7 +49,7 @@ class JointPositionExampleController : public controller_interface::ControllerIn
   double elapsed_time_ = 0.0;
   std::string arm_id{"panda"};
 
-  bool first_time_{true};
+  bool initialization_flag_{true};
   rclcpp::Time start_time_;
 };
 

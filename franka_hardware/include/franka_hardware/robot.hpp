@@ -244,7 +244,7 @@ class Robot {
    * @param[in] joint_velocities joint velocity command.
    */
   virtual void writeOnceJointVelocities(const std::array<double, 7>& joint_velocities);
-  
+
   /**
    * The robot will use these position until a different set of position are commanded.
    * @param[in] joint_position joint position command.
@@ -274,12 +274,14 @@ class Robot {
   bool cartesian_velocity_interface_active_{false};
 
   bool velocity_command_rate_limit_active_{false};
+
   bool cartesian_velocity_command_rate_limit_active_{false};
   bool cartesian_velocity_low_pass_filter_active{false};
+
   bool joint_position_command_rate_limit_active_{false};
   bool joint_position_command_low_pass_filter_active_{false};
 
-  double low_pass_filter_cut_off_freq{1000.0};
+  double low_pass_filter_cut_off_freq{100.0};
 
   franka::RobotState current_state_;
 };

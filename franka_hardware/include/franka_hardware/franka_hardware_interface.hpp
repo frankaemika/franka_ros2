@@ -69,14 +69,22 @@ class FrankaHardwareInterface : public hardware_interface::SystemInterface {
     bool& claim_flag;
   };
 
+  void initializePositionCommands(const franka::RobotState& robot_state);
+
+  // Initialize joint position commands in the first pass
+  bool first_elbow_update_{true};
+  bool first_position_update_{true};
+
   std::shared_ptr<Robot> robot_;
   std::shared_ptr<FrankaParamServiceServer> node_;
   std::shared_ptr<FrankaExecutor> executor_;
 
-  // Initialize joint position commands in the first pass
-  bool first_pass_{true};
-
-  std::array<double, kNumberOfJoints> hw_commands_{0, 0, 0, 0, 0, 0, 0};
+  // Torque joint commands for the effort command interface
+  std::array<double, kNumberOfJoints> hw_effort_commands_{0, 0, 0, 0, 0, 0, 0};
+  // Position joint commands for the position command interface
+  std::array<double, kNumberOfJoints> hw_position_commands_{0, 0, 0, 0, 0, 0, 0};
+  // Velocity joint commands for the position command interface
+  std::array<double, kNumberOfJoints> hw_velocity_commands_{0, 0, 0, 0, 0, 0, 0};
 
   // Robot joint states
   std::array<double, kNumberOfJoints> hw_positions_{0, 0, 0, 0, 0, 0, 0};

@@ -42,7 +42,7 @@ controller_interface::InterfaceConfiguration ElbowExampleController::state_inter
 controller_interface::return_type ElbowExampleController::update(
     const rclcpp::Time& /*time*/,
     const rclcpp::Duration& /*period*/) {
-  if (first_pass_) {
+  if (initialization_flag_) {
     // Get initial elbow configuration values
     if (!franka_cartesian_velocity_->getCommandedElbowConfiguration(initial_elbow_configuration_)) {
       RCLCPP_FATAL(get_node()->get_logger(),
@@ -51,11 +51,11 @@ controller_interface::return_type ElbowExampleController::update(
       return controller_interface::return_type::ERROR;
     }
 
-    first_pass_ = false;
+    initialization_flag_ = false;
   }
   elapsed_time_ = elapsed_time_ + traj_frequency_;
 
-  double angle = M_PI / 10.0 * (1.0 - std::cos(M_PI / 5.0 * elapsed_time_));
+  double angle = M_PI / 15.0 * (1.0 - std::cos(M_PI / 5.0 * elapsed_time_));
 
   std::array<double, 6> cartesian_velocity_command = {{0.0, 0.0, 0.0, 0.0, 0.0, 0.0}};
   std::array<double, 2> elbow_command = {
@@ -103,7 +103,8 @@ CallbackReturn ElbowExampleController::on_configure(
 CallbackReturn ElbowExampleController::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   franka_cartesian_velocity_->assign_loaned_command_interfaces(command_interfaces_);
-
+  initialization_flag_ = true;
+  elapsed_time_ = 0.0;
   return CallbackReturn::SUCCESS;
 }
 
