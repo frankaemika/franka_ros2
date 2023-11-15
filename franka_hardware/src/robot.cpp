@@ -24,6 +24,9 @@
 
 namespace franka_hardware {
 
+Robot::Robot(std::unique_ptr<franka::Robot> robot, std::unique_ptr<Model> model)
+    : robot_(std::move(robot)), franka_hardware_model_(std::move(model)) {}
+
 Robot::Robot(const std::string& robot_ip, const rclcpp::Logger& logger) {
   franka::RealtimeConfig rt_config = franka::RealtimeConfig::kEnforce;
   if (!franka::hasRealtimeKernel()) {
@@ -65,6 +68,9 @@ void Robot::stopRobot() {
 }
 
 void Robot::writeOnce(const std::array<double, 7>& joint_commands) {
+  if (!active_control_) {
+    throw std::runtime_error("Control hasn't been started");
+  }
   if (effort_interface_active_) {
     writeOnceEfforts(joint_commands);
   } else if (joint_velocity_interface_active_) {
@@ -78,10 +84,10 @@ void Robot::writeOnceEfforts(const std::array<double, 7>& efforts) {
   std::lock_guard<std::mutex> lock(control_mutex_);
 
   auto torque_command = franka::Torques(efforts);
-  torque_command.tau_J =
-      franka::limitRate(franka::kMaxTorqueRate, torque_command.tau_J, last_desired_torque_);
-  last_desired_torque_ = torque_command.tau_J;
-
+  if (torque_command_rate_limiter_active_) {
+    torque_command.tau_J =
+        franka::limitRate(franka::kMaxTorqueRate, torque_command.tau_J, current_state_.tau_J_d);
+  }
   active_control_->writeOnce(torque_command);
 }
 
@@ -162,6 +168,10 @@ void Robot::preProcessCartesianVelocities(franka::CartesianVelocities& velocity_
 }
 
 void Robot::writeOnce(const std::array<double, 6>& cartesian_velocities) {
+  if (!active_control_) {
+    throw std::runtime_error("Control hasn't been started");
+  }
+
   std::lock_guard<std::mutex> lock(control_mutex_);
 
   auto velocity_command = franka::CartesianVelocities(cartesian_velocities);
@@ -172,6 +182,10 @@ void Robot::writeOnce(const std::array<double, 6>& cartesian_velocities) {
 
 void Robot::writeOnce(const std::array<double, 6>& cartesian_velocities,
                       const std::array<double, 2>& elbow_command) {
+  if (!active_control_) {
+    throw std::runtime_error("Control hasn't been started");
+  }
+
   std::lock_guard<std::mutex> lock(control_mutex_);
 
   auto velocity_command = franka::CartesianVelocities(cartesian_velocities, elbow_command);
