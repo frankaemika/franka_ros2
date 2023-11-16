@@ -20,7 +20,7 @@ foreach(Dependency IN ITEMS ${THIS_PACKAGE_INCLUDE_DEPENDS})
   find_package(${Dependency} REQUIRED)
 endforeach()
 
-find_package(Franka REQUIRED)
+find_package(Franka 0.13.0 REQUIRED)
 
 add_library(franka_semantic_components SHARED
             src/franka_robot_state.cpp
