@@ -43,7 +43,6 @@ RUN apt-get update && \
     ros-humble-joint-state-broadcaster \
     ros-humble-ament-cmake-clang-tidy \
     libignition-gazebo6-dev \
-    ros-humble-joint-trajectory-controller \
     libpoco-dev \
     libeigen3-dev \
     && rm -rf /var/lib/apt/lists/*
