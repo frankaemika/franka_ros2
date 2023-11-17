@@ -23,6 +23,7 @@
 #include <thread>
 
 #include <franka/active_control.h>
+#include <franka/active_control_base.h>
 #include <franka/active_motion_generator.h>
 #include <franka/active_torque_control.h>
 
@@ -44,6 +45,13 @@ namespace franka_hardware {
 
 class Robot {
  public:
+  /**
+   * @brief Construct a new Robot object for tests purposes
+   *
+   * @param robot mocked libfranka robot
+   * @param model mocked model object
+   */
+  explicit Robot(std::unique_ptr<franka::Robot> robot, std::unique_ptr<Model> model);
   /**
    * Connects to the robot. This method can block for up to one minute if the robot is not
    * responding. An exception will be thrown if the connection cannot be established.
@@ -262,17 +270,16 @@ class Robot {
   std::mutex control_mutex_;
 
   std::unique_ptr<franka::Robot> robot_;
-  std::unique_ptr<franka::ActiveControl> active_control_;
+  std::unique_ptr<franka::ActiveControlBase> active_control_ = nullptr;
   std::unique_ptr<franka::Model> model_;
   std::unique_ptr<Model> franka_hardware_model_;
-
-  std::array<double, 7> last_desired_torque_ = {0, 0, 0, 0, 0, 0, 0};
 
   bool effort_interface_active_{false};
   bool joint_velocity_interface_active_{false};
   bool joint_position_interface_active_{false};
   bool cartesian_velocity_interface_active_{false};
 
+  bool torque_command_rate_limiter_active_{true};
   bool velocity_command_rate_limit_active_{false};
 
   bool cartesian_velocity_command_rate_limit_active_{false};

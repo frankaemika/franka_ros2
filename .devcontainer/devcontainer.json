@@ -13,15 +13,7 @@
 				"bungcip.better-toml",
 				"ms-vscode.cpptools",
 				"ms-vscode.cpptools-extension-pack"
-			],
-			"settings": {
-				"terminal.integrated.defaultProfile.linux": "bash",
-				"terminal.integrated.profiles.linux": {
-					"bash": {
-						"path": "/bin/bash"
-					}
-				}
-			}
+			]
 		}
 	}
 }

@@ -1,10 +1,17 @@
 # Changelog
 
+## 0.1.8 - 2023-11-16
+
+Requires libfranka >= 0.13.0, required ROS 2 Humble
+
+* franka\_hardware: add unit tests for robot class.
+* joint\_trajectory\_controller: hotfix add joint patched old JTC back.
+
 ## 0.1.7 - 2023-11-10
 
 Requires libfranka >= 0.12.1, required ROS 2 Humble
 
-* franka\_hardware: joint position command inteface supported
+* franka\_hardware: joint position command interface supported
 * franka\_hardware: controller initializer automatically acknowledges error, if arm is in reflex mode
 * franka\_example\_controllers: joint position example controller provided
 * franka\_example\_controllers: fix second start bug with the example controllers
