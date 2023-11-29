@@ -73,7 +73,7 @@ controller_interface::CallbackReturn FrankaRobotStateBroadcaster::on_configure(
     realtime_franka_state_publisher =
         std::make_shared<realtime_tools::RealtimePublisher<franka_msgs::msg::FrankaRobotState>>(
             franka_state_publisher);
-    ;
+    franka_robot_state->initialize_robot_state_msg(realtime_franka_state_publisher->msg_);
   } catch (const std::exception& e) {
     fprintf(stderr,
             "Exception thrown during publisher creation at configure stage with message : %s \n",

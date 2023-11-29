@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "franka/robot_state.h"
-#include "franka_msgs/msg/errors.hpp"
 #include "franka_msgs/msg/franka_robot_state.hpp"
 #include "semantic_components/semantic_component_interface.hpp"
 
@@ -31,11 +30,13 @@ class FrankaRobotState
 
   virtual ~FrankaRobotState() = default;
 
+  auto initialize_robot_state_msg(franka_msgs::msg::FrankaRobotState& message) -> void;
+
   /**
    * Constructs and return a FrankaRobotState message from the current values.
    * \return FrankaRobotState message from values;
    */
-  bool get_values_as_message(franka_msgs::msg::FrankaRobotState& message);
+  auto get_values_as_message(franka_msgs::msg::FrankaRobotState& message) -> bool;
 
  protected:
   franka::RobotState* robot_state_ptr;

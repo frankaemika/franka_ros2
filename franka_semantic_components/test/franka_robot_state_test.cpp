@@ -32,6 +32,7 @@ void FrankaRobotStateTest::SetUp() {
 
   robot_state.q = joint_angles;
   robot_state.q_d = joint_velocities;
+  robot_state.O_T_EE = end_effector_pose;
   robot_state.robot_mode = robot_mode;
 
   hardware_interface::StateInterface franka_hw_state{
@@ -69,8 +70,15 @@ TEST_F(FrankaRobotStateTest, robot_state_ptr_uncasted_correctly) {
 
 TEST_F(FrankaRobotStateTest,
        given_franka_semantic_state_initialized_when_message_returned_expect_correct_values) {
-  ASSERT_EQ(joint_angles, franka_robot_state_msg.q);
-  ASSERT_EQ(joint_velocities, franka_robot_state_msg.q_d);
+  ASSERT_THAT(joint_angles,
+              ::testing::ElementsAreArray(franka_robot_state_msg.measured_joint_state.position));
+  ASSERT_THAT(joint_velocities,
+              ::testing::ElementsAreArray(franka_robot_state_msg.desired_joint_state.position));
+
+  ASSERT_EQ(end_effector_pose[12], franka_robot_state_msg.o_t_ee.pose.position.x);
+  ASSERT_EQ(end_effector_pose[13], franka_robot_state_msg.o_t_ee.pose.position.y);
+  ASSERT_EQ(end_effector_pose[14], franka_robot_state_msg.o_t_ee.pose.position.z);
+
   ASSERT_EQ(franka_msgs::msg::FrankaRobotState::ROBOT_MODE_USER_STOPPED,
             franka_robot_state_msg.robot_mode);
   franka_state_friend->release_interfaces();

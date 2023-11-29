@@ -17,7 +17,21 @@
 #include <cstring>
 
 #include "rclcpp/logging.hpp"
+#include "sensor_msgs/msg/joint_state.hpp"
+#include "std_msgs/msg/header.hpp"
+#include "std_msgs/msg/string.hpp"
+#include "translation_utils.hpp"
+
 namespace {
+
+// TODO(kuhn_an): Are these correct?
+const std::string kLinkName = "_link";
+const size_t kTotalAmountOfLinks = 11;
+const size_t kBaseLinkIndex = 0;
+const size_t kFlangeLinkIndex = 7;
+const size_t kEndEffectorLinkIndex = 8;
+const size_t kLoadLinkIndex = 9;
+const size_t kStiffnessLinkIndex = 10;
 
 // Example implementation of bit_cast: https://en.cppreference.com/w/cpp/numeric/bit_cast
 template <class To, class From>
@@ -34,112 +48,6 @@ bit_cast(const From& src) noexcept {
   return dst;
 }
 
-franka_msgs::msg::Errors errorsToMessage(const franka::Errors& error) {
-  franka_msgs::msg::Errors message;
-  message.joint_position_limits_violation =
-      static_cast<decltype(message.joint_position_limits_violation)>(
-          error.joint_position_limits_violation);
-  message.cartesian_position_limits_violation =
-      static_cast<decltype(message.cartesian_position_limits_violation)>(
-          error.cartesian_position_limits_violation);
-  message.self_collision_avoidance_violation =
-      static_cast<decltype(message.self_collision_avoidance_violation)>(
-          error.self_collision_avoidance_violation);
-  message.joint_velocity_violation =
-      static_cast<decltype(message.joint_velocity_violation)>(error.joint_velocity_violation);
-  message.cartesian_velocity_violation =
-      static_cast<decltype(message.cartesian_velocity_violation)>(
-          error.cartesian_velocity_violation);
-  message.force_control_safety_violation =
-      static_cast<decltype(message.force_control_safety_violation)>(
-          error.force_control_safety_violation);
-  message.joint_reflex = static_cast<decltype(message.joint_reflex)>(error.joint_reflex);
-  message.cartesian_reflex =
-      static_cast<decltype(message.cartesian_reflex)>(error.cartesian_reflex);
-  message.max_goal_pose_deviation_violation =
-      static_cast<decltype(message.max_goal_pose_deviation_violation)>(
-          error.max_goal_pose_deviation_violation);
-  message.max_path_pose_deviation_violation =
-      static_cast<decltype(message.max_path_pose_deviation_violation)>(
-          error.max_path_pose_deviation_violation);
-  message.cartesian_velocity_profile_safety_violation =
-      static_cast<decltype(message.cartesian_velocity_profile_safety_violation)>(
-          error.cartesian_velocity_profile_safety_violation);
-  message.joint_position_motion_generator_start_pose_invalid =
-      static_cast<decltype(message.joint_position_motion_generator_start_pose_invalid)>(
-          error.joint_position_motion_generator_start_pose_invalid);
-  message.joint_motion_generator_position_limits_violation =
-      static_cast<decltype(message.joint_motion_generator_position_limits_violation)>(
-          error.joint_motion_generator_position_limits_violation);
-  message.joint_motion_generator_velocity_limits_violation =
-      static_cast<decltype(message.joint_motion_generator_velocity_limits_violation)>(
-          error.joint_motion_generator_velocity_limits_violation);
-  message.joint_motion_generator_velocity_discontinuity =
-      static_cast<decltype(message.joint_motion_generator_velocity_discontinuity)>(
-          error.joint_motion_generator_velocity_discontinuity);
-  message.joint_motion_generator_acceleration_discontinuity =
-      static_cast<decltype(message.joint_motion_generator_acceleration_discontinuity)>(
-          error.joint_motion_generator_acceleration_discontinuity);
-  message.cartesian_position_motion_generator_start_pose_invalid =
-      static_cast<decltype(message.cartesian_position_motion_generator_start_pose_invalid)>(
-          error.cartesian_position_motion_generator_start_pose_invalid);
-  message.cartesian_motion_generator_elbow_limit_violation =
-      static_cast<decltype(message.cartesian_motion_generator_elbow_limit_violation)>(
-          error.cartesian_motion_generator_elbow_limit_violation);
-  message.cartesian_motion_generator_velocity_limits_violation =
-      static_cast<decltype(message.cartesian_motion_generator_velocity_limits_violation)>(
-          error.cartesian_motion_generator_velocity_limits_violation);
-  message.cartesian_motion_generator_velocity_discontinuity =
-      static_cast<decltype(message.cartesian_motion_generator_velocity_discontinuity)>(
-          error.cartesian_motion_generator_velocity_discontinuity);
-  message.cartesian_motion_generator_acceleration_discontinuity =
-      static_cast<decltype(message.cartesian_motion_generator_acceleration_discontinuity)>(
-          error.cartesian_motion_generator_acceleration_discontinuity);
-  message.cartesian_motion_generator_elbow_sign_inconsistent =
-      static_cast<decltype(message.cartesian_motion_generator_elbow_sign_inconsistent)>(
-          error.cartesian_motion_generator_elbow_sign_inconsistent);
-  message.cartesian_motion_generator_start_elbow_invalid =
-      static_cast<decltype(message.cartesian_motion_generator_start_elbow_invalid)>(
-          error.cartesian_motion_generator_start_elbow_invalid);
-  message.cartesian_motion_generator_joint_position_limits_violation =
-      static_cast<decltype(message.cartesian_motion_generator_joint_position_limits_violation)>(
-          error.cartesian_motion_generator_joint_position_limits_violation);
-  message.cartesian_motion_generator_joint_velocity_limits_violation =
-      static_cast<decltype(message.cartesian_motion_generator_joint_velocity_limits_violation)>(
-          error.cartesian_motion_generator_joint_velocity_limits_violation);
-  message.cartesian_motion_generator_joint_velocity_discontinuity =
-      static_cast<decltype(message.cartesian_motion_generator_joint_velocity_discontinuity)>(
-          error.cartesian_motion_generator_joint_velocity_discontinuity);
-  message.cartesian_motion_generator_joint_acceleration_discontinuity =
-      static_cast<decltype(message.cartesian_motion_generator_joint_acceleration_discontinuity)>(
-          error.cartesian_motion_generator_joint_acceleration_discontinuity);
-  message.cartesian_position_motion_generator_invalid_frame =
-      static_cast<decltype(message.cartesian_position_motion_generator_invalid_frame)>(
-          error.cartesian_position_motion_generator_invalid_frame);
-  message.force_controller_desired_force_tolerance_violation =
-      static_cast<decltype(message.force_controller_desired_force_tolerance_violation)>(
-          error.force_controller_desired_force_tolerance_violation);
-  message.controller_torque_discontinuity =
-      static_cast<decltype(message.controller_torque_discontinuity)>(
-          error.controller_torque_discontinuity);
-  message.start_elbow_sign_inconsistent =
-      static_cast<decltype(message.start_elbow_sign_inconsistent)>(
-          error.start_elbow_sign_inconsistent);
-  message.communication_constraints_violation =
-      static_cast<decltype(message.communication_constraints_violation)>(
-          error.communication_constraints_violation);
-  message.power_limit_violation =
-      static_cast<decltype(message.power_limit_violation)>(error.power_limit_violation);
-  message.joint_p2p_insufficient_torque_for_planning =
-      static_cast<decltype(message.joint_p2p_insufficient_torque_for_planning)>(
-          error.joint_p2p_insufficient_torque_for_planning);
-  message.tau_j_range_violation =
-      static_cast<decltype(message.tau_j_range_violation)>(error.tau_j_range_violation);
-  message.instability_detected =
-      static_cast<decltype(message.instability_detected)>(error.instability_detected);
-  return message;
-}
-
 }  // anonymous namespace
 
 namespace franka_semantic_components {
@@ -149,7 +57,49 @@ FrankaRobotState::FrankaRobotState(const std::string& name) : SemanticComponentI
   // TODO: Set default values to NaN
 }
 
-bool FrankaRobotState::get_values_as_message(franka_msgs::msg::FrankaRobotState& message) {
+auto FrankaRobotState::initialize_robot_state_msg(franka_msgs::msg::FrankaRobotState& message)
+    -> void {
+  // The joint states
+  std::vector<std::string> joint_names;
+  // Starting from the base link (aka joint0) up to the end-effector (aka joint8), load (aka joint9)
+  // and stiffness frame (aka joint10)
+  for (size_t i = 0; i < kTotalAmountOfLinks; ++i) {
+    joint_names.push_back(robot_name_ + kLinkName + std::to_string(i));
+  }
+
+  // The joint state - joint 0 is the base while joint 8 is the last joint
+  message.measured_joint_state.name =
+      std::vector<std::string>(joint_names.cbegin() + 1, joint_names.cbegin() + 8);
+  message.desired_joint_state.name =
+      std::vector<std::string>(joint_names.cbegin() + 1, joint_names.cbegin() + 8);
+  message.measured_joint_motor_state.name =
+      std::vector<std::string>(joint_names.cbegin() + 1, joint_names.cbegin() + 8);
+  message.tau_ext_hat_filtered.name =
+      std::vector<std::string>(joint_names.cbegin() + 1, joint_names.cbegin() + 8);
+
+  // Active wrenches
+  message.o_f_ext_hat_k.header.frame_id = joint_names[kBaseLinkIndex];
+  message.k_f_ext_hat_k.header.frame_id = joint_names[kStiffnessLinkIndex];
+
+  // Different pose frames
+  message.o_t_ee.header.frame_id = joint_names[kBaseLinkIndex];
+  message.o_t_ee_d.header.frame_id = joint_names[kBaseLinkIndex];
+  message.o_t_ee_c.header.frame_id = joint_names[kBaseLinkIndex];
+
+  message.f_t_ee.header.frame_id = joint_names[kFlangeLinkIndex];
+  message.ee_t_k.header.frame_id = joint_names[kEndEffectorLinkIndex];
+
+  message.o_dp_ee_d.header.frame_id = joint_names[kBaseLinkIndex];
+  message.o_dp_ee_c.header.frame_id = joint_names[kBaseLinkIndex];
+  message.o_ddp_ee_c.header.frame_id = joint_names[kBaseLinkIndex];
+
+  // The inertias
+  message.inertia_ee.header.frame_id = joint_names[kEndEffectorLinkIndex];
+  message.inertia_load.header.frame_id = joint_names[kLoadLinkIndex];
+  message.inertia_total.header.frame_id = joint_names[kEndEffectorLinkIndex];
+}
+
+auto FrankaRobotState::get_values_as_message(franka_msgs::msg::FrankaRobotState& message) -> bool {
   const std::string full_interface_name = robot_name_ + "/" + state_interface_name_;
 
   auto franka_state_interface =
@@ -167,123 +117,90 @@ bool FrankaRobotState::get_values_as_message(franka_msgs::msg::FrankaRobotState&
     return false;
   }
 
-  static_assert(
-      sizeof(robot_state_ptr->cartesian_collision) == sizeof(robot_state_ptr->cartesian_contact),
-      "Robot state Cartesian members do not have same size");
-  static_assert(
-      sizeof(robot_state_ptr->cartesian_collision) == sizeof(robot_state_ptr->K_F_ext_hat_K),
-      "Robot state Cartesian members do not have same size");
-  static_assert(
-      sizeof(robot_state_ptr->cartesian_collision) == sizeof(robot_state_ptr->O_F_ext_hat_K),
-      "Robot state Cartesian members do not have same size");
-  static_assert(sizeof(robot_state_ptr->cartesian_collision) == sizeof(robot_state_ptr->O_dP_EE_d),
-                "Robot state Cartesian members do not have same size");
-  static_assert(sizeof(robot_state_ptr->cartesian_collision) == sizeof(robot_state_ptr->O_dP_EE_c),
-                "Robot state Cartesian members do not have same size");
-  static_assert(sizeof(robot_state_ptr->cartesian_collision) == sizeof(robot_state_ptr->O_ddP_EE_c),
-                "Robot state Cartesian members do not have same size");
-  for (size_t i = 0; i < robot_state_ptr->cartesian_collision.size(); i++) {
-    message.cartesian_collision[i] = robot_state_ptr->cartesian_collision[i];
-    message.cartesian_contact[i] = robot_state_ptr->cartesian_contact[i];
-    message.k_f_ext_hat_k[i] = robot_state_ptr->K_F_ext_hat_K[i];
-    message.o_f_ext_hat_k[i] = robot_state_ptr->O_F_ext_hat_K[i];
-    message.o_dp_ee_d[i] = robot_state_ptr->O_dP_EE_d[i];
-    message.o_dp_ee_c[i] = robot_state_ptr->O_dP_EE_c[i];
-    message.o_ddp_ee_c[i] = robot_state_ptr->O_ddP_EE_c[i];
-  }
+  // Collision and contact indicators
+  message.collision_indicators = translation::toCollisionIndicators(
+      robot_state_ptr->cartesian_collision, robot_state_ptr->cartesian_contact,
+      robot_state_ptr->joint_collision, robot_state_ptr->joint_contact);
 
-  static_assert(sizeof(robot_state_ptr->q) == sizeof(robot_state_ptr->q_d),
-                "Robot state joint members do not have same size");
-  static_assert(sizeof(robot_state_ptr->q) == sizeof(robot_state_ptr->dq),
-                "Robot state joint members do not have same size");
-  static_assert(sizeof(robot_state_ptr->q) == sizeof(robot_state_ptr->dq_d),
-                "Robot state joint members do not have same size");
-  static_assert(sizeof(robot_state_ptr->q) == sizeof(robot_state_ptr->ddq_d),
-                "Robot state joint members do not have same size");
-  static_assert(sizeof(robot_state_ptr->q) == sizeof(robot_state_ptr->tau_J),
-                "Robot state joint members do not have same size");
-  static_assert(sizeof(robot_state_ptr->q) == sizeof(robot_state_ptr->dtau_J),
-                "Robot state joint members do not have same size");
-  static_assert(sizeof(robot_state_ptr->q) == sizeof(robot_state_ptr->tau_J_d),
-                "Robot state joint members do not have same size");
-  static_assert(sizeof(robot_state_ptr->q) == sizeof(robot_state_ptr->theta),
-                "Robot state joint members do not have same size");
-  static_assert(sizeof(robot_state_ptr->q) == sizeof(robot_state_ptr->dtheta),
-                "Robot state joint members do not have same size");
-  static_assert(sizeof(robot_state_ptr->q) == sizeof(robot_state_ptr->joint_collision),
-                "Robot state joint members do not have same size");
-  static_assert(sizeof(robot_state_ptr->q) == sizeof(robot_state_ptr->joint_contact),
-                "Robot state joint members do not have same size");
-  static_assert(sizeof(robot_state_ptr->q) == sizeof(robot_state_ptr->tau_ext_hat_filtered),
-                "Robot state joint members do not have same size");
+  // The joint states
+  message.measured_joint_state.header.stamp = message.header.stamp;
+  message.measured_joint_state.position =
+      std::vector<double>(robot_state_ptr->q.cbegin(), robot_state_ptr->q.cend());
+  message.measured_joint_state.velocity =
+      std::vector<double>(robot_state_ptr->dq.cbegin(), robot_state_ptr->dq.cend());
+  message.measured_joint_state.effort =
+      std::vector<double>(robot_state_ptr->tau_J.cbegin(), robot_state_ptr->tau_J.cend());
+
+  message.desired_joint_state.header.stamp = message.header.stamp;
+  message.desired_joint_state.position =
+      std::vector<double>(robot_state_ptr->q_d.cbegin(), robot_state_ptr->q_d.cend());
+  message.desired_joint_state.velocity =
+      std::vector<double>(robot_state_ptr->dq_d.cbegin(), robot_state_ptr->dq_d.cend());
+  message.desired_joint_state.effort =
+      std::vector<double>(robot_state_ptr->tau_J_d.cbegin(), robot_state_ptr->tau_J_d.cend());
+
+  message.measured_joint_motor_state.header.stamp = message.header.stamp;
+  message.measured_joint_motor_state.position =
+      std::vector<double>(robot_state_ptr->theta.cbegin(), robot_state_ptr->theta.cend());
+  message.measured_joint_motor_state.velocity =
+      std::vector<double>(robot_state_ptr->dtheta.cbegin(), robot_state_ptr->dtheta.cend());
+
+  message.tau_ext_hat_filtered.header.stamp = message.header.stamp;
+  message.tau_ext_hat_filtered.effort = std::vector<double>(
+      robot_state_ptr->tau_ext_hat_filtered.cbegin(), robot_state_ptr->tau_ext_hat_filtered.cend());
+
   for (size_t i = 0; i < robot_state_ptr->q.size(); i++) {
-    message.q[i] = robot_state_ptr->q[i];
-    message.q_d[i] = robot_state_ptr->q_d[i];
-    message.dq[i] = robot_state_ptr->dq[i];
-    message.dq_d[i] = robot_state_ptr->dq_d[i];
     message.ddq_d[i] = robot_state_ptr->ddq_d[i];
-    message.tau_j[i] = robot_state_ptr->tau_J[i];
     message.dtau_j[i] = robot_state_ptr->dtau_J[i];
-    message.tau_j_d[i] = robot_state_ptr->tau_J_d[i];
-    message.theta[i] = robot_state_ptr->theta[i];
-    message.dtheta[i] = robot_state_ptr->dtheta[i];
-    message.joint_collision[i] = robot_state_ptr->joint_collision[i];
-    message.joint_contact[i] = robot_state_ptr->joint_contact[i];
-    message.tau_ext_hat_filtered[i] = robot_state_ptr->tau_ext_hat_filtered[i];
   }
 
-  static_assert(sizeof(robot_state_ptr->elbow) == sizeof(robot_state_ptr->elbow_d),
-                "Robot state elbow configuration members do not have same size");
-  static_assert(sizeof(robot_state_ptr->elbow) == sizeof(robot_state_ptr->elbow_c),
-                "Robot state elbow configuration members do not have same size");
-  static_assert(sizeof(robot_state_ptr->elbow) == sizeof(robot_state_ptr->delbow_c),
-                "Robot state elbow configuration members do not have same size");
-  static_assert(sizeof(robot_state_ptr->elbow) == sizeof(robot_state_ptr->ddelbow_c),
-                "Robot state elbow configuration members do not have same size");
+  // Output for the elbow
+  message.elbow = translation::toElbow(robot_state_ptr->elbow, robot_state_ptr->elbow_d,
+                                       robot_state_ptr->elbow_c, robot_state_ptr->delbow_c,
+                                       robot_state_ptr->ddelbow_c);
 
-  for (size_t i = 0; i < robot_state_ptr->elbow.size(); i++) {
-    message.elbow[i] = robot_state_ptr->elbow[i];
-    message.elbow_d[i] = robot_state_ptr->elbow_d[i];
-    message.elbow_c[i] = robot_state_ptr->elbow_c[i];
-    message.delbow_c[i] = robot_state_ptr->delbow_c[i];
-    message.ddelbow_c[i] = robot_state_ptr->ddelbow_c[i];
-  }
+  // Active wrenches on the stiffness frame
+  message.k_f_ext_hat_k.header.stamp = message.header.stamp;
+  message.k_f_ext_hat_k.wrench = translation::toWrench(robot_state_ptr->K_F_ext_hat_K);
+  message.o_f_ext_hat_k.header.stamp = message.header.stamp;
+  message.o_f_ext_hat_k.wrench = translation::toWrench(robot_state_ptr->O_F_ext_hat_K);
 
-  static_assert(sizeof(robot_state_ptr->O_T_EE) == sizeof(robot_state_ptr->F_T_EE),
-                "Robot state transforms do not have same size");
-  static_assert(sizeof(robot_state_ptr->O_T_EE) == sizeof(robot_state_ptr->EE_T_K),
-                "Robot state transforms do not have same size");
-  static_assert(sizeof(robot_state_ptr->O_T_EE) == sizeof(robot_state_ptr->O_T_EE_d),
-                "Robot state transforms do not have same size");
-  static_assert(sizeof(robot_state_ptr->O_T_EE) == sizeof(robot_state_ptr->O_T_EE_c),
-                "Robot state transforms do not have same size");
-  for (size_t i = 0; i < robot_state_ptr->O_T_EE.size(); i++) {
-    message.o_t_ee[i] = robot_state_ptr->O_T_EE[i];
-    message.f_t_ee[i] = robot_state_ptr->F_T_EE[i];
-    message.ee_t_k[i] = robot_state_ptr->EE_T_K[i];
-    message.o_t_ee_d[i] = robot_state_ptr->O_T_EE_d[i];
-    message.o_t_ee_c[i] = robot_state_ptr->O_T_EE_c[i];
-  }
-  message.m_ee = robot_state_ptr->m_ee;
-  message.m_load = robot_state_ptr->m_load;
-  message.m_total = robot_state_ptr->m_total;
+  // The transformations between different frames
+  message.o_t_ee.header.stamp = message.header.stamp;
+  message.o_t_ee.pose = translation::toPose(robot_state_ptr->O_T_EE);
+  message.o_t_ee_d.header.stamp = message.header.stamp;
+  message.o_t_ee_d.pose = translation::toPose(robot_state_ptr->O_T_EE_d);
+  message.o_t_ee_c.header.stamp = message.header.stamp;
+  message.o_t_ee_c.pose = translation::toPose(robot_state_ptr->O_T_EE_c);
 
-  for (size_t i = 0; i < robot_state_ptr->I_load.size(); i++) {
-    message.i_ee[i] = robot_state_ptr->I_ee[i];
-    message.i_load[i] = robot_state_ptr->I_load[i];
-    message.i_total[i] = robot_state_ptr->I_total[i];
-  }
+  message.f_t_ee.header.stamp = message.header.stamp;
+  message.f_t_ee.pose = translation::toPose(robot_state_ptr->F_T_EE);
+  message.ee_t_k.header.stamp = message.header.stamp;
+  message.ee_t_k.pose = translation::toPose(robot_state_ptr->EE_T_K);
 
-  for (size_t i = 0; i < robot_state_ptr->F_x_Cload.size(); i++) {
-    message.f_x_cee[i] = robot_state_ptr->F_x_Cee[i];
-    message.f_x_cload[i] = robot_state_ptr->F_x_Cload[i];
-    message.f_x_ctotal[i] = robot_state_ptr->F_x_Ctotal[i];
-  }
+  message.o_dp_ee_d.header.stamp = message.header.stamp;
+  message.o_dp_ee_d.twist = translation::toTwist(robot_state_ptr->O_dP_EE_d);
+  message.o_dp_ee_c.header.stamp = message.header.stamp;
+  message.o_dp_ee_c.twist = translation::toTwist(robot_state_ptr->O_dP_EE_c);
+  message.o_ddp_ee_c.header.stamp = message.header.stamp;
+  message.o_ddp_ee_c.accel = translation::toAccel(robot_state_ptr->O_ddP_EE_c);
 
+  // The inertias of the robot
+  message.inertia_ee.header.stamp = message.header.stamp;
+  message.inertia_ee.inertia = translation::toInertia(
+      robot_state_ptr->m_ee, robot_state_ptr->F_x_Cee, robot_state_ptr->I_ee);
+  message.inertia_load.header.stamp = message.header.stamp;
+  message.inertia_load.inertia = translation::toInertia(
+      robot_state_ptr->m_load, robot_state_ptr->F_x_Cload, robot_state_ptr->I_load);
+  message.inertia_total.header.stamp = message.header.stamp;
+  message.inertia_total.inertia = translation::toInertia(
+      robot_state_ptr->m_total, robot_state_ptr->F_x_Ctotal, robot_state_ptr->I_total);
+
+  // Errors and more
   message.time = robot_state_ptr->time.toSec();
   message.control_command_success_rate = robot_state_ptr->control_command_success_rate;
-  message.current_errors = errorsToMessage(robot_state_ptr->current_errors);
-  message.last_motion_errors = errorsToMessage(robot_state_ptr->last_motion_errors);
+  message.current_errors = translation::errorsToMessage(robot_state_ptr->current_errors);
+  message.last_motion_errors = translation::errorsToMessage(robot_state_ptr->last_motion_errors);
 
   switch (robot_state_ptr->robot_mode) {
     case franka::RobotMode::kOther:
