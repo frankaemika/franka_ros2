@@ -16,6 +16,15 @@ controller_manager:
 
     cartesian_velocity_example_controller:
       type: franka_example_controllers/CartesianVelocityExampleController
+    
+    cartesian_pose_example_controller:
+      type: franka_example_controllers/CartesianPoseExampleController
+
+    cartesian_pose_elbow_example_controller:
+      type: franka_example_controllers/CartesianElbowExampleController
+
+    cartesian_orientation_example_controller:
+      type: franka_example_controllers/CartesianOrientationExampleController
 
     elbow_example_controller:
       type: franka_example_controllers/ElbowExampleController

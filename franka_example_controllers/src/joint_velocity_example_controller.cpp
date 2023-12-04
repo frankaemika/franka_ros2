@@ -87,23 +87,18 @@ CallbackReturn JointVelocityExampleController::on_configure(
 
   auto client = get_node()->create_client<franka_msgs::srv::SetFullCollisionBehavior>(
       "service_server/set_full_collision_behavior");
-  auto request = std::make_shared<franka_msgs::srv::SetFullCollisionBehavior::Request>();
+  auto request = default_robot_behavior_.getDefaultCollisionBehaviorRequest();
 
-  request->lower_torque_thresholds_acceleration = {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0};
-  request->upper_torque_thresholds_acceleration = {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0};
-  request->lower_torque_thresholds_nominal = {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0};
-  request->upper_torque_thresholds_nominal = {20.0, 20.0, 18.0, 18.0, 16.0, 14.0, 12.0};
-  request->lower_force_thresholds_acceleration = {20.0, 20.0, 20.0, 25.0, 25.0, 25.0};
-  request->upper_force_thresholds_acceleration = {20.0, 20.0, 20.0, 25.0, 25.0, 25.0};
-  request->lower_force_thresholds_nominal = {20.0, 20.0, 20.0, 25.0, 25.0, 25.0};
-  request->upper_force_thresholds_nominal = {20.0, 20.0, 20.0, 25.0, 25.0, 25.0};
+  auto future_result = client->async_send_request(request);
+  future_result.wait_for(1000ms);
 
-  if (!client->wait_for_service(20s)) {
-    RCLCPP_FATAL(get_node()->get_logger(), "service server can't be found.");
-    return CallbackReturn::FAILURE;
+  auto success = future_result.get();
+  if (!success) {
+    RCLCPP_FATAL(get_node()->get_logger(), "Failed to set default collision behavior.");
+    return CallbackReturn::ERROR;
+  } else {
+    RCLCPP_INFO(get_node()->get_logger(), "Default collision behavior set.");
   }
-
-  client->async_send_request(request);
 
   return CallbackReturn::SUCCESS;
 }

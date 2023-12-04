@@ -29,6 +29,24 @@
             The cartesian velocity example controller commands linear velocity with x and z components.
         </description>
     </class>
+    <class name="franka_example_controllers/CartesianPoseExampleController"
+           type="franka_example_controllers::CartesianPoseExampleController" base_class_type="controller_interface::ControllerInterface">
+        <description>
+            The cartesian pose example controller commands to translation on x and z components.
+        </description>
+    </class>
+    <class name="franka_example_controllers/CartesianElbowExampleController"
+           type="franka_example_controllers::CartesianElbowExampleController" base_class_type="controller_interface::ControllerInterface">
+        <description>
+            The cartesian pose example controller commands the elbow with the same initial pose configuration.
+        </description>
+    </class>
+    <class name="franka_example_controllers/CartesianOrientationExampleController"
+           type="franka_example_controllers::CartesianOrientationExampleController" base_class_type="controller_interface::ControllerInterface">
+        <description>
+            The cartesian orientation example controller commands to rotation around x axis.
+        </description>
+    </class>
     <class name="franka_example_controllers/ElbowExampleController"
            type="franka_example_controllers::ElbowExampleController" base_class_type="controller_interface::ControllerInterface">
         <description>

@@ -73,6 +73,10 @@ bool operator==(const CartesianVelocities& lhs, const CartesianVelocities& rhs) 
   return compareWithTolerance(lhs.O_dP_EE, rhs.O_dP_EE);
 }
 
+bool operator==(const CartesianPose& lhs, const CartesianPose& rhs) {
+  return compareWithTolerance(lhs.O_T_EE, rhs.O_T_EE);
+}
+
 bool operator==(const JointPositions& lhs, const JointPositions& rhs) {
   return compareWithTolerance(lhs.q, rhs.q);
 }
@@ -93,15 +97,16 @@ class FrankaRobotTests : public ::testing::Test {
   std::unique_ptr<MockActiveControl> mock_active_control;
 
   template <typename RobotInitFunction, typename ControlType, typename RawControlInputType>
-  void testWriteOnce(RobotInitFunction initFunction,
-                     std::function<void()> expectCallFunction,
-                     const RawControlInputType& control_input,
-                     const ControlType& expected_active_control_input) {
+  void testReadWriteOnce(RobotInitFunction initFunction,
+                         std::function<void()> expectCallFunction,
+                         const RawControlInputType& control_input,
+                         const ControlType& expected_active_control_input) {
     EXPECT_CALL(*mock_active_control, writeOnce(expected_active_control_input));
+    EXPECT_CALL(*mock_active_control, readOnce());
     expectCallFunction();
     franka_hardware::Robot robot(std::move(mock_libfranka_robot), std::move(mock_model));
-
     (robot.*initFunction)();
+    robot.readOnce();
     robot.writeOnce(control_input);
   }
 

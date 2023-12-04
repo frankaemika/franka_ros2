@@ -19,6 +19,8 @@
 #include <controller_interface/controller_interface.hpp>
 #include <rclcpp/rclcpp.hpp>
 
+#include <franka_example_controllers/default_robot_behavior_utils.hpp>
+
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 namespace franka_example_controllers {
@@ -39,6 +41,8 @@ class JointVelocityExampleController : public controller_interface::ControllerIn
   CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
 
  private:
+  DefaultRobotBehavior default_robot_behavior_;
+
   std::string arm_id_;
   const int num_joints = 7;
   rclcpp::Duration elapsed_time_ = rclcpp::Duration(0, 0);

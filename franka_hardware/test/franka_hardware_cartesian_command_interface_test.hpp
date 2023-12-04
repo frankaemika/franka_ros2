@@ -27,8 +27,8 @@
 class FrankaCartesianCommandInterfaceTest
     : public ::testing::TestWithParam<std::tuple<std::vector<std::string>, std::string>> {
  protected:
-  //   hardware_interface::HardwareInfo setUpHWInterfaces();
-
+  const std::vector<std::string> k_hw_cartesian_pose_names{
+      "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15"};
   const std::vector<std::string> k_hw_cartesian_velocities_names{"vx", "vy", "vz",
                                                                  "wx", "wy", "wz"};
   const std::vector<std::string> k_hw_elbow_command_names{"joint_3_position", "joint_4_sign"};
@@ -37,6 +37,7 @@ class FrankaCartesianCommandInterfaceTest
   const size_t k_number_of_joints{7};
 
   const std::string k_cartesian_velocity_command_interface_name{"cartesian_velocity"};
+  const std::string k_cartesian_pose_command_interface_name{"cartesian_pose"};
   const std::string k_elbow_command_interface_name{"elbow_command"};
 };
 
@@ -45,5 +46,9 @@ INSTANTIATE_TEST_SUITE_P(
     FrankaCartesianCommandInterfaceTest,
     ::testing::Values(std::make_tuple(std::vector<std::string>{"vx", "vy", "vz", "wx", "wy", "wz"},
                                       "cartesian_velocity"),
+                      std::make_tuple(std::vector<std::string>{"0", "1", "2", "3", "4", "5", "6",
+                                                               "7", "8", "9", "10", "11", "12",
+                                                               "13", "14", "15"},
+                                      "cartesian_pose"),
                       std::make_tuple(std::vector<std::string>{"joint_3_position", "joint_4_sign"},
                                       "elbow_command")));

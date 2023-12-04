@@ -80,7 +80,10 @@ class Robot {
   /// Starts the active control for cartesian velocity control
   virtual void initializeCartesianVelocityInterface();
 
-  /// stops the read continuous communication with the connected robot
+  /// Starts the active control for cartesian pose control
+  virtual void initializeCartesianPoseInterface();
+
+  /// Stops the continuous communication read with the connected robot
   virtual void stopRobot();
 
   /**
@@ -103,13 +106,6 @@ class Robot {
   virtual void writeOnce(const std::array<double, 7>& joint_hardware_command);
 
   /**
-   * @brief Preprocessing includes rate limiting and low pass filtering, if activated
-   *
-   * @param cartesian_velocities cartesian velocity in libfranka format
-   */
-  virtual void preProcessCartesianVelocities(franka::CartesianVelocities& cartesian_velocities);
-
-  /**
    * Cartesian velocity command
    * @param[in] cartesian_velocity_command cartesian level velocity command in format
    *  [vx, vy, vz, wx, wy, wz]
@@ -123,6 +119,22 @@ class Robot {
    * @param[in] elbow_command elbow command representing joint3_position in rad and joint4 sign
    */
   virtual void writeOnce(const std::array<double, 6>& cartesian_velocity_command,
+                         const std::array<double, 2>& elbow_command);
+
+  /**
+   * Cartesian pose command
+   * @param[in] cartesian_pose_command cartesian level pose command in column major format [4x4]
+   * homogeneous transformation matrix
+   */
+  virtual void writeOnce(const std::array<double, 16>& cartesian_pose_command);
+
+  /**
+   * Cartesian pose command with elbow command
+   * @param[in] cartesian_pose_command cartesian level pose command in column major format [4x4]
+   * homogeneous transformation matrix
+   * @param[in] elbow_command elbow command representing joint3_position in rad and joint4 sign
+   */
+  virtual void writeOnce(const std::array<double, 16>& cartesian_pose_command,
                          const std::array<double, 2>& elbow_command);
 
   /**
@@ -258,13 +270,25 @@ class Robot {
    * @param[in] joint_position joint position command.
    */
   virtual void writeOnceJointPositions(const std::array<double, 7>& positions);
+
   /**
-   * @brief Checks if control loop is activated for active control.
+   * @brief Preprocessing includes rate limiting and low pass filtering, if activated
    *
-   * @return true when active control started either with effort or velocity command.
-   * @return false when active control is not started.
+   * @param cartesian_velocities cartesian velocity in libfranka format
+   *
+   * @return franka::CartesianVelocities filtered and limit-rated cartesian_velocities
    */
-  virtual bool isControlLoopActive();
+  franka::CartesianVelocities preProcessCartesianVelocities(
+      const franka::CartesianVelocities& cartesian_velocities);
+
+  /**
+   * @brief Preprocessing includes low pass filtering, if activated
+   *
+   * @param cartesian_pose cartesian pose in libfranka format
+   *
+   * @return franka::CartesianPose filtered and limit-rated cartesian_pose
+   */
+  franka::CartesianPose preProcessCartesianPose(const franka::CartesianPose& cartesian_pose);
 
   std::mutex write_mutex_;
   std::mutex control_mutex_;
@@ -278,12 +302,16 @@ class Robot {
   bool joint_velocity_interface_active_{false};
   bool joint_position_interface_active_{false};
   bool cartesian_velocity_interface_active_{false};
+  bool cartesian_pose_interface_active_{false};
 
   bool torque_command_rate_limiter_active_{true};
   bool velocity_command_rate_limit_active_{false};
 
   bool cartesian_velocity_command_rate_limit_active_{false};
-  bool cartesian_velocity_low_pass_filter_active{false};
+  bool cartesian_velocity_low_pass_filter_active_{false};
+
+  bool cartesian_pose_low_pass_filter_active_{false};
+  bool cartesian_pose_command_rate_limit_active_{false};
 
   bool joint_position_command_rate_limit_active_{false};
   bool joint_position_command_low_pass_filter_active_{false};

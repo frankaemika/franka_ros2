@@ -26,6 +26,7 @@ class MockRobot : public franka_hardware::Robot {
  public:
   MOCK_METHOD(void, initializeJointPositionInterface, (), (override));
   MOCK_METHOD(void, initializeCartesianVelocityInterface, (), (override));
+  MOCK_METHOD(void, initializeCartesianPoseInterface, (), (override));
   MOCK_METHOD(void, initializeTorqueInterface, (), (override));
   MOCK_METHOD(void, initializeJointVelocityInterface, (), (override));
   MOCK_METHOD(void, stopRobot, (), (override));
@@ -38,7 +39,12 @@ class MockRobot : public franka_hardware::Robot {
               ((const std::array<double, 6>&)cartesian_velocity,
                (const std::array<double, 2>&)elbow_command),
               (override));
-  //   MOCK_METHOD(void, writeOnce, ((const std::array<double, 6>&)cartesian_velocity), (override));
+  MOCK_METHOD(void, writeOnce, ((const std::array<double, 16>&)cartesian_pose), (override));
+  MOCK_METHOD(void,
+              writeOnce,
+              ((const std::array<double, 16>&)cartesian_pose,
+               (const std::array<double, 2>&)elbow_command),
+              (override));
   MOCK_METHOD(void,
               setJointStiffness,
               (const franka_msgs::srv::SetJointStiffness::Request::SharedPtr&),

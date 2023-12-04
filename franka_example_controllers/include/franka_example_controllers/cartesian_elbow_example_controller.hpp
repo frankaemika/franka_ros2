@@ -16,19 +16,20 @@
 
 #include <string>
 
-#include <Eigen/Eigen>
 #include <controller_interface/controller_interface.hpp>
+#include <franka_example_controllers/default_robot_behavior_utils.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include "franka_semantic_components/franka_robot_state.hpp"
+
+#include <franka_semantic_components/franka_cartesian_pose_interface.hpp>
 
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 namespace franka_example_controllers {
 
 /**
- * The joint position example controller moves in a periodic movement.
+ * The elbow example controller through cartesian pose command interface
  */
-class JointPositionExampleController : public controller_interface::ControllerInterface {
+class CartesianElbowExampleController : public controller_interface::ControllerInterface {
  public:
   [[nodiscard]] controller_interface::InterfaceConfiguration command_interface_configuration()
       const override;
@@ -39,18 +40,19 @@ class JointPositionExampleController : public controller_interface::ControllerIn
   CallbackReturn on_init() override;
   CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
   CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
 
  private:
-  std::string arm_id_;
-  const int num_joints = 7;
-  std::array<double, 7> initial_q_{0, 0, 0, 0, 0, 0, 0};
-  const double trajectory_period{0.001};
-  double elapsed_time_ = 0.0;
-  std::string arm_id{"panda"};
-  const std::string k_HW_IF_INITIAL_POSITION = "initial_joint_position";
-
+  std::unique_ptr<franka_semantic_components::FrankaCartesianPoseInterface> franka_cartesian_pose_;
+  DefaultRobotBehavior default_robot_behavior_;
+  const bool k_elbow_activated_{true};
+  std::vector<double> initial_cartesian_pose_and_elbow;
   bool initialization_flag_{true};
-  rclcpp::Time start_time_;
+  std::array<double, 2> initial_elbow_configuration_{0.0, 0.0};
+  std::array<double, 16> initial_pose_configuration_{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                                                     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  double elapsed_time_{0.0};
+  const double traj_frequency_{0.001};
 };
 
 }  // namespace franka_example_controllers
