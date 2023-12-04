@@ -26,7 +26,7 @@
 class FrankaRobotStateTestFriend : public franka_semantic_components::FrankaRobotState {
   FRIEND_TEST(FrankaRobotStateTest, validate_state_names_and_size);
   FRIEND_TEST(FrankaRobotStateTest,
-              given_franka_semantic_state_initialized_when_message_returned_expect_correct_values);
+              givenFrankaSemanticStateInitialized_whenMessageReturnedExpectsCorrectValues);
   FRIEND_TEST(FrankaRobotStateTest, robot_state_ptr_uncasted_correctly);
 
  public:

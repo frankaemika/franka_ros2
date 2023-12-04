@@ -69,7 +69,7 @@ TEST_F(FrankaRobotStateTest, robot_state_ptr_uncasted_correctly) {
 }
 
 TEST_F(FrankaRobotStateTest,
-       given_franka_semantic_state_initialized_when_message_returned_expect_correct_values) {
+       givenFrankaSemanticStateInitialized_whenMessageReturnedExpectsCorrectValues) {
   ASSERT_THAT(joint_angles,
               ::testing::ElementsAreArray(franka_robot_state_msg.measured_joint_state.position));
   ASSERT_THAT(joint_velocities,
@@ -84,4 +84,12 @@ TEST_F(FrankaRobotStateTest,
   franka_state_friend->release_interfaces();
   // validate the count of state_interfaces_
   ASSERT_EQ(franka_state_friend->state_interfaces_.size(), 0u);
+}
+
+TEST_F(FrankaRobotStateTest, givenInitializedRobotStateMsg_thenCorrectFrameIDs) {
+  franka_state_friend->initialize_robot_state_msg(franka_robot_state_msg);
+
+  ASSERT_EQ(franka_robot_state_msg.o_t_ee.header.frame_id, "panda_link0");
+  ASSERT_EQ(franka_robot_state_msg.ee_t_k.header.frame_id, "panda_link8");
+  ASSERT_EQ(franka_robot_state_msg.measured_joint_state.name[1], "panda_link2");
 }
