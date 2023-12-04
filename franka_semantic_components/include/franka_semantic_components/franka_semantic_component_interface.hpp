@@ -96,24 +96,23 @@ class FrankaSemanticComponentInterface {
   /**
    * Return all values of the state interfaces.
    *
-   * \param[in] state_interface_values is overwritten with the state interface values
-   *
-   * \return true if it gets all the values, else false
+   * \return std::vector<double>  state_interface_values
    */
   std::vector<double> get_values_state_interfaces() const;
 
   /**
    *  Return all values for the command interfaces
    *
-   * \param[in] command_interface_values is overwritten with the comman interface values
-   * \return true if it gets all the values, else false
+   * \return std::vector<double>  command_interface_values
    */
   std::vector<double> get_values_command_interfaces() const;
 
   /**
    * Set all values for the command interfaces
    *
-   * \return true if it gets all the values, else false
+   * \param[in] std::vector<double> commanded values to be set
+   *
+   * \return true if commanded_values size matches the loaned command_interface size, else false
    */
   bool set_values(const std::vector<double>& commanded_values);
 

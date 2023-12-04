@@ -19,7 +19,6 @@
 #include <controller_interface/controller_interface.hpp>
 #include <rclcpp/rclcpp.hpp>
 
-#include <franka_example_controllers/default_robot_behavior_utils.hpp>
 #include <franka_semantic_components/franka_cartesian_velocity_interface.hpp>
 
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
@@ -45,7 +44,6 @@ class ElbowExampleController : public controller_interface::ControllerInterface 
  private:
   std::unique_ptr<franka_semantic_components::FrankaCartesianVelocityInterface>
       franka_cartesian_velocity_;
-  DefaultRobotBehavior default_robot_behavior_;
 
   const bool k_elbow_activated_{true};
   std::vector<double> initial_cartesian_velocity_and_elbow;

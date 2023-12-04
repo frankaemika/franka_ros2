@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include <franka_example_controllers/cartesian_orientation_example_controller.hpp>
-#include <franka_msgs/srv/set_full_collision_behavior.hpp>
+#include <franka_example_controllers/default_robot_behavior_utils.hpp>
 
 #include <cassert>
 #include <cmath>
@@ -84,7 +84,7 @@ CallbackReturn CartesianOrientationExampleController::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   auto client = get_node()->create_client<franka_msgs::srv::SetFullCollisionBehavior>(
       "service_server/set_full_collision_behavior");
-  auto request = default_robot_behavior_.getDefaultCollisionBehaviorRequest();
+  auto request = DefaultRobotBehavior::getDefaultCollisionBehaviorRequest();
 
   auto future_result = client->async_send_request(request);
 

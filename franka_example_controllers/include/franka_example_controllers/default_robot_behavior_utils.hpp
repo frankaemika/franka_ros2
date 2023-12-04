@@ -16,21 +16,22 @@
 
 #include <franka_msgs/srv/set_full_collision_behavior.hpp>
 
-#include <string>
+namespace DefaultRobotBehavior {
 
-/**
- * @brief Helper function to prepare default robot behavior messages of the robot.
- *
- */
-class DefaultRobotBehavior {
- public:
-  DefaultRobotBehavior() = default;
+inline franka_msgs::srv::SetFullCollisionBehavior::Request::SharedPtr
+getDefaultCollisionBehaviorRequest() {
+  auto request = std::make_shared<franka_msgs::srv::SetFullCollisionBehavior::Request>();
 
-  /**
-   * @brief prepares default collision behavior of the robot for the control examples.
-   *
-   * @return default full collision robot behavior service request message
-   */
-  franka_msgs::srv::SetFullCollisionBehavior::Request::SharedPtr
-  getDefaultCollisionBehaviorRequest();
-};
+  request->lower_torque_thresholds_nominal = {25.0, 25.0, 22.0, 20.0, 19.0, 17.0, 14.0};
+  request->upper_torque_thresholds_nominal = {35.0, 35.0, 32.0, 30.0, 29.0, 27.0, 24.0};
+  request->lower_torque_thresholds_acceleration = {25.0, 25.0, 22.0, 20.0, 19.0, 17.0, 14.0};
+  request->upper_torque_thresholds_acceleration = {35.0, 35.0, 32.0, 30.0, 29.0, 27.0, 24.0};
+  request->lower_force_thresholds_nominal = {30.0, 30.0, 30.0, 25.0, 25.0, 25.0};
+  request->upper_force_thresholds_nominal = {40.0, 40.0, 40.0, 35.0, 35.0, 35.0};
+  request->lower_force_thresholds_acceleration = {30.0, 30.0, 30.0, 25.0, 25.0, 25.0};
+  request->upper_force_thresholds_acceleration = {40.0, 40.0, 40.0, 35.0, 35.0, 35.0};
+
+  return request;
+}
+
+}  // namespace DefaultRobotBehavior

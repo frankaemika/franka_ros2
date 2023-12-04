@@ -17,7 +17,6 @@
 #include <string>
 
 #include <controller_interface/controller_interface.hpp>
-#include <franka_example_controllers/default_robot_behavior_utils.hpp>
 #include <rclcpp/rclcpp.hpp>
 
 #include <franka_semantic_components/franka_cartesian_pose_interface.hpp>
@@ -44,7 +43,6 @@ class CartesianElbowExampleController : public controller_interface::ControllerI
 
  private:
   std::unique_ptr<franka_semantic_components::FrankaCartesianPoseInterface> franka_cartesian_pose_;
-  DefaultRobotBehavior default_robot_behavior_;
   const bool k_elbow_activated_{true};
   std::vector<double> initial_cartesian_pose_and_elbow;
   bool initialization_flag_{true};

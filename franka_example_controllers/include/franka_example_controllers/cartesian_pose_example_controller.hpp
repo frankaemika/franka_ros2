@@ -20,7 +20,6 @@
 #include <controller_interface/controller_interface.hpp>
 #include <rclcpp/rclcpp.hpp>
 
-#include <franka_example_controllers/default_robot_behavior_utils.hpp>
 #include <franka_semantic_components/franka_cartesian_pose_interface.hpp>
 
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
@@ -45,7 +44,6 @@ class CartesianPoseExampleController : public controller_interface::ControllerIn
 
  private:
   std::unique_ptr<franka_semantic_components::FrankaCartesianPoseInterface> franka_cartesian_pose_;
-  DefaultRobotBehavior default_robot_behavior_;
 
   Eigen::Quaterniond orientation_;
   Eigen::Vector3d position_;

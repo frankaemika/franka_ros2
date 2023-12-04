@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1.9 - 2023-12-04
+
+Requires libfranka >= 0.13.0, required ROS 2 Humble
+
+* franka\_hardware: add state interfaces for initial position, cartesian pose and elbow.
+* franka\_hardware: support cartesian pose interface.
+* franka\_semantic\_component: support cartesian pose interface.
+* franka\_example\_controllers: add cartesian pose example controller
+* franka\_example\_controllers: add cartesian elbow controller
+* franka\_example\_controllers: add cartesian orientation controller
+
 ## 0.1.8 - 2023-11-16
 
 Requires libfranka >= 0.13.0, required ROS 2 Humble

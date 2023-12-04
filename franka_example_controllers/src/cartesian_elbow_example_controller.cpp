@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <franka_example_controllers/cartesian_elbow_example_controller.hpp>
+#include <franka_example_controllers/default_robot_behavior_utils.hpp>
 
 #include <cassert>
 #include <cmath>
@@ -77,7 +78,7 @@ CallbackReturn CartesianElbowExampleController::on_configure(
       std::make_unique<franka_semantic_components::FrankaCartesianPoseInterface>(
           franka_semantic_components::FrankaCartesianPoseInterface(k_elbow_activated_));
 
-  auto request = default_robot_behavior_.getDefaultCollisionBehaviorRequest();
+  auto request = DefaultRobotBehavior::getDefaultCollisionBehaviorRequest();
   auto client = get_node()->create_client<franka_msgs::srv::SetFullCollisionBehavior>(
       "service_server/set_full_collision_behavior");
 
