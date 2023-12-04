@@ -15,6 +15,9 @@
 #include <franka_example_controllers/cartesian_velocity_example_controller.hpp>
 #include <franka_example_controllers/default_robot_behavior_utils.hpp>
 
+#include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/vector3.hpp"
+
 #include <cassert>
 #include <cmath>
 #include <exception>
@@ -54,7 +57,11 @@ controller_interface::return_type CartesianVelocityExampleController::update(
   double v_x = std::cos(k_angle_) * v;
   double v_z = -std::sin(k_angle_) * v;
 
-  std::array<double, 6> cartesian_velocity_command = {{v_x, 0.0, v_z, 0.0, 0.0, 0.0}};
+  geometry_msgs::msg::Twist cartesian_velocity_command;
+  cartesian_velocity_command.linear =
+      geometry_msgs::build<geometry_msgs::msg::Vector3>().x(v_x).y(0.0).z(v_z);
+  cartesian_velocity_command.angular =
+      geometry_msgs::build<geometry_msgs::msg::Vector3>().x(0.0).y(0.0).z(0.0);
 
   if (franka_cartesian_velocity_->setCommand(cartesian_velocity_command)) {
     return controller_interface::return_type::OK;

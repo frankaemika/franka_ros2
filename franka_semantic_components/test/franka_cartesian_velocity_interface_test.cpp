@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "franka_cartesian_velocity_interface_test.hpp"
+#include "../src/translation_utils.hpp"
 
 #include <memory>
 #include <string>
@@ -84,8 +85,9 @@ TEST_F(FrankaCartesianVelocityTest,
   std::array<double, 6> new_hw_cartesian_velocities{0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
   std::array<double, 2> new_elbow_command{0.0, 2.0};
 
-  auto success =
-      franka_cartesian_command_friend->setCommand(new_hw_cartesian_velocities, new_elbow_command);
+  auto success = franka_cartesian_command_friend->setCommand(
+      franka_semantic_components::translation::toTwist(new_hw_cartesian_velocities),
+      new_elbow_command);
 
   ASSERT_TRUE(success);
 
@@ -101,8 +103,9 @@ TEST_F(FrankaCartesianVelocityTest,
   std::array<double, 6> new_hw_cartesian_velocities{0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
   std::array<double, 2> new_elbow_command{0.0, 2.0};
 
-  auto success_set_command =
-      franka_cartesian_command_friend->setCommand(new_hw_cartesian_velocities, new_elbow_command);
+  auto success_set_command = franka_cartesian_command_friend->setCommand(
+      franka_semantic_components::translation::toTwist(new_hw_cartesian_velocities),
+      new_elbow_command);
 
   ASSERT_TRUE(success_set_command);
 
@@ -122,8 +125,8 @@ TEST_F(FrankaCartesianVelocityTest,
   setUpInterfaces(false);
   std::array<double, 6> new_hw_cartesian_velocities{0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
 
-  auto success_set_command =
-      franka_cartesian_command_friend->setCommand(new_hw_cartesian_velocities);
+  auto success_set_command = franka_cartesian_command_friend->setCommand(
+      franka_semantic_components::translation::toTwist(new_hw_cartesian_velocities));
 
   ASSERT_TRUE(success_set_command);
 
@@ -139,9 +142,10 @@ TEST_F(
     FrankaCartesianVelocityTest,
     given_elbow_and_cartesian_velocity_claimed_when_set_velocity_command_without_elbow_expect_failure) {
   setUpInterfaces(true);
-  std::array<double, 6> new_hw_cartesian_velocities_{0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
+  std::array<double, 6> new_hw_cartesian_velocities{0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
 
-  auto success = franka_cartesian_command_friend->setCommand(new_hw_cartesian_velocities_);
+  auto success = franka_cartesian_command_friend->setCommand(
+      franka_semantic_components::translation::toTwist(new_hw_cartesian_velocities));
 
   ASSERT_FALSE(success);
 
@@ -152,11 +156,12 @@ TEST_F(
     FrankaCartesianVelocityTest,
     given_only_cartesian_velocity_claimed_without_elbow_when_set_velocity_command_cartesian_vel_expect_successful) {
   setUpInterfaces(false);
-  std::array<double, 6> new_hw_cartesian_velocities_{0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
+  std::array<double, 6> new_hw_cartesian_velocities{0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
   std::array<double, 2> default_zero_elbow_command{0.0, 0.0};
 
-  auto success = franka_cartesian_command_friend->setCommand(new_hw_cartesian_velocities_,
-                                                             default_zero_elbow_command);
+  auto success = franka_cartesian_command_friend->setCommand(
+      franka_semantic_components::translation::toTwist(new_hw_cartesian_velocities),
+      default_zero_elbow_command);
 
   ASSERT_FALSE(success);
 
@@ -168,12 +173,13 @@ TEST_F(FrankaCartesianVelocityTest,
   franka_cartesian_command_friend = std::make_unique<FrankaCartesianVelocityTestFriend>(true);
   hardware_interface::CommandInterface dummy_command_interface{"dummy", "dummy_cartesian_velocity",
                                                                &hw_elbow_command_.at(0)};
-  std::array<double, 6> new_hw_cartesian_velocities_{0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
+  std::array<double, 6> new_hw_cartesian_velocities{0.0, 2.0, 4.0, 6.0, 8.0, 10.0};
 
   temp_command_interfaces.emplace_back(dummy_command_interface);
   franka_cartesian_command_friend->assign_loaned_command_interfaces(temp_command_interfaces);
 
-  auto success = franka_cartesian_command_friend->setCommand(new_hw_cartesian_velocities_);
+  auto success = franka_cartesian_command_friend->setCommand(
+      franka_semantic_components::translation::toTwist(new_hw_cartesian_velocities));
 
   ASSERT_FALSE(success);
 

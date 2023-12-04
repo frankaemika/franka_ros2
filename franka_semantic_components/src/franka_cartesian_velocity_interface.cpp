@@ -20,13 +20,12 @@
 #include "rclcpp/logging.hpp"
 
 namespace {
-std::vector<double> combineArraysToVector(const std::array<double, 6>& cartesian_velocity_command,
+std::vector<double> combineArraysToVector(const geometry_msgs::msg::Twist& twist_command,
                                           const std::array<double, 2>& elbow_command) {
-  std::vector<double> full_command;
-  full_command.reserve(cartesian_velocity_command.size() + elbow_command.size());
-  full_command.insert(full_command.end(), cartesian_velocity_command.begin(),
-                      cartesian_velocity_command.end());
-  full_command.insert(full_command.end(), elbow_command.begin(), elbow_command.end());
+  std::vector<double> full_command{twist_command.linear.x,  twist_command.linear.y,
+                                   twist_command.linear.z,  twist_command.angular.x,
+                                   twist_command.angular.y, twist_command.angular.z,
+                                   elbow_command[0],        elbow_command[1]};
 
   return full_command;
 }
@@ -60,32 +59,28 @@ FrankaCartesianVelocityInterface::FrankaCartesianVelocityInterface(bool command_
   }
 }
 
-bool FrankaCartesianVelocityInterface::setCommand(
-    const std::array<double, 6>& cartesian_velocity_command,
-    const std::array<double, 2>& elbow_command) {
+bool FrankaCartesianVelocityInterface::setCommand(const geometry_msgs::msg::Twist& twist_command,
+                                                  const std::array<double, 2>& elbow_command) {
   if (!command_elbow_active_) {
     RCLCPP_ERROR(rclcpp::get_logger("franka_cartesian_velocity_interface"),
                  "Elbow command interface must be claimed to command elbow.");
     return false;
   }
-  auto full_command = combineArraysToVector(cartesian_velocity_command, elbow_command);
+  auto full_command = combineArraysToVector(twist_command, elbow_command);
 
   return set_values(full_command);
 }
 
-bool FrankaCartesianVelocityInterface::setCommand(
-    const std::array<double, 6>& cartesian_velocity_command) {
+bool FrankaCartesianVelocityInterface::setCommand(const geometry_msgs::msg::Twist& twist_command) {
   if (command_elbow_active_) {
     RCLCPP_ERROR(rclcpp::get_logger("franka_cartesian_velocity_interface"),
                  "Elbow command interface must not claimed, if elbow is not commanded.");
     return false;
   }
 
-  std::vector<double> full_command;
-
-  full_command.reserve(cartesian_velocity_command.size());
-  full_command.insert(full_command.end(), cartesian_velocity_command.begin(),
-                      cartesian_velocity_command.end());
+  std::vector<double> full_command{twist_command.linear.x,  twist_command.linear.y,
+                                   twist_command.linear.z,  twist_command.angular.x,
+                                   twist_command.angular.y, twist_command.angular.z};
 
   return set_values(full_command);
 }
