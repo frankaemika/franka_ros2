@@ -41,6 +41,10 @@ class FrankaSemanticComponentInterface {
   explicit FrankaSemanticComponentInterface(const std::string& name,
                                             size_t state_interface_size = 0,
                                             size_t command_interface_size = 0);
+  FrankaSemanticComponentInterface(const FrankaSemanticComponentInterface&) = delete;
+  FrankaSemanticComponentInterface& operator=(FrankaSemanticComponentInterface const&) = delete;
+  FrankaSemanticComponentInterface(FrankaSemanticComponentInterface&&) = default;
+  FrankaSemanticComponentInterface& operator=(FrankaSemanticComponentInterface&&) = default;
 
   virtual ~FrankaSemanticComponentInterface() = default;
 
@@ -92,35 +96,42 @@ class FrankaSemanticComponentInterface {
   /**
    * Return all values of the state interfaces.
    *
-   * \param[out] state_interface_values is overwritten with the state interface values
-   *
-   * \return true if it gets all the values, else false
+   * \return std::vector<double>  state_interface_values
    */
-  bool get_values_state_interfaces(std::vector<double>& state_interface_values) const;
+  std::vector<double> get_values_state_interfaces() const;
 
   /**
    *  Return all values for the command interfaces
    *
-   * \param[out] command_interface_values is overwritten with the comman interface values
-   * \return true if it gets all the values, else false
+   * \return std::vector<double>  command_interface_values
    */
-  bool get_values_command_interfaces(std::vector<double>& command_interface_values) const;
+  std::vector<double> get_values_command_interfaces() const;
 
   /**
    * Set all values for the command interfaces
    *
-   * \return true if it gets all the values, else false
+   * \param[in] std::vector<double> commanded values to be set
+   *
+   * \return true if commanded_values size matches the loaned command_interface size, else false
    */
   bool set_values(const std::vector<double>& commanded_values);
 
  protected:
-  std::string name_;
-  std::vector<std::string> state_interface_names_;
-  std::vector<std::string> command_interface_names_;
+  std::string name_;  // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,
+                      // misc-non-private-member-variables-in-classes)
+  std::vector<std::string>
+      state_interface_names_;  // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,
+                               // misc-non-private-member-variables-in-classes)
+  std::vector<std::string>
+      command_interface_names_;  // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,
+                                 // misc-non-private-member-variables-in-classes)
 
-  std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>> state_interfaces_;
+  std::vector<std::reference_wrapper<hardware_interface::LoanedStateInterface>>
+      state_interfaces_;  // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,
+                          // misc-non-private-member-variables-in-classes)
   std::vector<std::reference_wrapper<hardware_interface::LoanedCommandInterface>>
-      command_interfaces_;
+      command_interfaces_;  // NOLINT(cppcoreguidelines-non-private-member-variables-in-classes,
+                            // misc-non-private-member-variables-in-classes)
 };
 
 }  // namespace franka_semantic_components

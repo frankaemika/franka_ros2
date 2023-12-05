@@ -16,19 +16,20 @@
 
 #include <string>
 
-#include <Eigen/Eigen>
+#include <Eigen/Dense>
 #include <controller_interface/controller_interface.hpp>
 #include <rclcpp/rclcpp.hpp>
-#include "franka_semantic_components/franka_robot_state.hpp"
+
+#include <franka_semantic_components/franka_cartesian_pose_interface.hpp>
 
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
 namespace franka_example_controllers {
 
 /**
- * The joint position example controller moves in a periodic movement.
+ * The cartesian pose example controller
  */
-class JointPositionExampleController : public controller_interface::ControllerInterface {
+class CartesianOrientationExampleController : public controller_interface::ControllerInterface {
  public:
   [[nodiscard]] controller_interface::InterfaceConfiguration command_interface_configuration()
       const override;
@@ -39,18 +40,18 @@ class JointPositionExampleController : public controller_interface::ControllerIn
   CallbackReturn on_init() override;
   CallbackReturn on_configure(const rclcpp_lifecycle::State& previous_state) override;
   CallbackReturn on_activate(const rclcpp_lifecycle::State& previous_state) override;
+  CallbackReturn on_deactivate(const rclcpp_lifecycle::State& previous_state) override;
 
  private:
-  std::string arm_id_;
-  const int num_joints = 7;
-  std::array<double, 7> initial_q_{0, 0, 0, 0, 0, 0, 0};
-  const double trajectory_period{0.001};
-  double elapsed_time_ = 0.0;
-  std::string arm_id{"panda"};
-  const std::string k_HW_IF_INITIAL_POSITION = "initial_joint_position";
+  std::unique_ptr<franka_semantic_components::FrankaCartesianPoseInterface> franka_cartesian_pose_;
 
+  Eigen::Quaterniond orientation_;
+  Eigen::Vector3d position_;
+  double trajectory_period_{0.001};
+  const bool k_elbow_activated_{false};
   bool initialization_flag_{true};
-  rclcpp::Time start_time_;
+
+  double elapsed_time_{0.0};
 };
 
 }  // namespace franka_example_controllers

@@ -49,7 +49,7 @@ Robot::~Robot() {
 
 franka::RobotState Robot::readOnce() {
   std::lock_guard<std::mutex> lock(control_mutex_);
-  if (!isControlLoopActive()) {
+  if (!active_control_) {
     current_state_ = robot_->readOnce();
   } else {
     current_state_ = readOnceActiveControl();
@@ -58,11 +58,12 @@ franka::RobotState Robot::readOnce() {
 }
 
 void Robot::stopRobot() {
-  if (isControlLoopActive()) {
+  if (active_control_) {
     effort_interface_active_ = false;
     joint_velocity_interface_active_ = false;
     joint_position_interface_active_ = false;
     cartesian_velocity_interface_active_ = false;
+    cartesian_pose_interface_active_ = false;
     active_control_.reset();
   }
 }
@@ -132,39 +133,49 @@ void Robot::writeOnceJointPositions(const std::array<double, 7>& positions) {
   active_control_->writeOnce(position_command);
 }
 
-void Robot::preProcessCartesianVelocities(franka::CartesianVelocities& velocity_command) {
-  if (cartesian_velocity_low_pass_filter_active) {
+franka::CartesianVelocities Robot::preProcessCartesianVelocities(
+    const franka::CartesianVelocities& velocity_command) {
+  franka::CartesianVelocities filtered_velocity_command = velocity_command;
+  if (cartesian_velocity_low_pass_filter_active_) {
     for (size_t i = 0; i < 6; i++) {
-      velocity_command.O_dP_EE.at(i) =
+      filtered_velocity_command.O_dP_EE.at(i) =
           franka::lowpassFilter(franka::kDeltaT, velocity_command.O_dP_EE.at(i),
                                 current_state_.O_dP_EE_c.at(i), low_pass_filter_cut_off_freq);
-    }
-    if (velocity_command.hasElbow()) {
-      velocity_command.elbow[0] =
-          franka::lowpassFilter(franka::kDeltaT, velocity_command.elbow[0],
-                                current_state_.elbow_c[0], low_pass_filter_cut_off_freq);
     }
   }
 
   // If you are experiencing issues with robot error. You can try activating the rate
   // limiter. Rate limiter is default deactivated (cartesian_velocity_command_rate_limit_active_)
   if (cartesian_velocity_command_rate_limit_active_) {
-    velocity_command.O_dP_EE = franka::limitRate(
+    filtered_velocity_command.O_dP_EE = franka::limitRate(
         franka::kMaxTranslationalVelocity, franka::kMaxTranslationalAcceleration,
         franka::kMaxTranslationalJerk, franka::kMaxRotationalVelocity,
         franka::kMaxRotationalAcceleration, franka::kMaxRotationalJerk, velocity_command.O_dP_EE,
         current_state_.O_dP_EE_c, current_state_.O_ddP_EE_c);
-    if (velocity_command.hasElbow()) {
-      velocity_command.elbow[0] = franka::limitRate(
-          franka::kMaxElbowVelocity, franka::kMaxElbowAcceleration, franka::kMaxElbowJerk,
-          velocity_command.elbow[0], current_state_.elbow_c[0], current_state_.delbow_c[0],
-          current_state_.ddelbow_c[0]);
-    }
   }
-  franka::checkFinite(velocity_command.O_dP_EE);
-  if (velocity_command.hasElbow()) {
-    franka::checkElbow(velocity_command.elbow);
+
+  return filtered_velocity_command;
+}
+
+franka::CartesianPose Robot::preProcessCartesianPose(const franka::CartesianPose& cartesian_pose) {
+  franka::CartesianPose filtered_cartesian_pose = cartesian_pose;
+
+  if (cartesian_pose_low_pass_filter_active_) {
+    filtered_cartesian_pose.O_T_EE =
+        franka::cartesianLowpassFilter(franka::kDeltaT, filtered_cartesian_pose.O_T_EE,
+                                       current_state_.O_T_EE_c, low_pass_filter_cut_off_freq);
   }
+
+  if (cartesian_pose_command_rate_limit_active_) {
+    filtered_cartesian_pose.O_T_EE =
+        franka::limitRate(franka::kMaxTranslationalVelocity, franka::kMaxTranslationalAcceleration,
+                          franka::kMaxTranslationalJerk, franka::kMaxRotationalVelocity,
+                          franka::kMaxRotationalAcceleration, franka::kMaxRotationalJerk,
+                          filtered_cartesian_pose.O_T_EE, current_state_.O_T_EE_c,
+                          current_state_.O_dP_EE_c, current_state_.O_ddP_EE_c);
+  }
+
+  return filtered_cartesian_pose;
 }
 
 void Robot::writeOnce(const std::array<double, 6>& cartesian_velocities) {
@@ -175,9 +186,8 @@ void Robot::writeOnce(const std::array<double, 6>& cartesian_velocities) {
   std::lock_guard<std::mutex> lock(control_mutex_);
 
   auto velocity_command = franka::CartesianVelocities(cartesian_velocities);
-  preProcessCartesianVelocities(velocity_command);
-
-  active_control_->writeOnce(velocity_command);
+  auto filtered_velocity_command = preProcessCartesianVelocities(velocity_command);
+  active_control_->writeOnce(filtered_velocity_command);
 }
 
 void Robot::writeOnce(const std::array<double, 6>& cartesian_velocities,
@@ -189,9 +199,37 @@ void Robot::writeOnce(const std::array<double, 6>& cartesian_velocities,
   std::lock_guard<std::mutex> lock(control_mutex_);
 
   auto velocity_command = franka::CartesianVelocities(cartesian_velocities, elbow_command);
-  preProcessCartesianVelocities(velocity_command);
+  auto filtered_velocity_command = preProcessCartesianVelocities(velocity_command);
 
-  active_control_->writeOnce(velocity_command);
+  active_control_->writeOnce(filtered_velocity_command);
+}
+
+void Robot::writeOnce(const std::array<double, 16>& cartesian_pose) {
+  if (!active_control_) {
+    throw std::runtime_error("Control hasn't been started");
+  }
+
+  std::lock_guard<std::mutex> lock(control_mutex_);
+
+  auto pose_command = franka::CartesianPose(cartesian_pose);
+  auto filtered_pose = preProcessCartesianPose(pose_command);
+
+  active_control_->writeOnce(filtered_pose);
+}
+
+void Robot::writeOnce(const std::array<double, 16>& cartesian_pose,
+                      const std::array<double, 2>& elbow_command) {
+  if (!active_control_) {
+    throw std::runtime_error("Control hasn't been started");
+  }
+
+  std::lock_guard<std::mutex> lock(control_mutex_);
+
+  auto pose_command = franka::CartesianPose(cartesian_pose, elbow_command);
+
+  auto filtered_pose = preProcessCartesianPose(pose_command);
+
+  active_control_->writeOnce(filtered_pose);
 }
 
 franka::RobotState Robot::readOnceActiveControl() {
@@ -252,9 +290,16 @@ void Robot::initializeCartesianVelocityInterface() {
   cartesian_velocity_interface_active_ = true;
 }
 
-bool Robot::isControlLoopActive() {
-  return joint_position_interface_active_ || joint_velocity_interface_active_ ||
-         effort_interface_active_ || cartesian_velocity_interface_active_;
+void Robot::initializeCartesianPoseInterface() {
+  try {
+    active_control_ = robot_->startCartesianPoseControl(
+        research_interface::robot::Move::ControllerMode::kJointImpedance);
+  } catch (const franka::ControlException& e) {
+    robot_->automaticErrorRecovery();
+    active_control_ = robot_->startCartesianPoseControl(
+        research_interface::robot::Move::ControllerMode::kJointImpedance);
+  }
+  cartesian_pose_interface_active_ = true;
 }
 
 void Robot::setJointStiffness(const franka_msgs::srv::SetJointStiffness::Request::SharedPtr& req) {

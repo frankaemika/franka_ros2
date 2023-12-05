@@ -65,30 +65,23 @@ std::vector<std::string> FrankaSemanticComponentInterface::get_command_interface
   return command_interface_names_;
 }
 
-bool FrankaSemanticComponentInterface::get_values_state_interfaces(
-    std::vector<double>& state_interface_values) const {
-  // check we have sufficient memory
-  if (state_interface_values.capacity() != state_interfaces_.size()) {
-    return false;
-  }
+std::vector<double> FrankaSemanticComponentInterface::get_values_state_interfaces() const {
+  std::vector<double> state_interface_values;
   // insert all the state_interface_values
   for (const auto& state_interface : state_interfaces_) {
     state_interface_values.emplace_back(state_interface.get().get_value());
   }
-  return true;
+  return state_interface_values;
 }
 
-bool FrankaSemanticComponentInterface::get_values_command_interfaces(
-    std::vector<double>& command_interface_values) const {
-  // check we have sufficient memory
-  if (command_interface_values.capacity() != command_interfaces_.size()) {
-    return false;
-  }
+std::vector<double> FrankaSemanticComponentInterface::get_values_command_interfaces() const {
+  std::vector<double> command_interface_values;
   // insert all the command_interface_values
   for (const auto& command_interface : command_interfaces_) {
     command_interface_values.emplace_back(command_interface.get().get_value());
   }
-  return true;
+
+  return command_interface_values;
 }
 
 bool FrankaSemanticComponentInterface::set_values(const std::vector<double>& values) {

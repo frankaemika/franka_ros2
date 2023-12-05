@@ -33,6 +33,9 @@ add_library(
         src/joint_velocity_example_controller.cpp
         src/joint_position_example_controller.cpp
         src/cartesian_velocity_example_controller.cpp
+        src/cartesian_pose_example_controller.cpp
+        src/cartesian_elbow_example_controller.cpp
+        src/cartesian_orientation_example_controller.cpp
         src/elbow_example_controller.cpp
         src/model_example_controller.cpp
         src/move_to_start_example_controller.cpp

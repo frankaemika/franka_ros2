@@ -40,6 +40,8 @@ FrankaCartesianVelocityInterface::FrankaCartesianVelocityInterface(bool command_
   if (command_elbow_active_) {
     command_interface_names_.reserve(full_command_interface_size_);
     command_interfaces_.reserve(full_command_interface_size_);
+    state_interface_names_.reserve(hw_elbow_command_names_.size());
+    state_interfaces_.reserve(hw_elbow_command_names_.size());
   }
 
   for (const auto& velocity_command_name : hw_cartesian_velocities_names_) {
@@ -50,16 +52,14 @@ FrankaCartesianVelocityInterface::FrankaCartesianVelocityInterface(bool command_
   if (command_elbow_active_) {
     for (const auto& elbow_command_name : hw_elbow_command_names_) {
       auto full_elbow_command_name = elbow_command_name + "/" + elbow_command_interface_name_;
+      auto full_initial_elbow_state_name =
+          elbow_command_name + "/" + elbow_initial_state_interface_name_;
       command_interface_names_.emplace_back(full_elbow_command_name);
+      state_interface_names_.emplace_back(full_initial_elbow_state_name);
     }
   }
 }
 
-/**
- * Sets the given command.
- *
- * @param[in] command Command to set.
- */
 bool FrankaCartesianVelocityInterface::setCommand(
     const std::array<double, 6>& cartesian_velocity_command,
     const std::array<double, 2>& elbow_command) {
@@ -90,22 +90,31 @@ bool FrankaCartesianVelocityInterface::setCommand(
   return set_values(full_command);
 }
 
-bool FrankaCartesianVelocityInterface::getCommandedElbowConfiguration(
-    std::array<double, 2>& elbow_configuration) {
+std::array<double, 2> FrankaCartesianVelocityInterface::getCommandedElbowConfiguration() {
   if (!command_elbow_active_) {
-    return false;
+    throw std::runtime_error(
+        "Elbow command interface must be claimed to receive elbow command state.");
   }
-  std::vector<double> full_configuration;
+  std::array<double, 2> elbow_configuration;
+  auto full_configuration = get_values_command_interfaces();
 
-  full_configuration.reserve(full_command_interface_size_);
+  std::copy_n(full_configuration.begin() + hw_cartesian_velocities_names_.size(),
+              hw_elbow_command_names_.size(), elbow_configuration.begin());
 
-  get_values_command_interfaces(full_configuration);
+  return elbow_configuration;
+};
 
-  for (size_t i = 0; i < hw_elbow_command_names_.size(); i++) {
-    elbow_configuration[i] = full_configuration[i + hw_cartesian_velocities_names_.size()];
+std::array<double, 2> FrankaCartesianVelocityInterface::getInitialElbowConfiguration() {
+  if (!command_elbow_active_) {
+    throw std::runtime_error("Elbow command interface must be claimed to receive elbow state.");
   }
 
-  return true;
+  std::array<double, 2> elbow_configuration;
+  auto full_configuration = get_values_state_interfaces();
+  std::copy_n(full_configuration.begin(), hw_elbow_command_names_.size(),
+              elbow_configuration.begin());
+
+  return elbow_configuration;
 };
 
 }  // namespace franka_semantic_components

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <franka_example_controllers/default_robot_behavior_utils.hpp>
 #include <franka_example_controllers/elbow_example_controller.hpp>
-#include <franka_msgs/srv/set_full_collision_behavior.hpp>
 
 #include <cassert>
 #include <cmath>
@@ -35,22 +35,18 @@ ElbowExampleController::command_interface_configuration() const {
 
 controller_interface::InterfaceConfiguration ElbowExampleController::state_interface_configuration()
     const {
-  return controller_interface::InterfaceConfiguration{
-      controller_interface::interface_configuration_type::NONE};
+  controller_interface::InterfaceConfiguration config;
+  config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
+  config.names = franka_cartesian_velocity_->get_state_interface_names();
+
+  return config;
 }
 
 controller_interface::return_type ElbowExampleController::update(
     const rclcpp::Time& /*time*/,
     const rclcpp::Duration& /*period*/) {
   if (initialization_flag_) {
-    // Get initial elbow configuration values
-    if (!franka_cartesian_velocity_->getCommandedElbowConfiguration(initial_elbow_configuration_)) {
-      RCLCPP_FATAL(get_node()->get_logger(),
-                   "Can't get the initial elbow configuration. Did you activate the elbow in "
-                   "cartesian velocity interface?");
-      return controller_interface::return_type::ERROR;
-    }
-
+    initial_elbow_configuration_ = franka_cartesian_velocity_->getInitialElbowConfiguration();
     initialization_flag_ = false;
   }
   elapsed_time_ = elapsed_time_ + traj_frequency_;
@@ -76,26 +72,24 @@ CallbackReturn ElbowExampleController::on_init() {
 
 CallbackReturn ElbowExampleController::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
-  initial_cartesian_velocity_and_elbow.reserve(8);
-
   franka_cartesian_velocity_ =
       std::make_unique<franka_semantic_components::FrankaCartesianVelocityInterface>(
           franka_semantic_components::FrankaCartesianVelocityInterface(k_elbow_activated_));
 
   auto client = get_node()->create_client<franka_msgs::srv::SetFullCollisionBehavior>(
       "service_server/set_full_collision_behavior");
-  auto request = std::make_shared<franka_msgs::srv::SetFullCollisionBehavior::Request>();
+  auto request = DefaultRobotBehavior::getDefaultCollisionBehaviorRequest();
 
-  request->lower_torque_thresholds_nominal = {25.0, 25.0, 22.0, 20.0, 19.0, 17.0, 14.0};
-  request->upper_torque_thresholds_nominal = {35.0, 35.0, 32.0, 30.0, 29.0, 27.0, 24.0};
-  request->lower_torque_thresholds_acceleration = {25.0, 25.0, 22.0, 20.0, 19.0, 17.0, 14.0};
-  request->upper_torque_thresholds_acceleration = {35.0, 35.0, 32.0, 30.0, 29.0, 27.0, 24.0};
-  request->lower_force_thresholds_nominal = {30.0, 30.0, 30.0, 25.0, 25.0, 25.0};
-  request->upper_force_thresholds_nominal = {40.0, 40.0, 40.0, 35.0, 35.0, 35.0};
-  request->lower_force_thresholds_acceleration = {30.0, 30.0, 30.0, 25.0, 25.0, 25.0};
-  request->upper_force_thresholds_acceleration = {40.0, 40.0, 40.0, 35.0, 35.0, 35.0};
+  auto future_result = client->async_send_request(request);
+  future_result.wait_for(1000ms);
 
-  client->async_send_request(request);
+  auto success = future_result.get();
+  if (!success) {
+    RCLCPP_FATAL(get_node()->get_logger(), "Failed to set default collision behavior.");
+    return CallbackReturn::ERROR;
+  } else {
+    RCLCPP_INFO(get_node()->get_logger(), "Default collision behavior set.");
+  }
 
   return CallbackReturn::SUCCESS;
 }
@@ -103,6 +97,8 @@ CallbackReturn ElbowExampleController::on_configure(
 CallbackReturn ElbowExampleController::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   franka_cartesian_velocity_->assign_loaned_command_interfaces(command_interfaces_);
+  franka_cartesian_velocity_->assign_loaned_state_interfaces(state_interfaces_);
+
   initialization_flag_ = true;
   elapsed_time_ = 0.0;
   return CallbackReturn::SUCCESS;

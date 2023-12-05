@@ -168,11 +168,7 @@ TEST_F(SemanticComponentInterfaceTest, validate_state_interfaces) {
   // validate the values of state_interfaces_ which should be
   // in order as per interface_names_
   std::vector<double> temp_values;
-  ASSERT_FALSE(semantic_component_->get_values_state_interfaces(temp_values));
-
-  // reserve memory for the vector and call get_values
-  temp_values.reserve(3);
-  ASSERT_TRUE(semantic_component_->get_values_state_interfaces(temp_values));
+  temp_values = semantic_component_->get_values_state_interfaces();
   ASSERT_EQ(temp_values, interface_values);
 
   // release the state_interfaces_
@@ -219,6 +215,9 @@ TEST_F(SemanticComponentInterfaceTest, validate_command_interfaces) {
 
   // validate the count of command_interfaces_
   ASSERT_EQ(semantic_component_->command_interfaces_.size(), 3u);
+
+  auto command_values = semantic_component_->get_values_command_interfaces();
+  ASSERT_EQ(command_values, interface_values);
 
   // validate the values of command_interfaces_ which should be
   // in order as per interface_names_

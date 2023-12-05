@@ -46,6 +46,7 @@ FrankaHardwareInterface::FrankaHardwareInterface()
           {k_HW_IF_ELBOW_COMMAND, hw_elbow_command_names_.size(), elbow_command_interface_claimed_},
           {k_HW_IF_CARTESIAN_VELOCITY, hw_cartesian_velocities_.size(),
            velocity_cartesian_interface_claimed_},
+          {k_HW_IF_CARTESIAN_POSE, hw_cartesian_pose_.size(), pose_cartesian_interface_claimed_},
       }) {}
 
 std::vector<StateInterface> FrankaHardwareInterface::export_state_interfaces() {
@@ -57,6 +58,8 @@ std::vector<StateInterface> FrankaHardwareInterface::export_state_interfaces() {
         info_.joints[i].name, hardware_interface::HW_IF_VELOCITY, &hw_velocities_.at(i)));
     state_interfaces.emplace_back(
         StateInterface(info_.joints[i].name, hardware_interface::HW_IF_EFFORT, &hw_efforts_.at(i)));
+    state_interfaces.emplace_back(StateInterface(info_.joints[i].name, k_HW_IF_INITIAL_POSITION,
+                                                 &initial_joint_positions_.at(i)));
   }
 
   state_interfaces.emplace_back(StateInterface(
@@ -67,6 +70,19 @@ std::vector<StateInterface> FrankaHardwareInterface::export_state_interfaces() {
       k_robot_name, k_robot_model_interface_name,
       reinterpret_cast<double*>(  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
           &hw_franka_model_ptr_)));
+
+  // initial cartesian pose state interface 16 element pose matrix
+  for (auto i = 0U; i < 16; i++) {
+    state_interfaces.emplace_back(StateInterface(std::to_string(i), k_HW_IF_INITIAL_CARTESIAN_POSE,
+                                                 &initial_robot_pose_.at(i)));
+  }
+
+  // initial elbow state interface
+  for (auto i = 0U; i < hw_elbow_command_names_.size(); i++) {
+    state_interfaces.emplace_back(StateInterface(
+        hw_elbow_command_names_.at(i), k_HW_IF_INITIAL_ELBOW_STATE, &initial_elbow_state_.at(i)));
+  }
+
   return state_interfaces;
 }
 
@@ -87,6 +103,12 @@ std::vector<CommandInterface> FrankaHardwareInterface::export_command_interfaces
     command_interfaces.emplace_back(CommandInterface(hw_cartesian_velocities_names_.at(i),
                                                      k_HW_IF_CARTESIAN_VELOCITY,
                                                      &hw_cartesian_velocities_.at(i)));
+  }
+
+  // cartesian pose command interface 16 element pose matrix
+  for (auto i = 0U; i < 16; i++) {
+    command_interfaces.emplace_back(
+        CommandInterface(std::to_string(i), k_HW_IF_CARTESIAN_POSE, &hw_cartesian_pose_.at(i)));
   }
 
   // elbow command interface
@@ -128,8 +150,16 @@ void initializeCommand(bool& first_update,
 void FrankaHardwareInterface::initializePositionCommands(const franka::RobotState& robot_state) {
   initializeCommand(first_elbow_update_, elbow_command_interface_running_, hw_elbow_command_,
                     robot_state.elbow_c);
+  initializeCommand(initial_elbow_state_update_, elbow_command_interface_running_,
+                    initial_elbow_state_, robot_state.elbow_c);
   initializeCommand(first_position_update_, position_joint_interface_running_,
                     hw_position_commands_, robot_state.q_d);
+  initializeCommand(first_cartesian_pose_update_, pose_cartesian_interface_running_,
+                    hw_cartesian_pose_, robot_state.O_T_EE_d);
+  initializeCommand(initial_robot_state_update_, pose_cartesian_interface_running_,
+                    initial_robot_pose_, robot_state.O_T_EE_d);
+  initializeCommand(initial_joint_position_update_, position_joint_interface_running_,
+                    initial_joint_positions_, robot_state.q_d);
 }
 
 hardware_interface::return_type FrankaHardwareInterface::read(const rclcpp::Time& /*time*/,
@@ -137,7 +167,6 @@ hardware_interface::return_type FrankaHardwareInterface::read(const rclcpp::Time
   if (hw_franka_model_ptr_ == nullptr) {
     hw_franka_model_ptr_ = robot_->getModel();
   }
-
   hw_franka_robot_state_ = robot_->readOnce();
 
   initializePositionCommands(hw_franka_robot_state_);
@@ -159,7 +188,7 @@ hardware_interface::return_type FrankaHardwareInterface::write(const rclcpp::Tim
                                                                const rclcpp::Duration& /*period*/) {
   if (hasInfinite(hw_position_commands_) || hasInfinite(hw_effort_commands_) ||
       hasInfinite(hw_velocity_commands_) || hasInfinite(hw_cartesian_velocities_) ||
-      hasInfinite(hw_elbow_command_)) {
+      hasInfinite(hw_elbow_command_) || hasInfinite(hw_cartesian_pose_)) {
     return hardware_interface::return_type::ERROR;
   }
 
@@ -167,13 +196,23 @@ hardware_interface::return_type FrankaHardwareInterface::write(const rclcpp::Tim
     robot_->writeOnce(hw_velocity_commands_);
   } else if (effort_interface_running_) {
     robot_->writeOnce(hw_effort_commands_);
-  } else if (position_joint_interface_running_ && !first_position_update_) {
+  } else if (position_joint_interface_running_ && !first_position_update_ &&
+             !initial_joint_position_update_) {
     robot_->writeOnce(hw_position_commands_);
   } else if (velocity_cartesian_interface_running_ && elbow_command_interface_running_ &&
              !first_elbow_update_) {
     // Wait until the first read pass after robot controller is activated to write the elbow
     // command to the robot
     robot_->writeOnce(hw_cartesian_velocities_, hw_elbow_command_);
+  } else if (pose_cartesian_interface_running_ && elbow_command_interface_running_ &&
+             !first_cartesian_pose_update_ && !first_elbow_update_) {
+    // Wait until the first read pass after robot controller is activated to write the elbow
+    // command to the robot
+    robot_->writeOnce(hw_cartesian_pose_, hw_elbow_command_);
+  } else if (pose_cartesian_interface_running_ && !first_cartesian_pose_update_) {
+    // Wait until the first read pass after robot controller is activated to write the cartesian
+    // pose
+    robot_->writeOnce(hw_cartesian_pose_);
   } else if (velocity_cartesian_interface_running_ && !elbow_command_interface_running_) {
     robot_->writeOnce(hw_cartesian_velocities_);
   }
@@ -284,6 +323,7 @@ hardware_interface::return_type FrankaHardwareInterface::perform_command_mode_sw
     robot_->initializeJointPositionInterface();
     position_joint_interface_running_ = true;
     first_position_update_ = true;
+    initial_joint_position_update_ = true;
   } else if (position_joint_interface_running_ && !position_joint_interface_claimed_) {
     robot_->stopRobot();
     position_joint_interface_running_ = false;
@@ -308,8 +348,30 @@ hardware_interface::return_type FrankaHardwareInterface::perform_command_mode_sw
     velocity_cartesian_interface_running_ = false;
   }
 
+  if (!pose_cartesian_interface_running_ && pose_cartesian_interface_claimed_) {
+    robot_->stopRobot();
+    robot_->initializeCartesianPoseInterface();
+    if (!elbow_command_interface_running_ && elbow_command_interface_claimed_) {
+      elbow_command_interface_running_ = true;
+      first_elbow_update_ = true;
+      initial_elbow_state_update_ = true;
+    }
+    pose_cartesian_interface_running_ = true;
+    initial_robot_state_update_ = true;
+    first_cartesian_pose_update_ = true;
+  } else if (pose_cartesian_interface_running_ && !pose_cartesian_interface_claimed_) {
+    robot_->stopRobot();
+    // Elbow command interface can't be commanded without cartesian pose or pose interface
+    if (elbow_command_interface_running_) {
+      elbow_command_interface_running_ = false;
+      elbow_command_interface_claimed_ = false;
+    }
+    pose_cartesian_interface_running_ = false;
+  }
+
   // check if the elbow command is activated without cartesian command interface
-  if (elbow_command_interface_claimed_ && !velocity_cartesian_interface_claimed_) {
+  if (elbow_command_interface_claimed_ &&
+      !(velocity_cartesian_interface_claimed_ || pose_cartesian_interface_claimed_)) {
     RCLCPP_FATAL(getLogger(),
                  "Elbow cannot be commanded without cartesian velocity or pose interface");
     return hardware_interface::return_type::ERROR;

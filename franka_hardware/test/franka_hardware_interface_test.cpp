@@ -153,8 +153,10 @@ TEST_F(
     FrankaHardwareInterfaceTest,
     given_that_the_robot_interfaces_are_set_when_call_export_state_return_zero_values_and_correct_interface_names) {
   franka::RobotState robot_state;
-  const size_t state_interface_size = 23;  // position, effort and velocity states for
-                                           // every joint + robot state and model
+  const size_t state_interface_size =
+      48;  // position, effort and velocity states for
+           // every joint + robot state and model// every joint + robot state and model + initial
+           // pose(16) + initial elbow(2) + position
   auto mock_robot = std::make_shared<MockRobot>();
   MockModel mock_model;
   MockModel* model_address = &mock_model;
@@ -173,20 +175,22 @@ TEST_F(
   auto states = franka_hardware_interface.export_state_interfaces();
   size_t joint_index = 0;
 
-  // Get all the states except the last two reserved for robot state
-  for (size_t i = 0; i < states.size() - 2; i++) {
-    if (i % 3 == 0) {
+  // Get all the states except the last two reserved for robot state + initial pose, elbow, position
+  for (size_t i = 0; i < states.size() - 20; i++) {
+    if (i % 4 == 0) {
       joint_index++;
     }
     const std::string joint_name = k_joint_name + std::to_string(joint_index);
-    if (i % 3 == 0) {
+    if (i % 4 == 0) {
       ASSERT_EQ(states[i].get_name(), joint_name + "/" + k_position_controller);
-    } else if (i % 3 == 1) {
+    } else if (i % 4 == 1) {
       ASSERT_EQ(states[i].get_name(), joint_name + "/" + k_velocity_controller);
-    } else {
+    } else if (i % 4 == 2) {
       ASSERT_EQ(states[i].get_name(), joint_name + "/" + k_effort_controller);
-    }
-    ASSERT_EQ(states[i].get_value(), 0.0);
+    } else if (i % 4 == 3) {
+      ASSERT_EQ(states[i].get_name(), joint_name + "/" + "initial_joint_position");
+    } else
+      ASSERT_EQ(states[i].get_value(), 0.0);
   }
 
   ASSERT_EQ(states.size(), state_interface_size);
@@ -196,8 +200,9 @@ TEST_F(
     FrankaHardwareInterfaceTest,
     given_that_the_robot_interfaces_are_set_when_call_export_state_interface_robot_model_interface_exists) {
   franka::RobotState robot_state;
-  const size_t state_interface_size = 23;  // position, effort and velocity states for
-                                           // every joint + robot state and model
+  const size_t state_interface_size = 48;  // position, effort and velocity states for
+                                           // every joint + robot state and model + initial pose(16)
+                                           // + initial elbow(2) + initial joint position(7)
   auto mock_robot = std::make_shared<MockRobot>();
 
   MockModel mock_model;
@@ -214,9 +219,11 @@ TEST_F(
   auto return_type = franka_hardware_interface.read(time, duration);
   ASSERT_EQ(return_type, hardware_interface::return_type::OK);
   auto states = franka_hardware_interface.export_state_interfaces();
-  ASSERT_EQ(states[state_interface_size - 1].get_name(),
-            "panda/robot_model");  // Last state interface is the robot model state
-  EXPECT_NEAR(states[state_interface_size - 1].get_value(),
+  ASSERT_EQ(states[state_interface_size - 19].get_name(),
+            "panda/robot_model");  // Last state interface is the robot model state +
+                                   // initial_pose(16) + inital_elbow(2) + initial position(7)
+  EXPECT_NEAR(states[state_interface_size - 19]
+                  .get_value(),  // initial_pose(16), initial_pose(2) + initial position(7)
               *reinterpret_cast<double*>(&model_address),
               k_EPS);  // testing that the casted mock_model ptr
                        // is correctly pushed to state interface
@@ -225,7 +232,7 @@ TEST_F(
 TEST_F(
     FrankaHardwareInterfaceTest,
     given_that_the_robot_interfaces_are_set_when_call_export_state_interface_robot_state_interface_exists) {
-  const size_t state_interface_size = 23;  // position, effort and velocity states for
+  const size_t state_interface_size = 30;  // position, effort and velocity states for
                                            // every joint + robot state and model
   auto mock_robot = std::make_shared<MockRobot>();
 
