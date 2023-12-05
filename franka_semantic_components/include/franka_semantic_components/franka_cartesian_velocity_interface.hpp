@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Franka Emika GmbH
+// Copyright (c) 2023 Franka Robotics GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@
 #include <limits>
 #include <string>
 #include <vector>
+
+#include <Eigen/Dense>
 
 namespace franka_semantic_components {
 /**
@@ -56,7 +58,8 @@ class FrankaCartesianVelocityInterface : public FrankaSemanticComponentInterface
    *
    * @return if successful true, else when elbow is activated false.
    */
-  bool setCommand(const geometry_msgs::msg::Twist& twist_command);
+  bool setCommand(const Eigen::Vector3d& linear_velocity_command,
+                  const Eigen::Vector3d& angular_velocity_command);
 
   /**
    * @param twist_command The velocity command in Cartesian coordinates
@@ -65,7 +68,8 @@ class FrankaCartesianVelocityInterface : public FrankaSemanticComponentInterface
    *
    * @return if successful true, else when elbow is not activated false.
    */
-  bool setCommand(const geometry_msgs::msg::Twist& twist_command,
+  bool setCommand(const Eigen::Vector3d& linear_velocity_command,
+                  const Eigen::Vector3d& angular_velocity_command,
                   const std::array<double, 2>& elbow_command);
 
   /**

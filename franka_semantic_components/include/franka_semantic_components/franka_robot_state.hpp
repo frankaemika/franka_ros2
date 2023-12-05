@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Franka Emika GmbH
+// Copyright (c) 2023 Franka Robotics GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,6 +30,9 @@ class FrankaRobotState
 
   virtual ~FrankaRobotState() = default;
 
+  /**
+   * @param[in/out] message Initializes this message to contain the respective frame_id information
+   */
   auto initialize_robot_state_msg(franka_msgs::msg::FrankaRobotState& message) -> void;
 
   /**

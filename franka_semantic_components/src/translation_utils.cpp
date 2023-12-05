@@ -1,9 +1,24 @@
+// Copyright (c) 2023 Franka Robotics GmbH
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #include "translation_utils.hpp"
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-namespace franka_semantic_components::translation {
+namespace franka_semantic_components {
+namespace translation {
 
 franka_msgs::msg::Errors errorsToMessage(const franka::Errors& error) {
   franka_msgs::msg::Errors message;
@@ -277,14 +292,15 @@ auto toElbow(const std::array<double, 2>& elbow,
   franka_msgs::msg::Elbow elbow_message;
 
   for (size_t i = 0; i < elbow.size(); i++) {
-    elbow_message.position[i] = elbow[i];
-    elbow_message.desired_position[i] = elbow_d[i];
-    elbow_message.commanded_position[i] = elbow_c[i];
-    elbow_message.commanded_velocity[i] = delbow_c[i];
-    elbow_message.commanded_acceleration[i] = ddelbow_c[i];
+    elbow_message.position.at(i) = elbow.at(i);
+    elbow_message.desired_position.at(i) = elbow_d.at(i);
+    elbow_message.commanded_position.at(i) = elbow_c.at(i);
+    elbow_message.commanded_velocity.at(i) = delbow_c.at(i);
+    elbow_message.commanded_acceleration.at(i) = ddelbow_c.at(i);
   }
 
   return elbow_message;
 }
 
-}  // namespace franka_semantic_components::translation
+}  // namespace translation
+}  // namespace franka_semantic_components

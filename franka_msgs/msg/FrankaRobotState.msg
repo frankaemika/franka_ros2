@@ -16,9 +16,9 @@ sensor_msgs/JointState measured_joint_motor_state
 
 # The desired joint acceleration
 float64[7] ddq_d
-# The derivative of the of the measured torque signal
+# The derivative of the measured torque signal
 float64[7] dtau_j
-# External torque, filtered consisting out of effort
+# Filtered external torque. The JointState consists out of effort (tau_ext_hat_filtered)
 sensor_msgs/JointState tau_ext_hat_filtered
 
 ### The state of the elbow

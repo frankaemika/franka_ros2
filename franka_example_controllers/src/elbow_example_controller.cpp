@@ -15,9 +15,6 @@
 #include <franka_example_controllers/default_robot_behavior_utils.hpp>
 #include <franka_example_controllers/elbow_example_controller.hpp>
 
-#include "geometry_msgs/msg/twist.hpp"
-#include "geometry_msgs/msg/vector3.hpp"
-
 #include <cassert>
 #include <cmath>
 #include <exception>
@@ -56,16 +53,14 @@ controller_interface::return_type ElbowExampleController::update(
 
   double angle = M_PI / 15.0 * (1.0 - std::cos(M_PI / 5.0 * elapsed_time_));
 
-  geometry_msgs::msg::Twist cartesian_velocity_command;
-  cartesian_velocity_command.linear =
-      geometry_msgs::build<geometry_msgs::msg::Vector3>().x(0.0).y(0.0).z(0.0);
-  cartesian_velocity_command.angular =
-      geometry_msgs::build<geometry_msgs::msg::Vector3>().x(0.0).y(0.0).z(0.0);
+  Eigen::Vector3d cartesian_linear_velocity(0.0, 0.0, 0.0);
+  Eigen::Vector3d cartesian_angular_velocity(0.0, 0.0, 0.0);
 
   std::array<double, 2> elbow_command = {
       {initial_elbow_configuration_[0] + angle, initial_elbow_configuration_[1]}};
 
-  if (franka_cartesian_velocity_->setCommand(cartesian_velocity_command, elbow_command)) {
+  if (franka_cartesian_velocity_->setCommand(cartesian_linear_velocity, cartesian_angular_velocity,
+                                             elbow_command)) {
     return controller_interface::return_type::OK;
   } else {
     RCLCPP_FATAL(get_node()->get_logger(),
