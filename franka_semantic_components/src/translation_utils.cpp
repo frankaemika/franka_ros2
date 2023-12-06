@@ -302,5 +302,39 @@ auto toElbow(const std::array<double, 2>& elbow,
   return elbow_message;
 }
 
+auto toJointStateVector(const std::array<double, 7>& data_vector) -> std::vector<double> {
+  return {data_vector.cbegin(), data_vector.cend()};
+}
+
+auto updateTimeStamps(const builtin_interfaces::msg::Time& time_stamps,
+                      franka_msgs::msg::FrankaRobotState& robot_state) -> void {
+  // The joint states
+  robot_state.measured_joint_state.header.stamp = time_stamps;
+  robot_state.desired_joint_state.header.stamp = time_stamps;
+  robot_state.measured_joint_motor_state.header.stamp = time_stamps;
+  robot_state.tau_ext_hat_filtered.header.stamp = time_stamps;
+
+  // Active wrenches on the stiffness frame
+  robot_state.k_f_ext_hat_k.header.stamp = time_stamps;
+  robot_state.o_f_ext_hat_k.header.stamp = time_stamps;
+
+  // The transformations between different frames
+  robot_state.o_t_ee.header.stamp = time_stamps;
+  robot_state.o_t_ee_d.header.stamp = time_stamps;
+  robot_state.o_t_ee_c.header.stamp = time_stamps;
+
+  robot_state.f_t_ee.header.stamp = time_stamps;
+  robot_state.ee_t_k.header.stamp = time_stamps;
+
+  robot_state.o_dp_ee_d.header.stamp = time_stamps;
+  robot_state.o_dp_ee_c.header.stamp = time_stamps;
+  robot_state.o_ddp_ee_c.header.stamp = time_stamps;
+
+  // The inertias of the robot
+  robot_state.inertia_ee.header.stamp = time_stamps;
+  robot_state.inertia_load.header.stamp = time_stamps;
+  robot_state.inertia_total.header.stamp = time_stamps;
+}
+
 }  // namespace translation
 }  // namespace franka_semantic_components

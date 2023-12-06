@@ -19,6 +19,9 @@
 #include "franka_msgs/msg/collision_indicators.hpp"
 #include "franka_msgs/msg/elbow.hpp"
 #include "franka_msgs/msg/errors.hpp"
+#include "franka_msgs/msg/franka_robot_state.hpp"
+
+#include "builtin_interfaces/msg/time.hpp"
 
 #include "geometry_msgs/msg/accel.hpp"
 #include "geometry_msgs/msg/inertia.hpp"
@@ -100,6 +103,18 @@ auto toElbow(const std::array<double, 2>& elbow,
              const std::array<double, 2>& elbow_c,
              const std::array<double, 2>& delbow_c,
              const std::array<double, 2>& ddelbow_c) -> franka_msgs::msg::Elbow;
+
+/**
+ * @param data_vector Translates this data vector from an array to a vector
+ * @return std::vector<double> The translated vector
+ */
+auto toJointStateVector(const std::array<double, 7>& data_vector) -> std::vector<double>;
+
+/**
+ * @param robot_state Updates the the
+ */
+auto updateTimeStamps(const builtin_interfaces::msg::Time& time_stamps,
+                      franka_msgs::msg::FrankaRobotState& robot_state) -> void;
 
 }  // namespace translation
 }  // namespace franka_semantic_components

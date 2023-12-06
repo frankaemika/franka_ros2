@@ -117,42 +117,33 @@ auto FrankaRobotState::get_values_as_message(franka_msgs::msg::FrankaRobotState&
     return false;
   }
 
+  // Update the time stamps of the data
+  translation::updateTimeStamps(message.header.stamp, message);
+
   // Collision and contact indicators
   message.collision_indicators = translation::toCollisionIndicators(
       robot_state_ptr->cartesian_collision, robot_state_ptr->cartesian_contact,
       robot_state_ptr->joint_collision, robot_state_ptr->joint_contact);
 
   // The joint states
-  message.measured_joint_state.header.stamp = message.header.stamp;
-  message.measured_joint_state.position =
-      std::vector<double>(robot_state_ptr->q.cbegin(), robot_state_ptr->q.cend());
-  message.measured_joint_state.velocity =
-      std::vector<double>(robot_state_ptr->dq.cbegin(), robot_state_ptr->dq.cend());
-  message.measured_joint_state.effort =
-      std::vector<double>(robot_state_ptr->tau_J.cbegin(), robot_state_ptr->tau_J.cend());
+  message.measured_joint_state.position = translation::toJointStateVector(robot_state_ptr->q);
+  message.measured_joint_state.velocity = translation::toJointStateVector(robot_state_ptr->dq);
+  message.measured_joint_state.effort = translation::toJointStateVector(robot_state_ptr->tau_J);
 
-  message.desired_joint_state.header.stamp = message.header.stamp;
-  message.desired_joint_state.position =
-      std::vector<double>(robot_state_ptr->q_d.cbegin(), robot_state_ptr->q_d.cend());
-  message.desired_joint_state.velocity =
-      std::vector<double>(robot_state_ptr->dq_d.cbegin(), robot_state_ptr->dq_d.cend());
-  message.desired_joint_state.effort =
-      std::vector<double>(robot_state_ptr->tau_J_d.cbegin(), robot_state_ptr->tau_J_d.cend());
+  message.desired_joint_state.position = translation::toJointStateVector(robot_state_ptr->q_d);
+  message.desired_joint_state.velocity = translation::toJointStateVector(robot_state_ptr->dq_d);
+  message.desired_joint_state.effort = translation::toJointStateVector(robot_state_ptr->tau_J_d);
 
-  message.measured_joint_motor_state.header.stamp = message.header.stamp;
   message.measured_joint_motor_state.position =
-      std::vector<double>(robot_state_ptr->theta.cbegin(), robot_state_ptr->theta.cend());
+      translation::toJointStateVector(robot_state_ptr->theta);
   message.measured_joint_motor_state.velocity =
-      std::vector<double>(robot_state_ptr->dtheta.cbegin(), robot_state_ptr->dtheta.cend());
+      translation::toJointStateVector(robot_state_ptr->dtheta);
 
-  message.tau_ext_hat_filtered.header.stamp = message.header.stamp;
-  message.tau_ext_hat_filtered.effort = std::vector<double>(
-      robot_state_ptr->tau_ext_hat_filtered.cbegin(), robot_state_ptr->tau_ext_hat_filtered.cend());
+  message.tau_ext_hat_filtered.effort =
+      translation::toJointStateVector(robot_state_ptr->tau_ext_hat_filtered);
 
-  for (size_t i = 0; i < robot_state_ptr->q.size(); i++) {
-    message.ddq_d[i] = robot_state_ptr->ddq_d[i];
-    message.dtau_j[i] = robot_state_ptr->dtau_J[i];
-  }
+  message.ddq_d = robot_state_ptr->ddq_d;
+  message.dtau_j = robot_state_ptr->dtau_J;
 
   // Output for the elbow
   message.elbow = translation::toElbow(robot_state_ptr->elbow, robot_state_ptr->elbow_d,
@@ -160,39 +151,26 @@ auto FrankaRobotState::get_values_as_message(franka_msgs::msg::FrankaRobotState&
                                        robot_state_ptr->ddelbow_c);
 
   // Active wrenches on the stiffness frame
-  message.k_f_ext_hat_k.header.stamp = message.header.stamp;
   message.k_f_ext_hat_k.wrench = translation::toWrench(robot_state_ptr->K_F_ext_hat_K);
-  message.o_f_ext_hat_k.header.stamp = message.header.stamp;
   message.o_f_ext_hat_k.wrench = translation::toWrench(robot_state_ptr->O_F_ext_hat_K);
 
   // The transformations between different frames
-  message.o_t_ee.header.stamp = message.header.stamp;
   message.o_t_ee.pose = translation::toPose(robot_state_ptr->O_T_EE);
-  message.o_t_ee_d.header.stamp = message.header.stamp;
   message.o_t_ee_d.pose = translation::toPose(robot_state_ptr->O_T_EE_d);
-  message.o_t_ee_c.header.stamp = message.header.stamp;
   message.o_t_ee_c.pose = translation::toPose(robot_state_ptr->O_T_EE_c);
 
-  message.f_t_ee.header.stamp = message.header.stamp;
   message.f_t_ee.pose = translation::toPose(robot_state_ptr->F_T_EE);
-  message.ee_t_k.header.stamp = message.header.stamp;
   message.ee_t_k.pose = translation::toPose(robot_state_ptr->EE_T_K);
 
-  message.o_dp_ee_d.header.stamp = message.header.stamp;
   message.o_dp_ee_d.twist = translation::toTwist(robot_state_ptr->O_dP_EE_d);
-  message.o_dp_ee_c.header.stamp = message.header.stamp;
   message.o_dp_ee_c.twist = translation::toTwist(robot_state_ptr->O_dP_EE_c);
-  message.o_ddp_ee_c.header.stamp = message.header.stamp;
   message.o_ddp_ee_c.accel = translation::toAccel(robot_state_ptr->O_ddP_EE_c);
 
   // The inertias of the robot
-  message.inertia_ee.header.stamp = message.header.stamp;
   message.inertia_ee.inertia = translation::toInertia(
       robot_state_ptr->m_ee, robot_state_ptr->F_x_Cee, robot_state_ptr->I_ee);
-  message.inertia_load.header.stamp = message.header.stamp;
   message.inertia_load.inertia = translation::toInertia(
       robot_state_ptr->m_load, robot_state_ptr->F_x_Cload, robot_state_ptr->I_load);
-  message.inertia_total.header.stamp = message.header.stamp;
   message.inertia_total.inertia = translation::toInertia(
       robot_state_ptr->m_total, robot_state_ptr->F_x_Ctotal, robot_state_ptr->I_total);
 
