@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Franka Emika GmbH
+// Copyright (c) 2023 Franka Robotics GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,15 +14,18 @@
 
 #pragma once
 
-#include <limits>
-#include <string>
-#include <vector>
-
 #include "franka/control_types.h"
 #include "franka/robot_state.h"
 #include "franka_semantic_components/franka_semantic_component_interface.hpp"
 
+#include "geometry_msgs/msg/twist.hpp"
+
 #include <iostream>
+#include <limits>
+#include <string>
+#include <vector>
+
+#include <Eigen/Dense>
 
 namespace franka_semantic_components {
 /**
@@ -50,23 +53,24 @@ class FrankaCartesianVelocityInterface : public FrankaSemanticComponentInterface
   virtual ~FrankaCartesianVelocityInterface() = default;
 
   /**
-   * Sets the given command.
-   *
-   * @param[in] command Command to set.
+   * @param twist_command The velocity command in Cartesian coordinates
+   * @return true if successul
    *
    * @return if successful true, else when elbow is activated false.
    */
-  bool setCommand(const std::array<double, 6>& command);
+  bool setCommand(const Eigen::Vector3d& linear_velocity_command,
+                  const Eigen::Vector3d& angular_velocity_command);
 
   /**
-   * Sets the given command.
-   *
-   * @param[in] cartesian_velocity_command Command to set.
-   * @param[in] elbow Elbow to set.
+   * @param twist_command The velocity command in Cartesian coordinates
+   * @param elbow_command The elbow command: {joint_3, sign(joint_4)}
+   * @return true if successul
    *
    * @return if successful true, else when elbow is not activated false.
    */
-  bool setCommand(const std::array<double, 6>& command, const std::array<double, 2>& elbow);
+  bool setCommand(const Eigen::Vector3d& linear_velocity_command,
+                  const Eigen::Vector3d& angular_velocity_command,
+                  const std::array<double, 2>& elbow_command);
 
   /**
    * Get the commanded elbow interface elbow values.

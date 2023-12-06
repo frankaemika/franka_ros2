@@ -12,7 +12,7 @@ endif()
 
 option(CHECK_TIDY "Adds clang-tidy tests" OFF)
 
-set(THIS_PACKAGE_INCLUDE_DEPENDS Franka franka_hardware franka_msgs hardware_interface rclcpp_lifecycle)
+set(THIS_PACKAGE_INCLUDE_DEPENDS Franka franka_hardware franka_msgs geometry_msgs sensor_msgs hardware_interface rclcpp_lifecycle)
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -28,11 +28,17 @@ add_library(franka_semantic_components SHARED
             src/franka_robot_model.cpp
             src/franka_cartesian_velocity_interface.cpp
             src/franka_cartesian_pose_interface.cpp
-            src/franka_semantic_component_interface.cpp)
+            src/franka_semantic_component_interface.cpp
+            src/translation_utils.cpp
+)
 target_include_directories(franka_semantic_components PRIVATE include ${EIGEN3_INCLUDE_DIRS})
-target_link_libraries(franka_semantic_components Franka::Franka)
+target_link_libraries(franka_semantic_components
+  Franka::Franka
+  Eigen3::Eigen)
 ament_target_dependencies(franka_semantic_components
                           Franka
+                          sensor_msgs
+                          geometry_msgs
                           ${THIS_PACKAGE_INCLUDE_DEPENDS})
 
 install(TARGETS franka_semantic_components DESTINATION lib)
@@ -73,6 +79,8 @@ if(BUILD_TESTING)
     controller_interface
     hardware_interface
     franka_msgs
+    sensor_msgs
+    geometry_msgs
     Franka
   )
   ament_add_gmock(test_franka_robot_model test/franka_robot_model_test.cpp)
@@ -85,6 +93,8 @@ if(BUILD_TESTING)
     controller_interface
     hardware_interface
     franka_msgs
+    sensor_msgs
+    geometry_msgs
     Franka
   )
 
@@ -101,6 +111,8 @@ if(BUILD_TESTING)
   ament_target_dependencies(
     franka_semantic_component_interface_test
     hardware_interface
+    sensor_msgs
+    geometry_msgs
   )
 
   ament_add_gmock(
@@ -133,6 +145,8 @@ if(BUILD_TESTING)
   ament_target_dependencies(
     franka_cartesian_pose_interface_test
     hardware_interface
+    sensor_msgs
+    geometry_msgs
   )
 endif()
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Franka Emika GmbH
+// Copyright (c) 2023 Franka Robotics GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@
 class FrankaRobotStateTestFriend : public franka_semantic_components::FrankaRobotState {
   FRIEND_TEST(FrankaRobotStateTest, validate_state_names_and_size);
   FRIEND_TEST(FrankaRobotStateTest,
-              given_franka_semantic_state_initialized_when_message_returned_expect_correct_values);
+              givenFrankaSemanticStateInitialized_whenMessageReturnedExpectsCorrectValues);
   FRIEND_TEST(FrankaRobotStateTest, robot_state_ptr_uncasted_correctly);
 
  public:
@@ -52,6 +52,8 @@ class FrankaRobotStateTest : public ::testing::Test {
 
   std::array<double, 7> joint_angles = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
   std::array<double, 7> joint_velocities = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  std::array<double, 16> end_effector_pose = {1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0,   0.0,
+                                              0.0, 0.0, 1.0, 0.0, 2.2, 3.8, 93.23, 1.0};
   franka::RobotMode robot_mode = franka::RobotMode::kUserStopped;
   franka_msgs::msg::FrankaRobotState franka_robot_state_msg;
 

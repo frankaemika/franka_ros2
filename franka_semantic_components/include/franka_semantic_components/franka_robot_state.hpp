@@ -1,4 +1,4 @@
-// Copyright (c) 2023 Franka Emika GmbH
+// Copyright (c) 2023 Franka Robotics GmbH
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@
 #include <vector>
 
 #include "franka/robot_state.h"
-#include "franka_msgs/msg/errors.hpp"
 #include "franka_msgs/msg/franka_robot_state.hpp"
 #include "semantic_components/semantic_component_interface.hpp"
 
@@ -32,10 +31,15 @@ class FrankaRobotState
   virtual ~FrankaRobotState() = default;
 
   /**
+   * @param[in/out] message Initializes this message to contain the respective frame_id information
+   */
+  auto initialize_robot_state_msg(franka_msgs::msg::FrankaRobotState& message) -> void;
+
+  /**
    * Constructs and return a FrankaRobotState message from the current values.
    * \return FrankaRobotState message from values;
    */
-  bool get_values_as_message(franka_msgs::msg::FrankaRobotState& message);
+  auto get_values_as_message(franka_msgs::msg::FrankaRobotState& message) -> bool;
 
  protected:
   franka::RobotState* robot_state_ptr;

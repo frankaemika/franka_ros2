@@ -32,6 +32,8 @@ RUN apt-get update && \
     ros-humble-controller-manager \
     ros-humble-joint-state-publisher-gui \
     ros-humble-control-msgs \
+    ros-humble-geometry-msgs \
+    ros-humble-sensor-msgs \
     ros-humble-gazebo-ros \
     ros-humble-control-toolbox \
     ros-humble-ackermann-msgs \

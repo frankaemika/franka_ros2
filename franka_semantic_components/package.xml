@@ -3,14 +3,16 @@
 <package format="3">
   <name>franka_semantic_components</name>
   <version>0.1.0</version>
-  <description>franka_semantic_components provides semantic components for using Franka Emika research robots with ros2_control</description>
-  <maintainer email="support@franka.de">Franka Emika GmbH</maintainer>
+  <description>franka_semantic_components provides semantic components for using Franka Robotics research robots with ros2_control</description>
+  <maintainer email="support@franka.de">Franka Robotics GmbH</maintainer>
   <license>Apache 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
   <depend>rclcpp</depend>
   <depend>franka_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
   <depend>hardware_interface</depend>
   <depend>franka_hardware</depend>
 
@@ -22,6 +24,7 @@
   <test_depend>ament_cmake_pep257</test_depend>
   <test_depend>ament_cmake_xmllint</test_depend>
   <test_depend>ament_cmake_gmock</test_depend>
+  <test_depend>ament_cmake_clang_tidy</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>
