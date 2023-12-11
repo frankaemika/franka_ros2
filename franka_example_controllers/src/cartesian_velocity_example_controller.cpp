@@ -54,9 +54,11 @@ controller_interface::return_type CartesianVelocityExampleController::update(
   double v_x = std::cos(k_angle_) * v;
   double v_z = -std::sin(k_angle_) * v;
 
-  std::array<double, 6> cartesian_velocity_command = {{v_x, 0.0, v_z, 0.0, 0.0, 0.0}};
+  Eigen::Vector3d cartesian_linear_velocity(v_x, 0.0, v_z);
+  Eigen::Vector3d cartesian_angular_velocity(0.0, 0.0, 0.0);
 
-  if (franka_cartesian_velocity_->setCommand(cartesian_velocity_command)) {
+  if (franka_cartesian_velocity_->setCommand(cartesian_linear_velocity,
+                                             cartesian_angular_velocity)) {
     return controller_interface::return_type::OK;
   } else {
     RCLCPP_FATAL(get_node()->get_logger(),
