@@ -29,6 +29,7 @@ public:
      * QUE: How do you retrieve the robot model?
      */
 
+    using vector7d = Eigen::Matrix<double, 7, 1>;
     [[nodiscard]] controller_interface::InterfaceConfiguration command_interface_configuration()
     const override;
     [[nodiscard]] controller_interface::InterfaceConfiguration state_interface_configuration()
@@ -56,8 +57,18 @@ public:
 
 
 private:
+    void UpdateJointStates();
     std::string arm_id_;
+    const int num_joints = 7;
+
+    // Interface for Panda model for dynamics and kinematics
     std::unique_ptr<franka_semantic_components::FrankaRobotModel> franka_robot_model_;
+
+    // Interface for Desired equilibrium pose of the eef
+    std::unique_ptr<franka_semantic_components::FrankaCartesianPoseInterface> equilibrium_pose_d_;
+
+    // Interface for Robot state
+    std::unique_ptr<franka_semantic_components::FrankaRobotState> franka_robot_state_;
 
     const std::string k_robot_state_interface_name{"robot_state"};
     const std::string k_robot_model_interface_name{"robot_model"};
