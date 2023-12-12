@@ -13,7 +13,7 @@ using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
 namespace franka_example_controllers {
 
 /**
- * The cartesian empedance example controller
+ * The Cartesian Impedance example controller
 */
 class CartesianImpedanceExampleController : public controller_interface::ControllerInterface {
 public:
@@ -58,6 +58,9 @@ public:
 
 private:
     void UpdateJointStates();
+    Eigen::Matrix<double, 7, 1> saturateTorqueRate(
+        const Eigen::Matrix<double, 7, 1>& tau_d_calculated,
+        const Eigen::Matrix<double, 7, 1>& tau_J_d)
     std::string arm_id_;
     const int num_joints = 7;
 
@@ -70,8 +73,13 @@ private:
     // Interface for Robot state
     std::unique_ptr<franka_semantic_components::FrankaRobotState> franka_robot_state_;
 
+    // message object that takes in robot state
+    std::unique_ptr<franka_msgs::msg::FrankaRObotState> robot_state_;
+
     const std::string k_robot_state_interface_name{"robot_state"};
     const std::string k_robot_model_interface_name{"robot_model"};
+
+    const double delta_tau_max_{1.0}
 
 
 };
