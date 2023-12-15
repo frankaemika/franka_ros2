@@ -89,7 +89,7 @@ controller_interface::return_type CartesianImpedanceExampleController::update(
   robot_state_ =
     std::make_unique<franka_msgs::msg::FrankaRobotState>(
       franka_msgs::msg::FrankaRobotState());
-  franka_robot_state_->get_values_as_message(robot_state_);
+  franka_robot_state_->get_values_as_message(robot_state_->msg_);
 
   // get coriolis
   std::array<double, 7> coriolis_array = franka_robot_model_->getCoriolis();
@@ -181,7 +181,7 @@ CallbackReturn CartesianImpedanceExampleController::on_init() {
     cartesian_damping_.setZero();
   } catch (const std::exception& e) {
     fprintf(stderr, "Exception thrown during init stage with message: %s \n", e.what());
-    return CallbackReturn::ERROR
+    return CallbackReturn::ERROR;
   }
 
 
@@ -196,7 +196,7 @@ CallbackReturn CartesianImpedanceExampleController::on_configure(
    * Initialise variables
    * Read parameters here
   */
-  franka_cartesian_pose_ = 
+  equilibrium_pose_d = 
     std::make_unique<franka_semantic_components::FrankaCartesianPoseInterface>(
     franka_semantic_components::FrankaCartesianPoseInterface(k_elbow_activated));
 
@@ -226,7 +226,7 @@ CallbackReturn CartesianImpedanceExampleController::on_activate(
   equilibrium_pose_d_->assign_loaned_state_interfaces(state_interfaces_);
 
   // command interfaces
-  franka_robot_state_->assign_loaned_command_interfaces(command_interfaces_);
+  // franka_robot_state_->assign_loaned_command_interfaces(command_interfaces_);
 
   return CallbackReturn::SUCCESS;
 }
