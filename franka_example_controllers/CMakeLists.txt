@@ -36,6 +36,7 @@ add_library(
         src/cartesian_pose_example_controller.cpp
         src/cartesian_elbow_example_controller.cpp
         src/cartesian_orientation_example_controller.cpp
+        src/cartesian_impedance_example_controller.cpp
         src/elbow_example_controller.cpp
         src/model_example_controller.cpp
         src/move_to_start_example_controller.cpp

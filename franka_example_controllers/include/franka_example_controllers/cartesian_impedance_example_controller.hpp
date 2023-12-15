@@ -7,6 +7,9 @@
 #include <rclcpp/rclcpp.hpp>
 
 #include <franka_semantic_components/franka_cartesian_pose_interface.hpp>
+#include <franka_semantic_components/franka_robot_model.hpp>
+#include <franka_semantic_components/franka_robot_state.hpp>
+#include <franka_msgs/msg/franka_robot_state.hpp>
 
 using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn;
 
@@ -60,9 +63,8 @@ private:
     void UpdateJointStates();
     Eigen::Matrix<double, 7, 1> saturateTorqueRate(
         const Eigen::Matrix<double, 7, 1>& tau_d_calculated,
-        const Eigen::Matrix<double, 7, 1>& tau_J_d)
+        const Eigen::Matrix<double, 7, 1>& tau_J_d);
     std::string arm_id_;
-    const int num_joints = 7;
 
     // Interface for Panda model for dynamics and kinematics
     std::unique_ptr<franka_semantic_components::FrankaRobotModel> franka_robot_model_;
@@ -74,13 +76,25 @@ private:
     std::unique_ptr<franka_semantic_components::FrankaRobotState> franka_robot_state_;
 
     // message object that takes in robot state
-    std::unique_ptr<franka_msgs::msg::FrankaRObotState> robot_state_;
+    std::unique_ptr<franka_msgs::msg::FrankaRobotState> robot_state_;
 
     const std::string k_robot_state_interface_name{"robot_state"};
     const std::string k_robot_model_interface_name{"robot_model"};
 
-    const double delta_tau_max_{1.0}
-
+    const double delta_tau_max_{1.0};
+    double nullspace_stiffness_{20.0};
+    double nullspace_stiffness_target_{20.0};
+    int num_joints{7};
+    bool k_elbow_activated{true};
+    Eigen::Matrix<double, 6, 6> cartesian_stiffness_;
+    Eigen::Matrix<double, 6, 6> cartesian_stiffness_target_;
+    Eigen::Matrix<double, 6, 6> cartesian_damping_;
+    Eigen::Matrix<double, 6, 6> cartesian_damping_target_;
+    Eigen::Matrix<double, 7, 1> q_d_nullspace_;
+    Eigen::Vector3d position_d_;
+    Eigen::Quaterniond orientation_d_;
+    Eigen::Vector3d position_d_target_;
+    Eigen::Quaterniond orientation_d_target_;
 
 };
 } // namespace franka_example_controllers
