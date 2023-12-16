@@ -32,6 +32,8 @@ controller_interface::InterfaceConfiguration
   CartesianImpedanceExampleController::command_interface_configuration() const {
   /*
    * Define command interfaces here
+   * NOTE: const word after function declaration makes it a compiler error to
+   * change any data member of the class.
   */
   controller_interface::InterfaceConfiguration config;
   config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
@@ -86,13 +88,19 @@ controller_interface::return_type CartesianImpedanceExampleController::update(
   // get robot state
   // DOUBT: placeholder for getting complete robot state. Pass a franka state
   // message into this function?
-  robot_state_ =
-    std::make_unique<franka_msgs::msg::FrankaRobotState>(
-      franka_msgs::msg::FrankaRobotState());
-  franka_robot_state_->get_values_as_message(robot_state_->msg_);
+  // DEBG: deleter after testing
+  // robot_state_ =
+  //   std::make_unique<franka_msgs::msg::FrankaRobotState>(
+  //     franka_msgs::msg::FrankaRobotState());
+
+  robot_state_ = franka_msgs::msg::FrankaRobotState();
+
+  // TODO: Implement boolean check for if the robot state read has been
+  // successfull or not
+  franka_robot_state_->get_values_as_message(robot_state_);
 
   // get coriolis
-  std::array<double, 7> coriolis_array = franka_robot_model_->getCoriolis();
+  std::array<double, 7> coriolis_array = franka_robot_model_->getCoriolisForceVector();
 
   // get jacobian DOUBT: How to access the relevant end effector frame
   std::array<double, 42> Jacobian_array = franka_robot_model_->getZeroJacobian(
@@ -101,15 +109,34 @@ controller_interface::return_type CartesianImpedanceExampleController::update(
   // Convert to eigen
   Eigen::Map<Eigen::Matrix<double, 7, 1>> coriolis(coriolis_array.data());
   Eigen::Map<Eigen::Matrix<double, 6, 7>> jacobian(Jacobian_array.data());
-  Eigen::Map<Eigen::Matrix<double, 7, 1>> q(robot_state_.q.data());
-  Eigen::Map<Eigen::Matrix<double, 7, 1>> dq(robot_state_.dq.data());
+  // Eigen::Map<Eigen::Matrix<double, 7, 1>> q(robot_state_.q.data());
+  Eigen::Map<Eigen::Matrix<double, 7, 1>> q(robot_state_.measured_joint_state.position.data());
+  Eigen::Map<Eigen::Matrix<double, 7, 1>> dq(robot_state_.measured_joint_state.velocity.data());
+  // Eigen::Map<Eigen::Matrix<double, 7, 1>> dq(robot_state_.dq.data());
+
+  // DOUBT: Is this desired joint torque
+  // Eigen::Map<Eigen::Matrix<double, 7, 1>> tau_j_d(
+  //   robot_state_.tau_J_d.data());
   Eigen::Map<Eigen::Matrix<double, 7, 1>> tau_j_d(
-    robot_state_.tau_J_d.data());
+    robot_state_.desired_joint_state.effort.data());
 
   // get current eef pose X_EE(drake)
-  Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state_.O_T_EE.date()));
-  Eigen::Vector3d position(transform.translation());
-  Eigen::Quaterniond orientation(transform.rotation());
+  // Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state_.o_t_ee.pose.data()));
+  // Eigen::Vector3d position(transform.translation());
+  // Eigen::Quaterniond orientation(transform.rotation());
+  Eigen::Vector3d position(
+    robot_state_.o_t_ee.pose.position.x,
+    robot_state_.o_t_ee.pose.position.y,
+    robot_state_.o_t_ee.pose.position.z);
+  Eigen::Quaterniond orientation(
+    robot_state_.o_t_ee.pose.orientation.w,
+    robot_state_.o_t_ee.pose.orientation.x,
+    robot_state_.o_t_ee.pose.orientation.y,
+    robot_state_.o_t_ee.pose.orientation.z);
+  Eigen::Affine3d transform = Eigen::Affine3d::Identity();
+  transform.translation() = position;
+  transform.rotate(orientation.toRotationMatrix());
+  // Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state_.o_t_ee.pose.data()));
 
   // Get desired equilibrium pose
   // construct error
@@ -196,7 +223,7 @@ CallbackReturn CartesianImpedanceExampleController::on_configure(
    * Initialise variables
    * Read parameters here
   */
-  equilibrium_pose_d = 
+  equilibrium_pose_d_ = 
     std::make_unique<franka_semantic_components::FrankaCartesianPoseInterface>(
     franka_semantic_components::FrankaCartesianPoseInterface(k_elbow_activated));
 
@@ -253,7 +280,7 @@ Eigen::Matrix<double, 7, 1> CartesianImpedanceExampleController::saturateTorqueR
     const Eigen::Matrix<double, 7, 1>& tau_d_calculated,
     const Eigen::Matrix<double, 7, 1>& tau_J_d) {
   Eigen::Matrix<double, 7, 1> tau_d_saturated{};
-  for (size_t i = 0; i < num_joints; i++) {
+  for (int i = 0; i < num_joints; i++) {
     double difference = tau_d_calculated[i] - tau_J_d[i];
     tau_d_saturated[i] =
        tau_J_d[i] + std::max(std::min(difference, delta_tau_max_), -delta_tau_max_);
@@ -262,6 +289,7 @@ Eigen::Matrix<double, 7, 1> CartesianImpedanceExampleController::saturateTorqueR
 }
 
 } // namespace franka_example_controllers
+
 #include "pluginlib/class_list_macros.hpp"
 PLUGINLIB_EXPORT_CLASS(franka_example_controllers::CartesianImpedanceExampleController,
                        controller_interface::ControllerInterface)

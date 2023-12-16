@@ -76,7 +76,9 @@ private:
     std::unique_ptr<franka_semantic_components::FrankaRobotState> franka_robot_state_;
 
     // message object that takes in robot state
-    std::unique_ptr<franka_msgs::msg::FrankaRobotState> robot_state_;
+    // DEBG: delete after testing
+    // std::unique_ptr<franka_msgs::msg::FrankaRobotState> robot_state_;
+    franka_msgs::msg::FrankaRobotState robot_state_, init_robot_state_;
 
     const std::string k_robot_state_interface_name{"robot_state"};
     const std::string k_robot_model_interface_name{"robot_model"};
