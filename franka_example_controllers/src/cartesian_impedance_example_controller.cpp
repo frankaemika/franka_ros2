@@ -9,22 +9,13 @@
 #include <franka/robot_state.h>
 
 // NOTE: Build Errors and interface questions
-// TODO: Declare robot_state_
-// TODO: franka_robot_model_ not declared
-// TODO: jacobian_array not declared
-// TODO: position_d_ not declared
-// TODO: orientation_d_ not declared
-// TODO: cartesian_stiffness_ not declared
-// TODO: cartesian_damping_ not declared
-// TODO: nullspace_stiffness_ not declared
-// TODO: q_d_nullspace_ not declared
-// TODO: tau_J_d not declared
-// TODO: saturateTorque not declared
-// TODO: num_joints not declared
-// TODO: command_interfaces_ not declared
-// TODO: franka_cartesian_pose_ undeclared
 // TODO: Maybe get ros parameters in on_init(). ref:
 // franka_robot_state_broadcaster
+// TODO: Subscribe to the equilibrium pose topic and update target position and
+// orientation of the controller. This is what the CIC will use to track.
+// TODO: Monitor stiffness and damping parameters served as ROS params. Create
+// a callback that changes these values. Ensure thread safety and prevent race
+// conditions.
 
 namespace franka_example_controllers {
 
@@ -237,6 +228,31 @@ CallbackReturn CartesianImpedanceExampleController::on_configure(
         arm_id_ + "/" + k_robot_model_interface_name,
         arm_id_ + "/" + k_robot_state_interface_name));
   // arm_id_ = get_node()
+  
+  // initialise varrious variables
+  init_robot_state_ = franka_msgs::msg::FrankaRobotState();
+  franka_robot_state_->get_values_as_message(init_robot_state_);
+
+  // retrieve intial joint state
+  Eigen::Map<Eigen::Matrix<double, 7, 1>> q_init(init_robot_state_.measured_joint_state.position.data());
+  Eigen::Vector3d position(
+    robot_state_.o_t_ee.pose.position.x,
+    robot_state_.o_t_ee.pose.position.y,
+    robot_state_.o_t_ee.pose.position.z);
+  Eigen::Quaterniond orientation(
+    robot_state_.o_t_ee.pose.orientation.w,
+    robot_state_.o_t_ee.pose.orientation.x,
+    robot_state_.o_t_ee.pose.orientation.y,
+    robot_state_.o_t_ee.pose.orientation.z);
+  Eigen::Affine3d init_transform = Eigen::Affine3d::Identity();
+  init_transform.translation() = position;
+  init_transform.rotate(orientation.toRotationMatrix());
+  q_d_nullspace_ = q_init;
+
+  position_d_ = init_transform.translation();
+  orientation_d_ = init_transform.rotation();
+  position_d_target_ = init_transform.translation();
+  orientation_d_target_ = init_transform.rotation();
 
   RCLCPP_DEBUG(get_node()->get_logger(), "configured successfully");
   return CallbackReturn::SUCCESS;
