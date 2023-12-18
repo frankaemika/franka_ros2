@@ -4,6 +4,7 @@
 
     <xacro:include filename="$(find franka_moveit_config)/srdf/group_definition.xacro"/>
     <xacro:group_definition arm_id="${arm_id}" group_name="${arm_id}_manipulator" tip_link="${arm_id}_hand_tcp"/>
+    <xacro:group_definition arm_id="${arm_id}" group_name="${arm_id}_arm_ik" tip_link="${arm_id}_hand_tcp"/>
     <xacro:group_definition arm_id="${arm_id}" group_name="${arm_id}_arm" tip_link="${arm_id}_link8"/>
 
     <virtual_joint name="virtual_joint" type="fixed" parent_frame="world" child_link="${arm_id}_link0"/>

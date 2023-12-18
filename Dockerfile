@@ -40,6 +40,7 @@ RUN apt-get update -y && apt-get install -y --allow-unauthenticated \
     ros-humble-controller-interface \
     ros-humble-ros2-control-test-assets \
     ros-humble-controller-manager \
+    ros-humble-moveit \
     && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m pip install -U \

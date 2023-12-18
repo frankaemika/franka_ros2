@@ -24,6 +24,7 @@ find_package(franka_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(franka_semantic_components REQUIRED)
 find_package(generate_parameter_library)
+find_package(moveit_core REQUIRED)
 
 add_library(
         ${PROJECT_NAME}
@@ -34,6 +35,7 @@ add_library(
         src/joint_position_example_controller.cpp
         src/cartesian_velocity_example_controller.cpp
         src/cartesian_pose_example_controller.cpp
+        src/joint_impedance_with_ik_example_controller.cpp
         src/cartesian_elbow_example_controller.cpp
         src/cartesian_orientation_example_controller.cpp
         src/elbow_example_controller.cpp
@@ -54,6 +56,7 @@ ament_target_dependencies(
         rclcpp
         rclcpp_lifecycle
         franka_semantic_components
+        moveit_core
 )
 
 generate_parameter_library(franka_example_controllers_parameters src/model_example_controller_parameters.yaml)
@@ -141,5 +144,6 @@ ament_export_dependencies(
         rclcpp
         rclcpp_lifecycle
         hardware_interface
+        moveit_core
 )
 ament_package()
