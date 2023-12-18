@@ -9,10 +9,10 @@
 #include <franka/robot_state.h>
 
 // NOTE: Build Errors and interface questions
-// TODO: Maybe get ros parameters in on_init(). ref:
-// franka_robot_state_broadcaster
 // TODO: Subscribe to the equilibrium pose topic and update target position and
 // orientation of the controller. This is what the CIC will use to track.
+// TODO: Maybe get ros parameters in on_init(). ref:
+// franka_robot_state_broadcaster
 // TODO: Monitor stiffness and damping parameters served as ROS params. Create
 // a callback that changes these values. Ensure thread safety and prevent race
 // conditions.
@@ -71,8 +71,8 @@ controller_interface::InterfaceConfiguration
 }
 
 controller_interface::return_type CartesianImpedanceExampleController::update(
-  const rclcpp::Time& time,
-  const rclcpp::Duration& period) {
+  const rclcpp::Time& /*time*/,
+  const rclcpp::Duration& /*period*/) {
   /*
    * Generates and writes the joint torques to the joints of the robot
   */
@@ -208,7 +208,7 @@ CallbackReturn CartesianImpedanceExampleController::on_init() {
 }
 
 CallbackReturn CartesianImpedanceExampleController::on_configure(
-  const rclcpp_lifecycle::State& previous_state) {
+  const rclcpp_lifecycle::State& /*previous_state*/) {
   /*
    * TODO:
    * Initialise variables
@@ -254,12 +254,17 @@ CallbackReturn CartesianImpedanceExampleController::on_configure(
   position_d_target_ = init_transform.translation();
   orientation_d_target_ = init_transform.rotation();
 
+  // read stiffness and damping parameters here
+  // needs to be cast as an Eigen::Matrix, check hpp
+  cartesian_stiffness_ = get_node()->get_parameter("k_gains").as_double_array();
+  cartesian_damping_ = get_node()->get_parameter("d_gains").as_double_array();
+
   RCLCPP_DEBUG(get_node()->get_logger(), "configured successfully");
   return CallbackReturn::SUCCESS;
 }
 
 CallbackReturn CartesianImpedanceExampleController::on_activate(
-  const rclcpp_lifecycle::State& previous_state) {
+  const rclcpp_lifecycle::State& /*previous_state*/) {
   /*
    * Assign loaned command and state interfaces
   */
@@ -275,7 +280,7 @@ CallbackReturn CartesianImpedanceExampleController::on_activate(
 }
 
 CallbackReturn CartesianImpedanceExampleController::on_deactivate(
-  const rclcpp_lifecycle::State& previous_state) {
+  const rclcpp_lifecycle::State& /*previous_state*/) {
   /*
    * De-assign loaned command and state interfaces
   */
