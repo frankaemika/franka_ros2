@@ -4,7 +4,7 @@
            base_class_type="hardware_interface::SystemInterface">
 
         <description>
-            Hardware interface for Franka Emika research robots
+            Hardware interface for Franka Robotics research robots
         </description>
     </class>
 </library>
