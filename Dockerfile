@@ -40,6 +40,7 @@ RUN apt-get update -y && apt-get install -y --allow-unauthenticated \
     ros-humble-controller-interface \
     ros-humble-ros2-control-test-assets \
     ros-humble-controller-manager \
+    ros-humble-moveit \
     && rm -rf /var/lib/apt/lists/*
 
 RUN python3 -m pip install -U \
@@ -59,7 +60,7 @@ RUN python3 -m pip install -U \
 RUN mkdir ~/source_code    
 RUN cd ~/source_code && git clone https://github.com/frankaemika/libfranka.git \
     && cd libfranka \
-    && git checkout 0.13.0 \
+    && git checkout 0.13.2 \
     && git submodule init \
     && git submodule update \
     && mkdir build && cd build \
