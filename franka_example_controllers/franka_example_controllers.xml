@@ -71,4 +71,10 @@
             The franka model example controller evaluates and prints the dynamic model of Franka Emika Robots.
         </description>
     </class>
+    <class name="franka_example_controllers/CartesianImpedanceExampleController"
+        type="franka_example_controllers::CartesianImpedanceExampleController" base_class_type="controller_interface::ControllerInterface">
+        <description>
+            An experimental port of the ROS1 cartesian impedance controller
+        </description>
+    </class>
 </library>
