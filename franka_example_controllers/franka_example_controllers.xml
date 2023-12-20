@@ -38,7 +38,7 @@
         <class name="franka_example_controllers/JointImpedanceWithIKExampleController"
            type="franka_example_controllers::JointImpedanceWithIKExampleController" base_class_type="controller_interface::ControllerInterface">
         <description>
-            The joint impedance using inverse kinematics from moveit(bio-ik) and commands torques based on joint impedance control law.
+            The joint impedance using inverse kinematics from moveit-OrocosKDL(LMA-ik) and commands torques based on joint impedance control law.
         </description>
     </class>
     <class name="franka_example_controllers/CartesianElbowExampleController"

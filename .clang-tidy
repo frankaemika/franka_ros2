@@ -1,5 +1,4 @@
-Checks: 'cppcoreguidelines-*,
-        -cppcoreguidelines-pro-type-vararg,
+Checks: '-cppcoreguidelines-pro-type-vararg,
         -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
         clang-diagnostic-*,
         clang-analyzer-*,
@@ -15,9 +14,7 @@ Checks: 'cppcoreguidelines-*,
         -clang-diagnostic-reinterpret-base-class,
         -clang-diagnostic-return-type,
         -clang-diagnostic-switch,
-        -bugprone-lambda-function-name,
-        -cppcoreguidelines-avoid-magic-numbers,
-        -readability-magic-numbers'
+        -bugprone-lambda-function-name'
 HeaderFilterRegex: '^franka_.*'
 CheckOptions:
 # Classes, structs, ...

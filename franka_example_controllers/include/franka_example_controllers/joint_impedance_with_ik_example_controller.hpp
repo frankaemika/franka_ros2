@@ -28,7 +28,10 @@ using CallbackReturn = rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface
 namespace franka_example_controllers {
 
 /**
- * joint impedance example controller get desired pose and use moveit inverse kinematics
+ * joint impedance example controller get desired pose and use inverse kinematics LMA
+ * (Levenberg-Marquardt) from Orocos KDL. IK returns the desired joint positions from the desired
+ * pose. Desired joint positions are fed to the impedance control law together with the current
+ * joint velocities to calculate the desired joint torques.
  */
 class JointImpedanceWithIKExampleController : public controller_interface::ControllerInterface {
  public:
@@ -46,18 +49,42 @@ class JointImpedanceWithIKExampleController : public controller_interface::Contr
 
  private:
   void update_joint_states();
+
+  /**
+   * @brief Calculates the new pose based on the initial pose.
+   *
+   * @return  Eigen::Vector3d calculated sinosuidal period for the x,z position of the pose.
+   */
   Eigen::Vector3d compute_new_position();
+
+  /**
+   * @brief creates the ik service request for ik service from moveit. Assigns the move-group,
+   * desired pose of the desired link.
+   *
+   * @return std::shared_ptr<moveit_msgs::srv::GetPositionIK::Request> request service message
+   */
   std::shared_ptr<moveit_msgs::srv::GetPositionIK::Request> create_ik_service_request(
-      Eigen::Vector3d new_position,
-      Eigen::Quaterniond new_orientation,
-      std::vector<double> joint_positions_desired,
-      std::vector<double> joint_positions_current,
-      std::vector<double> joint_efforts_current);
+      const Eigen::Vector3d& new_position,
+      const Eigen::Quaterniond& new_orientation,
+      const std::vector<double>& joint_positions_desired,
+      const std::vector<double>& joint_positions_current,
+      const std::vector<double>& joint_efforts_current);
 
-  Vector7d compute_torque_command(Vector7d joint_positions_desired,
-                                  Vector7d joint_positions_current,
-                                  Vector7d joint_velocities_current);
+  /**
+   * @brief computes the torque commands based on impedance control law with compensated coriolis
+   * terms
+   *
+   * @return Eigen::Vector7d torque for each joint of the robot
+   */
+  Vector7d compute_torque_command(const Vector7d& joint_positions_desired,
+                                  const Vector7d& joint_positions_current,
+                                  const Vector7d& joint_velocities_current);
 
+  /**
+   * @brief assigns the Kp, Kd and arm_id parameters
+   *
+   * @return true when parameters are present, false when parameters are not available
+   */
   bool assign_parameters();
 
   std::unique_ptr<franka_semantic_components::FrankaCartesianPoseInterface> franka_cartesian_pose_;
@@ -83,9 +110,9 @@ class JointImpedanceWithIKExampleController : public controller_interface::Contr
   Vector7d d_gains_;
   int num_joints_{7};
 
-  std::vector<double> joint_positions_desired;
-  std::vector<double> joint_positions_current{0, 0, 0, 0, 0, 0, 0};
-  std::vector<double> joint_velocities_current{0, 0, 0, 0, 0, 0, 0};
-  std::vector<double> joint_efforts_current{0, 0, 0, 0, 0, 0, 0};
+  std::vector<double> joint_positions_desired_;
+  std::vector<double> joint_positions_current_{0, 0, 0, 0, 0, 0, 0};
+  std::vector<double> joint_velocities_current_{0, 0, 0, 0, 0, 0, 0};
+  std::vector<double> joint_efforts_current_{0, 0, 0, 0, 0, 0, 0};
 };
 }  // namespace franka_example_controllers

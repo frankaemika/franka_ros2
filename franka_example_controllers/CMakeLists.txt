@@ -25,6 +25,7 @@ find_package(Eigen3 REQUIRED)
 find_package(franka_semantic_components REQUIRED)
 find_package(generate_parameter_library)
 find_package(moveit_core REQUIRED)
+find_package(moveit_msgs REQUIRED)
 
 add_library(
         ${PROJECT_NAME}
@@ -57,6 +58,7 @@ ament_target_dependencies(
         rclcpp_lifecycle
         franka_semantic_components
         moveit_core
+        moveit_msgs
 )
 
 generate_parameter_library(franka_example_controllers_parameters src/model_example_controller_parameters.yaml)

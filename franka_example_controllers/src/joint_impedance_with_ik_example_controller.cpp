@@ -31,7 +31,7 @@ controller_interface::InterfaceConfiguration
 JointImpedanceWithIKExampleController::command_interface_configuration() const {
   controller_interface::InterfaceConfiguration config;
   config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
-  for (int i = 1; i <= 7; ++i) {
+  for (int i = 1; i <= num_joints_; ++i) {
     config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/effort");
   }
   return config;
@@ -42,13 +42,13 @@ JointImpedanceWithIKExampleController::state_interface_configuration() const {
   controller_interface::InterfaceConfiguration config;
   config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   config.names = franka_cartesian_pose_->get_state_interface_names();
-  for (int i = 1; i <= 7; ++i) {
+  for (int i = 1; i <= num_joints_; ++i) {
     config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/position");
   }
-  for (int i = 1; i <= 7; ++i) {
+  for (int i = 1; i <= num_joints_; ++i) {
     config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/velocity");
   }
-  for (int i = 1; i <= 7; ++i) {
+  for (int i = 1; i <= num_joints_; ++i) {
     config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/effort");
   }
   for (const auto& franka_robot_model_name : franka_robot_model_->get_state_interface_names()) {
@@ -59,14 +59,14 @@ JointImpedanceWithIKExampleController::state_interface_configuration() const {
 }
 
 void JointImpedanceWithIKExampleController::update_joint_states() {
-  for (auto i = 0; i < 7; ++i) {
+  for (auto i = 0; i < num_joints_; ++i) {
     // TODO(yazi_ba) Can we get the state from its name?
     const auto& position_interface = state_interfaces_.at(16 + i);
     const auto& velocity_interface = state_interfaces_.at(23 + i);
     const auto& effort_interface = state_interfaces_.at(30 + i);
-    joint_positions_current[i] = position_interface.get_value();
-    joint_velocities_current[i] = velocity_interface.get_value();
-    joint_efforts_current[i] = effort_interface.get_value();
+    joint_positions_current_[i] = position_interface.get_value();
+    joint_velocities_current_[i] = velocity_interface.get_value();
+    joint_efforts_current_[i] = effort_interface.get_value();
   }
 }
 
@@ -88,13 +88,14 @@ Eigen::Vector3d JointImpedanceWithIKExampleController::compute_new_position() {
 
 std::shared_ptr<moveit_msgs::srv::GetPositionIK::Request>
 JointImpedanceWithIKExampleController::create_ik_service_request(
-    Eigen::Vector3d position,
-    Eigen::Quaterniond orientation,
-    std::vector<double> joint_positions_current,
-    std::vector<double> joint_velocities_current,
-    std::vector<double> joint_efforts_current) {
+    const Eigen::Vector3d& position,
+    const Eigen::Quaterniond& orientation,
+    const std::vector<double>& joint_positions_current,
+    const std::vector<double>& joint_velocities_current,
+    const std::vector<double>& joint_efforts_current) {
   auto service_request = std::make_shared<moveit_msgs::srv::GetPositionIK::Request>();
-  service_request->ik_request.group_name = arm_id_ + "_arm_ik";
+
+  service_request->ik_request.group_name = arm_id_ + "_arm";
   service_request->ik_request.pose_stamped.header.frame_id = arm_id_ + "_link0";
   service_request->ik_request.pose_stamped.pose.position.x = position.x();
   service_request->ik_request.pose_stamped.pose.position.y = position.y();
@@ -112,14 +113,13 @@ JointImpedanceWithIKExampleController::create_ik_service_request(
 
   // If Franka Hand is not connected, the following line should be commented out.
   service_request->ik_request.ik_link_name = arm_id_ + "_hand_tcp";
-  service_request->ik_request.timeout = rclcpp::Duration(0.001, 0);
   return service_request;
 }
 
 Vector7d JointImpedanceWithIKExampleController::compute_torque_command(
-    Vector7d joint_positions_desired,
-    Vector7d joint_positions_current,
-    Vector7d joint_velocities_current) {
+    const Vector7d& joint_positions_desired,
+    const Vector7d& joint_positions_current,
+    const Vector7d& joint_velocities_current) {
   std::array<double, 7> coriolis_array = franka_robot_model_->getCoriolisForceVector();
   Vector7d coriolis(coriolis_array.data());
   const double kAlpha = 0.99;
@@ -144,25 +144,26 @@ controller_interface::return_type JointImpedanceWithIKExampleController::update(
   Eigen::Vector3d new_position = compute_new_position();
 
   auto service_request =
-      create_ik_service_request(new_position, orientation_, joint_positions_current,
-                                joint_velocities_current, joint_efforts_current);
+      create_ik_service_request(new_position, orientation_, joint_positions_current_,
+                                joint_velocities_current_, joint_efforts_current_);
 
   using ServiceResponseFuture = rclcpp::Client<moveit_msgs::srv::GetPositionIK>::SharedFuture;
-  auto response_received_callback = [&](ServiceResponseFuture future) {
-    auto response = future.get();
+  auto response_received_callback =
+      [&](ServiceResponseFuture future) {  // NOLINT(performance-unnecessary-value-param)
+        const auto& response = future.get();
 
-    if (response->error_code.val == response->error_code.SUCCESS) {
-      joint_positions_desired = response->solution.joint_state.position;
-    } else {
-      RCLCPP_INFO(get_node()->get_logger(), "Inverse kinematics solution failed.");
-    }
-  };
+        if (response->error_code.val == response->error_code.SUCCESS) {
+          joint_positions_desired_ = response->solution.joint_state.position;
+        } else {
+          RCLCPP_INFO(get_node()->get_logger(), "Inverse kinematics solution failed.");
+        }
+      };
   auto result_future_ =
       compute_ik_client_->async_send_request(service_request, response_received_callback);
 
-  Vector7d joint_positions_desired_eigen(joint_positions_desired.data());
-  Vector7d joint_positions_current_eigen(joint_positions_current.data());
-  Vector7d joint_velocities_current_eigen(joint_velocities_current.data());
+  Vector7d joint_positions_desired_eigen(joint_positions_desired_.data());
+  Vector7d joint_positions_current_eigen(joint_positions_current_.data());
+  Vector7d joint_velocities_current_eigen(joint_velocities_current_.data());
 
   auto tau_d_calculated = compute_torque_command(
       joint_positions_desired_eigen, joint_positions_current_eigen, joint_velocities_current_eigen);
@@ -253,10 +254,10 @@ CallbackReturn JointImpedanceWithIKExampleController::on_activate(
   initialization_flag_ = true;
   elapsed_time_ = 0.0;
   dq_filtered_.setZero();
-  joint_positions_desired.reserve(7);
-  joint_positions_current.reserve(7);
-  joint_velocities_current.reserve(7);
-  joint_efforts_current.reserve(7);
+  joint_positions_desired_.reserve(num_joints_);
+  joint_positions_current_.reserve(num_joints_);
+  joint_velocities_current_.reserve(num_joints_);
+  joint_efforts_current_.reserve(num_joints_);
 
   franka_cartesian_pose_->assign_loaned_state_interfaces(state_interfaces_);
   franka_robot_model_->assign_loaned_state_interfaces(state_interfaces_);
