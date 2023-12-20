@@ -23,6 +23,9 @@ controller_manager:
     cartesian_pose_elbow_example_controller:
       type: franka_example_controllers/CartesianElbowExampleController
 
+    joint_impedance_with_ik_example_controller:
+      type: franka_example_controllers/JointImpedanceWithIKExampleController
+
     cartesian_orientation_example_controller:
       type: franka_example_controllers/CartesianOrientationExampleController
 
@@ -43,6 +46,26 @@ controller_manager:
     
     franka_robot_state_broadcaster:
       type: franka_robot_state_broadcaster/FrankaRobotStateBroadcaster
+
+joint_impedance_with_ik_example_controller:
+  ros__parameters:
+    arm_id: panda
+    k_gains:
+      - 600.0
+      - 600.0
+      - 600.0
+      - 600.0
+      - 250.0
+      - 150.0
+      - 50.0
+    d_gains:
+      - 30.0
+      - 30.0
+      - 30.0
+      - 30.0
+      - 10.0
+      - 10.0
+      - 5.
 
 franka_robot_state_broadcaster:
   ros__parameters:

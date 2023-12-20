@@ -35,6 +35,12 @@
             The cartesian pose example controller commands to translation on x and z components.
         </description>
     </class>
+        <class name="franka_example_controllers/JointImpedanceWithIKExampleController"
+           type="franka_example_controllers::JointImpedanceWithIKExampleController" base_class_type="controller_interface::ControllerInterface">
+        <description>
+            The joint impedance using inverse kinematics from moveit-OrocosKDL(LMA-ik) and commands torques based on joint impedance control law.
+        </description>
+    </class>
     <class name="franka_example_controllers/CartesianElbowExampleController"
            type="franka_example_controllers::CartesianElbowExampleController" base_class_type="controller_interface::ControllerInterface">
         <description>
