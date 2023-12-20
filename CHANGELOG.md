@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.11 - 2023-12-20
+
+Requires libfranka >= 0.13.2, requires ROS 2 Humble
+
+* franka\_example\_controllers: Add a joint impedance example using OrocosKDL(LMA-ik) through MoveIt service.
+* franka\_hardware: Register initial joint positions and cartesian pose state interface without having running command interfaces.
+
 ## 0.1.10 - 2023-12-04
 
 Requires libfranka >= 0.13.0, required ROS 2 Humble
