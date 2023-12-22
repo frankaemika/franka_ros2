@@ -68,7 +68,7 @@
     <class name="franka_example_controllers/ModelExampleController"
            type="franka_example_controllers::ModelExampleController" base_class_type="controller_interface::ControllerInterface">
         <description>
-            The franka model example controller evaluates and prints the dynamic model of Franka Emika Robots.
+            The franka model example controller evaluates and prints the dynamic model ofFranka Robotics Robots.
         </description>
     </class>
 </library>

@@ -4,18 +4,18 @@
   <name>integration_launch_testing</name>
   <version>0.1.11</version>
   <description>Functional integration tests for franka controllers</description>
-  <maintainer email="support@franka.de">Franka Emika GmbH</maintainer>
+  <maintainer email="support@franka.de">Franka Robotics GmbH</maintainer>
   <license>Apache 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
-  
+
   <test_depend>ament_cmake_copyright</test_depend>
   <test_depend>ament_cmake_flake8</test_depend>
   <test_depend>ament_cmake_lint_cmake</test_depend>
   <test_depend>ament_cmake_pep257</test_depend>
   <test_depend>ament_cmake_xmllint</test_depend>
   <test_depend>launch_testing</test_depend>
-  
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>

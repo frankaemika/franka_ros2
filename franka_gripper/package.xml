@@ -4,7 +4,7 @@
   <name>franka_gripper</name>
   <version>0.1.11</version>
   <description>This package implements the franka gripper of type Franka Hand for the use in ROS2</description>
-  <maintainer email="support@franka.de">Franka Emika GmbH</maintainer>
+  <maintainer email="support@franka.de">Franka Robotics GmbH</maintainer>
   <license>Apache 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>

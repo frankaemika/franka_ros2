@@ -3,7 +3,7 @@
   <name>franka_robot_state_broadcaster</name>
   <version>0.1.11</version>
   <description>Broadcaster to publish robot states</description>
-  <maintainer email="support@franka.de">Franka Emika GmbH</maintainer>
+  <maintainer email="support@franka.de">Franka Robotics GmbH</maintainer>
   <license>Apache 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
