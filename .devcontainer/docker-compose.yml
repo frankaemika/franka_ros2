@@ -13,6 +13,7 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - $XAUTHORITY:$XAUTHORITY
       - ./limits.conf:/etc/security/limits.conf
+      - ~/.gitconfig:/etc/gitconfig:ro
     environment:
       QT_X11_NO_MITSHM: 1
       DISPLAY: $DISPLAY

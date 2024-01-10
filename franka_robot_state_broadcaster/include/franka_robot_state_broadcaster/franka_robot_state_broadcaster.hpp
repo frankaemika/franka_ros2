@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "controller_interface/controller_interface.hpp"
+#include "franka_msgs/msg/franka_robot_state.hpp"
 #include "franka_robot_state_broadcaster_parameters.hpp"
 #include "franka_semantic_components/franka_robot_state.hpp"
 #include "rclcpp_lifecycle/lifecycle_publisher.hpp"
@@ -55,6 +56,23 @@ class FrankaRobotStateBroadcaster : public controller_interface::ControllerInter
   std::shared_ptr<rclcpp::Publisher<franka_msgs::msg::FrankaRobotState>> franka_state_publisher;
   std::shared_ptr<realtime_tools::RealtimePublisher<franka_msgs::msg::FrankaRobotState>>
       realtime_franka_state_publisher;
+  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::PoseStamped>>
+      current_pose_stamped_publisher_;
+  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::PoseStamped>>
+      last_desired_pose_stamped_publisher_;
+  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::TwistStamped>>
+      desired_end_effector_twist_stamped_publisher_;
+  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>>
+      external_wrench_in_base_frame_publisher_;
+  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>>
+      external_wrench_in_stiffness_frame_publisher_;
+  std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::JointState>>
+      external_joint_torques_publisher_;
+
+  std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::JointState>> measured_joint_states_publisher_;
+  std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::JointState>> desired_joint_states_publisher_;
+
+  franka_msgs::msg::FrankaRobotState franka_robot_state_msg_;
   std::unique_ptr<franka_semantic_components::FrankaRobotState> franka_robot_state;
 };
 

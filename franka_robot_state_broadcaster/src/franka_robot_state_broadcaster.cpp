@@ -63,10 +63,36 @@ FrankaRobotStateBroadcaster::state_interface_configuration() const {
 controller_interface::CallbackReturn FrankaRobotStateBroadcaster::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   params = param_listener->get_params();
-
+  std::string robot_description;
+  if (!get_node()->get_parameter_or("robot_description", robot_description, std::string(""))) {
+    RCLCPP_ERROR(get_node()->get_logger(), "Failed to get robot_description parameter");
+    return CallbackReturn::ERROR;
+  }
   franka_robot_state = std::make_unique<franka_semantic_components::FrankaRobotState>(
-      franka_semantic_components::FrankaRobotState(params.arm_id + "/" + state_interface_name));
-
+      franka_semantic_components::FrankaRobotState(params.arm_id + "/" + state_interface_name,
+                                                   robot_description));
+  current_pose_stamped_publisher_ = get_node()->create_publisher<geometry_msgs::msg::PoseStamped>(
+      "~/current_pose", rclcpp::SystemDefaultsQoS());
+  last_desired_pose_stamped_publisher_ =
+      get_node()->create_publisher<geometry_msgs::msg::PoseStamped>("~/last_desired_pose",
+                                                                    rclcpp::SystemDefaultsQoS());
+  desired_end_effector_twist_stamped_publisher_ =
+      get_node()->create_publisher<geometry_msgs::msg::TwistStamped>("~/desired_end_effector_twist",
+                                                                     rclcpp::SystemDefaultsQoS());
+  measured_joint_states_publisher_ = get_node()->create_publisher<sensor_msgs::msg::JointState>(
+      "~/measured_joint_states", rclcpp::SystemDefaultsQoS());
+  external_wrench_in_stiffness_frame_publisher_ =
+      get_node()->create_publisher<geometry_msgs::msg::WrenchStamped>(
+          "~/external_wrench_in_stiffness_frame_expressed_in_stiffness_frame",
+          rclcpp::SystemDefaultsQoS());
+  external_wrench_in_base_frame_publisher_ =
+      get_node()->create_publisher<geometry_msgs::msg::WrenchStamped>(
+          "~/external_wrench_in_stiffness_frame_expressed_in_base_frame",
+          rclcpp::SystemDefaultsQoS());
+  external_joint_torques_publisher_ = get_node()->create_publisher<sensor_msgs::msg::JointState>(
+      "~/external_joint_torques", rclcpp::SystemDefaultsQoS());
+  desired_joint_states_publisher_ = get_node()->create_publisher<sensor_msgs::msg::JointState>(
+      "~/desired_joint_states", rclcpp::SystemDefaultsQoS());
   try {
     franka_state_publisher = get_node()->create_publisher<franka_msgs::msg::FrankaRobotState>(
         "~/" + state_interface_name, rclcpp::SystemDefaultsQoS());
@@ -108,7 +134,38 @@ controller_interface::return_type FrankaRobotStateBroadcaster::update(
       realtime_franka_state_publisher->unlock();
       return controller_interface::return_type::ERROR;
     }
+
     realtime_franka_state_publisher->unlockAndPublish();
+
+    geometry_msgs::msg::PoseStamped pose_stamped_msg;
+    geometry_msgs::msg::TwistStamped twist_stamped_msg;
+    geometry_msgs::msg::WrenchStamped wrench_stamped_msg;
+    sensor_msgs::msg::JointState joint_state_msg;
+
+    pose_stamped_msg = realtime_franka_state_publisher->msg_.o_t_ee;
+    current_pose_stamped_publisher_->publish(pose_stamped_msg);
+
+    pose_stamped_msg = realtime_franka_state_publisher->msg_.o_t_ee_d;
+    last_desired_pose_stamped_publisher_->publish(pose_stamped_msg);
+
+    twist_stamped_msg = realtime_franka_state_publisher->msg_.o_dp_ee_d;
+    desired_end_effector_twist_stamped_publisher_->publish(twist_stamped_msg);
+
+    wrench_stamped_msg = realtime_franka_state_publisher->msg_.o_f_ext_hat_k;
+    external_wrench_in_base_frame_publisher_->publish(wrench_stamped_msg);
+
+    wrench_stamped_msg = realtime_franka_state_publisher->msg_.k_f_ext_hat_k;
+    external_wrench_in_stiffness_frame_publisher_->publish(wrench_stamped_msg);
+
+    joint_state_msg = realtime_franka_state_publisher->msg_.measured_joint_state;
+    measured_joint_states_publisher_->publish(joint_state_msg);
+
+    joint_state_msg = realtime_franka_state_publisher->msg_.tau_ext_hat_filtered;
+    external_joint_torques_publisher_->publish(joint_state_msg);
+
+    joint_state_msg = realtime_franka_state_publisher->msg_.desired_joint_state;
+    desired_joint_states_publisher_->publish(joint_state_msg);
+
     return controller_interface::return_type::OK;
 
   } else {

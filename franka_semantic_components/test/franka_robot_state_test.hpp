@@ -18,6 +18,9 @@
 #include <string>
 #include <vector>
 
+#include <ament_index_cpp/get_package_share_directory.hpp>
+#include <fstream>
+#include <sstream>
 #include "franka/robot_state.h"
 #include "franka_semantic_components/franka_robot_state.hpp"
 #include "gmock/gmock.h"
@@ -32,9 +35,27 @@ class FrankaRobotStateTestFriend : public franka_semantic_components::FrankaRobo
  public:
   // Use generation of interface names
   explicit FrankaRobotStateTestFriend(const std::string& name)
-      : franka_semantic_components::FrankaRobotState(name) {}
+      : franka_semantic_components::FrankaRobotState(
+            name,
+            get_robot_description("franka_semantic_components")) {}
 
   virtual ~FrankaRobotStateTestFriend() = default;
+
+ private:
+  static std::string get_robot_description(const std::string& package_name) {
+    std::string package_path = ament_index_cpp::get_package_share_directory(package_name);
+    std::string file_path = package_path + "/robot_description_test.txt";
+
+    std::ifstream file(file_path);
+    if (!file) {
+      throw std::runtime_error("Failed to open robot_description.txt.");
+    }
+
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+
+    return buffer.str();
+  }
 };
 
 class FrankaRobotStateTest : public ::testing::Test {
