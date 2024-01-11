@@ -35,13 +35,13 @@ class FrankaRobotState
   /**
    * @param[in/out] message Initializes this message to contain the respective frame_id information
    */
-  auto initialize_robot_state_msg(franka_msgs::msg::FrankaRobotState& message) -> void;
+  virtual auto initialize_robot_state_msg(franka_msgs::msg::FrankaRobotState& message) -> void;
 
   /**
    * Constructs and return a FrankaRobotState message from the current values.
    * \return FrankaRobotState message from values;
    */
-  auto get_values_as_message(franka_msgs::msg::FrankaRobotState& message) -> bool;
+  virtual auto get_values_as_message(franka_msgs::msg::FrankaRobotState& message) -> bool;
 
  protected:
   franka::RobotState* robot_state_ptr;

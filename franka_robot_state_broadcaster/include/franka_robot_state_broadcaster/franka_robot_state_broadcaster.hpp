@@ -30,6 +30,9 @@
 namespace franka_robot_state_broadcaster {
 class FrankaRobotStateBroadcaster : public controller_interface::ControllerInterface {
  public:
+  explicit FrankaRobotStateBroadcaster(
+      std::unique_ptr<franka_semantic_components::FrankaRobotState> franka_robot_state = nullptr)
+      : franka_robot_state(std::move(franka_robot_state)){};
   controller_interface::InterfaceConfiguration command_interface_configuration() const override;
 
   controller_interface::InterfaceConfiguration state_interface_configuration() const override;

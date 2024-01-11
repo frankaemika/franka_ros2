@@ -64,13 +64,15 @@ controller_interface::CallbackReturn FrankaRobotStateBroadcaster::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   params = param_listener->get_params();
   std::string robot_description;
-  if (!get_node()->get_parameter_or("robot_description", robot_description, std::string(""))) {
+  if (!get_node()->get_parameter("robot_description", robot_description)) {
     RCLCPP_ERROR(get_node()->get_logger(), "Failed to get robot_description parameter");
     return CallbackReturn::ERROR;
   }
-  franka_robot_state = std::make_unique<franka_semantic_components::FrankaRobotState>(
-      franka_semantic_components::FrankaRobotState(params.arm_id + "/" + state_interface_name,
-                                                   robot_description));
+  if (!franka_robot_state) {
+    franka_robot_state = std::make_unique<franka_semantic_components::FrankaRobotState>(
+        franka_semantic_components::FrankaRobotState(params.arm_id + "/" + state_interface_name,
+                                                     robot_description));
+  }
   current_pose_stamped_publisher_ = get_node()->create_publisher<geometry_msgs::msg::PoseStamped>(
       "~/current_pose", rclcpp::SystemDefaultsQoS());
   last_desired_pose_stamped_publisher_ =

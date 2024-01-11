@@ -48,7 +48,7 @@ class FrankaRobotStateTestFriend : public franka_semantic_components::FrankaRobo
 
     std::ifstream file(file_path);
     if (!file) {
-      throw std::runtime_error("Failed to open robot_description.txt.");
+      throw std::runtime_error("Failed to open file: " + file_path);
     }
 
     std::stringstream buffer;
