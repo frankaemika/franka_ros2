@@ -24,14 +24,10 @@
 
 namespace {
 
-// TODO(kuhn_an): Are these correct?
-const std::string kLinkName = "_link";
-const size_t kTotalAmountOfLinks = 11;
 const size_t kBaseLinkIndex = 0;
-const size_t kFlangeLinkIndex = 7;
-const size_t kEndEffectorLinkIndex = 8;
-const size_t kLoadLinkIndex = 9;
-const size_t kStiffnessLinkIndex = 10;
+const size_t kFlangeLinkIndex = 8;
+const size_t kLoadLinkIndex = 8;
+const std::string kTCPFrameName = "_hand_tcp";
 
 // Example implementation of bit_cast: https://en.cppreference.com/w/cpp/numeric/bit_cast
 template <class To, class From>
@@ -52,51 +48,112 @@ bit_cast(const From& src) noexcept {
 
 namespace franka_semantic_components {
 
-FrankaRobotState::FrankaRobotState(const std::string& name) : SemanticComponentInterface(name, 1) {
+FrankaRobotState::FrankaRobotState(const std::string& name, const std::string& robot_description)
+    : SemanticComponentInterface(name, 1), model_(std::make_shared<urdf::Model>()) {
   interface_names_.emplace_back(name_);
-  // TODO: Set default values to NaN
+  robot_description_ = robot_description;
+  if (!model_->initString(robot_description_)) {
+    throw std::runtime_error("Failed to parse URDF.");
+  }
+
+  robot_name_ = get_robot_name_from_urdf();
+  gripper_loaded_ = is_gripper_loaded();
+
+  set_links_from_urdf();
+  set_joints_from_urdf();
+
+  if (gripper_loaded_) {
+    kEndEffectorLinkIndex = get_link_index(robot_name_ + kTCPFrameName);
+    kStiffnessLinkIndex = kEndEffectorLinkIndex;
+  } else {
+    kEndEffectorLinkIndex = kFlangeLinkIndex;
+    kStiffnessLinkIndex = kEndEffectorLinkIndex;
+  }
+}
+
+auto FrankaRobotState::get_link_index(const std::string& link_name) -> size_t {
+  auto link_index = std::find(link_names.cbegin(), link_names.cend(), link_name);
+  if (link_index != link_names.end()) {
+    return std::distance(link_names.cbegin(), link_index);
+  } else {
+    throw std::runtime_error("Link name not found in URDF.");
+  }
+}
+
+auto FrankaRobotState::is_gripper_loaded() -> bool {
+  const auto& links = model_->links_;
+  bool gripper_loaded = links.find(robot_name_ + kTCPFrameName) != links.end();
+
+  return gripper_loaded;
+}
+
+auto FrankaRobotState::get_robot_name_from_urdf() -> std::string {
+  return model_->name_;
+}
+
+auto FrankaRobotState::set_child_links_recursively(const std::shared_ptr<const urdf::Link>& link)
+    -> void {
+  for (const auto& child_link : link->child_links) {
+    link_names.push_back(child_link->name);
+    set_child_links_recursively(child_link);
+  }
+}
+
+auto FrankaRobotState::set_links_from_urdf() -> void {
+  auto root_link = model_->getRoot();
+  link_names.push_back(root_link->name);
+  set_child_links_recursively(root_link);
+}
+
+auto FrankaRobotState::set_joints_from_urdf() -> void {
+  auto& joints = model_->joints_;
+  for (const auto& [name, joint] : joints) {
+    if (joint->type == urdf::Joint::REVOLUTE) {
+      joint_names.push_back(name);
+    }
+  }
 }
 
 auto FrankaRobotState::initialize_robot_state_msg(franka_msgs::msg::FrankaRobotState& message)
     -> void {
-  // The joint states
-  std::vector<std::string> joint_names;
-  // Starting from the base link (aka joint0) up to the end-effector (aka joint8), load (aka joint9)
-  // and stiffness frame (aka joint10)
-  for (size_t i = 0; i < kTotalAmountOfLinks; ++i) {
-    joint_names.push_back(robot_name_ + kLinkName + std::to_string(i));
-  }
-
-  // The joint state - joint 0 is the base while joint 8 is the last joint
+  // The joint state - joint 1 is the first joint while joint 7 is the last revolute joint
   message.measured_joint_state.name =
-      std::vector<std::string>(joint_names.cbegin() + 1, joint_names.cbegin() + 8);
+      std::vector<std::string>(joint_names.cbegin(), joint_names.cend());
   message.desired_joint_state.name =
-      std::vector<std::string>(joint_names.cbegin() + 1, joint_names.cbegin() + 8);
+      std::vector<std::string>(joint_names.cbegin(), joint_names.cend());
   message.measured_joint_motor_state.name =
-      std::vector<std::string>(joint_names.cbegin() + 1, joint_names.cbegin() + 8);
+      std::vector<std::string>(joint_names.cbegin(), joint_names.cend());
   message.tau_ext_hat_filtered.name =
-      std::vector<std::string>(joint_names.cbegin() + 1, joint_names.cbegin() + 8);
+      std::vector<std::string>(joint_names.cbegin(), joint_names.cend());
+
+  message.measured_joint_state.header.frame_id = link_names[kBaseLinkIndex];
+  message.desired_joint_state.header.frame_id = link_names[kBaseLinkIndex];
+  message.measured_joint_motor_state.header.frame_id = link_names[kBaseLinkIndex];
+  message.tau_ext_hat_filtered.header.frame_id = link_names[kBaseLinkIndex];
 
   // Active wrenches
-  message.o_f_ext_hat_k.header.frame_id = joint_names[kBaseLinkIndex];
-  message.k_f_ext_hat_k.header.frame_id = joint_names[kStiffnessLinkIndex];
+  message.o_f_ext_hat_k.header.frame_id = link_names[kBaseLinkIndex];
+  message.k_f_ext_hat_k.header.frame_id = link_names[kStiffnessLinkIndex];
 
-  // Different pose frames
-  message.o_t_ee.header.frame_id = joint_names[kBaseLinkIndex];
-  message.o_t_ee_d.header.frame_id = joint_names[kBaseLinkIndex];
-  message.o_t_ee_c.header.frame_id = joint_names[kBaseLinkIndex];
+  // Current EE Pose
+  message.o_t_ee.header.frame_id = link_names[kBaseLinkIndex];
+  // Desired EE Pose
+  message.o_t_ee_d.header.frame_id = link_names[kBaseLinkIndex];
+  // Commanded EE Pose
+  message.o_t_ee_c.header.frame_id = link_names[kBaseLinkIndex];
 
-  message.f_t_ee.header.frame_id = joint_names[kFlangeLinkIndex];
-  message.ee_t_k.header.frame_id = joint_names[kEndEffectorLinkIndex];
+  message.f_t_ee.header.frame_id = link_names[kFlangeLinkIndex];
+  message.ee_t_k.header.frame_id = link_names[kEndEffectorLinkIndex];
 
-  message.o_dp_ee_d.header.frame_id = joint_names[kBaseLinkIndex];
-  message.o_dp_ee_c.header.frame_id = joint_names[kBaseLinkIndex];
-  message.o_ddp_ee_c.header.frame_id = joint_names[kBaseLinkIndex];
+  message.o_dp_ee_d.header.frame_id = link_names[kBaseLinkIndex];
+  message.o_dp_ee_c.header.frame_id = link_names[kBaseLinkIndex];
+  message.o_ddp_ee_c.header.frame_id = link_names[kBaseLinkIndex];
 
-  // The inertias
-  message.inertia_ee.header.frame_id = joint_names[kEndEffectorLinkIndex];
-  message.inertia_load.header.frame_id = joint_names[kLoadLinkIndex];
-  message.inertia_total.header.frame_id = joint_names[kEndEffectorLinkIndex];
+  // The inertias are with respect to the Center Of Mass.
+  // TODO(yazi_ba) frame ids should be referenced to the Center Of Mass
+  message.inertia_ee.header.frame_id = link_names[kEndEffectorLinkIndex];
+  message.inertia_load.header.frame_id = link_names[kLoadLinkIndex];
+  message.inertia_total.header.frame_id = link_names[kEndEffectorLinkIndex];
 }
 
 auto FrankaRobotState::get_values_as_message(franka_msgs::msg::FrankaRobotState& message) -> bool {

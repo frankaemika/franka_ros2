@@ -90,6 +90,10 @@ TEST_F(FrankaRobotStateTest, givenInitializedRobotStateMsg_thenCorrectFrameIDs) 
   franka_state_friend->initialize_robot_state_msg(franka_robot_state_msg);
 
   ASSERT_EQ(franka_robot_state_msg.o_t_ee.header.frame_id, "panda_link0");
-  ASSERT_EQ(franka_robot_state_msg.ee_t_k.header.frame_id, "panda_link8");
-  ASSERT_EQ(franka_robot_state_msg.measured_joint_state.name[1], "panda_link2");
+  ASSERT_EQ(franka_robot_state_msg.ee_t_k.header.frame_id, "panda_hand_tcp");
+  ASSERT_EQ(franka_robot_state_msg.measured_joint_state.name[1], "panda_joint2");
+  ASSERT_EQ(franka_robot_state_msg.k_f_ext_hat_k.header.frame_id, "panda_hand_tcp");
+  ASSERT_EQ(franka_robot_state_msg.o_f_ext_hat_k.header.frame_id, "panda_link0");
+  ASSERT_EQ(franka_robot_state_msg.o_dp_ee_c.header.frame_id, "panda_link0");
+  ASSERT_EQ(franka_robot_state_msg.o_ddp_ee_c.header.frame_id, "panda_link0");
 }

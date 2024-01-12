@@ -16,20 +16,33 @@
 
 #include "controller_interface/controller_interface.hpp"
 #include "franka_robot_state_broadcaster/franka_robot_state_broadcaster.hpp"
+#include "franka_semantic_components/franka_robot_state.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/rclcpp.hpp"
+#include "ros2_control_test_assets/descriptions.hpp"
+
+class MockFrankaRobotState : public franka_semantic_components::FrankaRobotState {
+ public:
+  MockFrankaRobotState(const std::string& name, const std::string& robot_description)
+      : FrankaRobotState(name, robot_description){};
+
+  MOCK_METHOD(void, initialize_robot_state_msg, (franka_msgs::msg::FrankaRobotState&), (override));
+};
 
 using namespace franka_robot_state_broadcaster;
-
 class TestFrankaRobotStateBroadcaster : public ::testing::Test {
  protected:
   void SetUp() override {
-    broadcaster_ = std::make_unique<FrankaRobotStateBroadcaster>();
+    franka_robot_state_ = std::make_unique<MockFrankaRobotState>(
+        "mock_franka_robot_state", ros2_control_test_assets::minimal_robot_urdf);
+    broadcaster_ = std::make_unique<FrankaRobotStateBroadcaster>(std::move(franka_robot_state_));
     broadcaster_->init("test_broadcaster");
+    broadcaster_->get_node()->set_parameter(
+        {"robot_description", ros2_control_test_assets::minimal_robot_urdf});
   }
-
   std::unique_ptr<FrankaRobotStateBroadcaster> broadcaster_;
+  std::unique_ptr<MockFrankaRobotState> franka_robot_state_;
 };
 
 TEST_F(TestFrankaRobotStateBroadcaster, test_init_return_success) {
@@ -51,7 +64,6 @@ TEST_F(TestFrankaRobotStateBroadcaster, test_activate_return_success) {
 TEST_F(TestFrankaRobotStateBroadcaster, test_deactivate_return_success) {
   EXPECT_EQ(broadcaster_->on_configure(rclcpp_lifecycle::State()),
             controller_interface::CallbackReturn::SUCCESS);
-
   EXPECT_EQ(broadcaster_->on_deactivate(rclcpp_lifecycle::State()),
             controller_interface::CallbackReturn::SUCCESS);
 }

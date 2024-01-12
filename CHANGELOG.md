@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.12 - 2024-01-12
+
+Requires libfranka >= 0.13.2, requires ROS 2 Humble
+
+* franka\_semantic\_component: Read robot state from urdf robot description.
+* franka\_state\_broadcaster: Publish visualizable topics seperately.
+
 ## 0.1.11 - 2023-12-20
 
 Requires libfranka >= 0.13.2, requires ROS 2 Humble
