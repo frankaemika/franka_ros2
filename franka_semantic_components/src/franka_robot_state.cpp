@@ -27,6 +27,7 @@ namespace {
 const size_t kBaseLinkIndex = 0;
 const size_t kFlangeLinkIndex = 8;
 const size_t kLoadLinkIndex = 8;
+const std::string kTCPFrameName = "_hand_tcp";
 
 // Example implementation of bit_cast: https://en.cppreference.com/w/cpp/numeric/bit_cast
 template <class To, class From>
@@ -62,7 +63,7 @@ FrankaRobotState::FrankaRobotState(const std::string& name, const std::string& r
   set_joints_from_urdf();
 
   if (gripper_loaded_) {
-    kEndEffectorLinkIndex = get_link_index(robot_name_ + "_hand_tcp");
+    kEndEffectorLinkIndex = get_link_index(robot_name_ + kTCPFrameName);
     kStiffnessLinkIndex = kEndEffectorLinkIndex;
   } else {
     kEndEffectorLinkIndex = kFlangeLinkIndex;
@@ -81,7 +82,7 @@ auto FrankaRobotState::get_link_index(const std::string& link_name) -> size_t {
 
 auto FrankaRobotState::is_gripper_loaded() -> bool {
   const auto& links = model_->links_;
-  bool gripper_loaded = links.find(robot_name_ + "_hand_tcp") != links.end();
+  bool gripper_loaded = links.find(robot_name_ + kTCPFrameName) != links.end();
 
   return gripper_loaded;
 }

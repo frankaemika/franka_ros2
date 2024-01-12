@@ -75,6 +75,15 @@ class FrankaRobotStateBroadcaster : public controller_interface::ControllerInter
   std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::JointState>> measured_joint_states_publisher_;
   std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::JointState>> desired_joint_states_publisher_;
 
+  const std::string kCurrentPoseTopic = "~/current_pose";
+  const std::string kLastDesiredPoseTopic = "~/last_desired_pose";
+  const std::string kDesiredEETwist = "~/desired_end_effector_twist";
+  const std::string kMeasuredJointStates = "~/measured_joint_states";
+  const std::string kExternalWrenchInStiffnessFrame = "~/external_wrench_in_stiffness_frame";
+  const std::string kExternalWrenchInBaseFrame = "~/external_wrench_in_base_frame";
+  const std::string kExternalJointTorques = "~/external_joint_torques";
+  const std::string kDesiredJointStates = "~/desired_joint_states";
+
   franka_msgs::msg::FrankaRobotState franka_robot_state_msg_;
   std::unique_ptr<franka_semantic_components::FrankaRobotState> franka_robot_state;
 };
