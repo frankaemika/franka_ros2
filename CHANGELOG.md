@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.13 - 2024-01-18
+
+Requires libfranka >= 0.13.2, requires ROS 2 Humble
+
+* update libfranka dependency on devcontainer to 0.13.3(requires system image 5.5.0)
+* fix .devcontainer typo
+
 ## 0.1.12 - 2024-01-12
 
 Requires libfranka >= 0.13.2, requires ROS 2 Humble
