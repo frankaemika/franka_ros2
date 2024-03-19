@@ -1,10 +1,12 @@
+#pragma once
+
 #include <memory>
 #include <mutex>
 #include <string>
 #include <vector>
 #include <fstream>
 #include <ostream>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <functional>
 #include <thread>
 #include <cmath>
@@ -12,25 +14,11 @@
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/node.hpp"
 #include <rclcpp/time.hpp> 
-#include "rclcpp_action/server.hpp"
-#include "rclcpp_action/rclcpp_action.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
-#include "sensor_msgs/msg/joint_state.hpp"
-#include "control_msgs/action/follow_joint_trajectory.hpp"
 
 #include <controller_interface/controller_interface.hpp> 
-
-#include "hardware_interface/types/hardware_interface_type_values.hpp" 
-#include "hardware_interface/types/hardware_interface_return_values.hpp"
-#include "hardware_interface/macros.hpp"
-#include <hardware_interface/handle.hpp>
-#include <hardware_interface/hardware_info.hpp>
-#include <hardware_interface/system_interface.hpp>
-
-#include "franka_hardware/franka_hardware_interface.hpp"
 #include "franka_semantic_components/franka_robot_model.hpp"
 #include "franka_semantic_components/franka_robot_state.hpp"
-#include "franka_semantic_components/franka_cartesian_pose_interface.hpp"
 #include <franka_msgs/msg/franka_robot_state.hpp>
 #include <franka/robot_state.h>
 

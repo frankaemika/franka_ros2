@@ -1,13 +1,6 @@
 #include "franka_example_controllers/cartesian_impedance_example_controller.hpp"
 #include "franka_example_controllers/pseudo_inverse.hpp"
 
-#include <typeinfo>
-#include <chrono>
-#include <thread>
-
-#include <iostream>
-#include <boost/type_index.hpp>
-
 namespace franka_example_controllers
 {
 
