@@ -184,7 +184,10 @@ namespace franka_example_controllers
                       (2.0 * sqrt(nullspace_stiffness_)) * dq);
 
     // Desired torque                 
-    tau_d << tau_task + coriolis;
+    tau_d << tau_task + tau_nullspace + coriolis;
+    
+    // saturate the commanded torque to joint limits
+    tau_d << saturateTorqueRate(tau_d, tau_j_d);
 
     for (int i = 0; i < num_joints; i++) {
       command_interfaces_[i].set_value(tau_d[i]); 
