@@ -71,4 +71,10 @@
             The franka model example controller evaluates and prints the dynamic model ofFranka Robotics Robots.
         </description>
     </class>
+    <class name="franka_example_controllers/CartesianImpedanceExampleController" 
+           type="franka_example_controllers::CartesianImpedanceExampleController" base_class_type="controller_interface::ControllerBase">
+        <description>
+        A controller that renders a spring damper system in cartesian space. Compliance parameters and the equilibrium pose can be modified online with dynamic reconfigure and an interactive marker respectively.
+        </description>
+  </class>
 </library>
