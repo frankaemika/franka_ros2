@@ -1,0 +1,100 @@
+<?xml version='1.0' encoding='utf-8'?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find franka_description)/robots/fr3_duo/fr3_duo.xacro" />
+  <xacro:include filename="$(find franka_description)/robots/mobile_fr3_duo_v0_2/mobile_fr3_duo_v0_2.xacro" />
+  <xacro:include filename="$(find franka_vision_and_manipulation_kit)/robots/vision_kit_components.xacro" />
+
+  <xacro:macro name="fr3_duo_with_vision_and_manipulation_kit"
+    params="
+    prefix
+    mobile_platform
+    mobile_platform_type
+    left_arm_type
+    right_arm_type
+    no_prefix
+    special_connection
+    xyz_ee
+    rpy_ee
+    tcp_xyz
+    tcp_rpy
+    safety_distance
+    with_sc
+    include_self_collision_geometry
+    ros2_control
+    mobile_platform_ip
+    left_arm_ip
+    right_arm_ip
+    use_fake_hardware
+    fake_sensor_commands
+    description_pkg
+    ">
+
+    <xacro:if value="${not mobile_platform}">
+      <link name="base"/>
+      <xacro:fr3_duo
+        name="${prefix}fr3_duo_base"
+        robot_types="${[left_arm_type, right_arm_type]}"
+        arm_prefixes="${[prefix + 'left', prefix + 'right']}"
+        hand="false"
+        ee_id="none"
+        special_connection="${special_connection}"
+        xyz_ee="${xyz_ee}"
+        rpy_ee="${rpy_ee}"
+        tcp_xyz="${tcp_xyz}"
+        tcp_rpy="${tcp_rpy}"
+        base_mount="base"
+        safety_distance="${safety_distance}"
+        with_sc="${with_sc}"
+        include_self_collision_geometry="${include_self_collision_geometry}"
+        description_pkg="${description_pkg}"
+        connected_to=""
+        no_prefix="${no_prefix}">
+        <arm0_extras/>
+        <arm1_extras/>
+      </xacro:fr3_duo>
+    </xacro:if>
+
+    <xacro:if value="${mobile_platform}">
+      <link name="base"/>
+      <joint name="base_joint" type="fixed">
+        <parent link="base"/>
+        <child link="base_link"/>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+      </joint>
+      <xacro:property name="robot_types_list" value="${[mobile_platform_type, left_arm_type, right_arm_type]}"/>
+      <xacro:mobile_fr3_duo_v0_2
+        robot_types="${robot_types_list}"
+        hand="false"
+        reduced_version="false"
+        description_pkg="${description_pkg}"
+        connected_to="base"
+        use_arms="true"
+        no_prefix="${no_prefix}"
+        ee_id="none"
+        special_connection="${special_connection}"
+        xyz_ee="${xyz_ee}"
+        rpy_ee="${rpy_ee}"
+        tcp_xyz="${tcp_xyz}"
+        tcp_rpy="${tcp_rpy}"
+        safety_distance="${safety_distance}"
+        with_sc="${with_sc}"
+        include_self_collision_geometry="${include_self_collision_geometry}">
+        <arm0_extras/>
+        <arm1_extras/>
+      </xacro:mobile_fr3_duo_v0_2>
+    </xacro:if>
+
+
+    <!-- Attach vision kit components (wrist cameras + head camera) -->
+    <xacro:vision_kit_components
+      left_arm_type="${left_arm_type}"
+      right_arm_type="${right_arm_type}"
+      prefix="${prefix}"
+      left_arm_prefix="${prefix + 'left' if not mobile_platform else 'left'}"
+      right_arm_prefix="${prefix + 'right' if not mobile_platform else 'right'}"
+      robotiq_use_fake_hardware="${use_fake_hardware}"
+      robotiq_include_ros2_control="${ros2_control}" />
+
+  </xacro:macro>
+</robot>

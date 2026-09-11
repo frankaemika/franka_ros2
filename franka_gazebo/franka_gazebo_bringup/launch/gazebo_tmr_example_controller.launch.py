@@ -66,9 +66,7 @@ def get_robot_description(context: LaunchContext):
 
     robot_description_config = xacro.process_file(
         franka_xacro_file,
-        mappings={
-            'gazebo': 'true',
-        }
+        mappings={}
     )
 
     if not isinstance(robot_description_config, xml.dom.minidom.Document):
@@ -161,8 +159,7 @@ def generate_launch_description():
     circle_reference_node = ExecuteProcess(
         cmd=['python3', '-c', cmd_vel_node], output='screen')
 
-    # Let's use the cartesian velocity example controller
-    mobile_cartesian_velocity_controller_node = Node(
+    controller_spawner_node = Node(
         package='controller_manager',
         executable='spawner',
         arguments=[
@@ -191,7 +188,7 @@ def generate_launch_description():
         RegisterEventHandler(
             event_handler=OnProcessExit(
                 target_action=spawn,
-                on_exit=[mobile_cartesian_velocity_controller_node],
+                on_exit=[controller_spawner_node],
             )
         ),
         circle_reference_node,

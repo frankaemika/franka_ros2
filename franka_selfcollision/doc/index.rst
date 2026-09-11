@@ -12,10 +12,14 @@ Mobile FR3 Duo robots.
 Functionality
 -------------
 
-This monitoring node is spawned by ``fr3_duo.launch.py`` or ``mobile_fr3_duo.launch.py`` in ``franka_bringup`` if the ``check_selfcollision`` argument is enabled.
+This monitoring node is launched by ``fr3_duo.launch.py`` and
+``mobile_fr3_duo.launch.py`` in ``franka_bringup`` for the FR3 Duo and Mobile FR3 Duo
+configurations. In the current launch setup, the node is always started for these
+configurations.
 
-The node continuously monitors the robot's joint states to check for self-collisions between the robot links. It handles both ``fr3_duo`` and ``mobile_fr3_duo`` configurations.
-It performs two main actions upon detecting a collision (or violation of the security margin):
+The node continuously monitors the robot joint states for self-collisions between robot links.
+It performs two main actions when it detects a collision, or when the security margin is
+violated:
 
 1. **Publishes Status:** Sends a boolean to the topic ``~/<node_name>/collision_detected``
    (where ``<node_name>`` is set via the ``name`` parameter in the launch file, default: ``self_collision_node``).
@@ -36,15 +40,15 @@ Parameters are defined in ``config/self_collision_node.yaml``:
 Usage
 -----
 
-Both nodes are automatically started when the robot is launched with ``check_selfcollision`` set
-to ``true``:
+The self-collision node starts automatically when you launch either dual-arm configuration. No
+extra launch argument is required.
 
 .. code-block:: shell
 
     # FR3 Duo
     ros2 launch franka_bringup fr3_duo.launch.py \
-        check_selfcollision:=true
+        controller_name:=fr3_duo_joint_impedance_example_controller
 
     # Mobile FR3 Duo
     ros2 launch franka_bringup mobile_fr3_duo.launch.py \
-        check_selfcollision:=true
+        controller_name:=mobile_fr3_duo_joint_impedance_example_controller

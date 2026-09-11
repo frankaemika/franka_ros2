@@ -192,16 +192,6 @@ This example uses the CartesianElbow interface to send periodic elbow commands t
 
     ros2 launch franka_bringup example.launch.py controller_names:=elbow_example_controller
 
-Mobile Cartesian Velocity Example
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-This controller subscribes to a topic that publishes cartesian velocities and forwards them to the
-robot after going through a rate limiter.
-
-.. code-block:: shell
-
-    ros2 launch franka_bringup example.launch.py controller_names:=mobile_cartesian_velocity_example_controller
-
 
 Writing Custom Controllers
 ---------------------------

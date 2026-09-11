@@ -17,7 +17,6 @@
 #include <cstring>
 #include <iostream>
 
-#include <realtime_tools/realtime_buffer.hpp>
 #include "rclcpp/logging.hpp"
 namespace {
 
@@ -64,7 +63,7 @@ auto FrankaRobotModel::initialize() -> void {
       franka_model_interface != state_interfaces_.end()) {
     robot_model_ =
         bit_cast<franka_hardware::Model*>((*franka_model_interface).get().get_optional().value());
-    robot_state_buffer_ = bit_cast<realtime_tools::RealtimeBuffer<franka::RobotState>*>(
+    robot_state_box_ = bit_cast<realtime_tools::RealtimeThreadSafeBox<franka::RobotState>*>(
         (*franka_state_interface).get().get_optional().value());
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("franka_model_semantic_component"),
@@ -121,8 +120,19 @@ auto FrankaRobotModel::refreshRobotState() -> void {
   if (!initialized_) {
     initialize();
   }
-  cached_robot_state_ = *robot_state_buffer_->readFromRT();
-  last_refresh_time_ = std::chrono::steady_clock::now();
+  // First sample must be real: a failed try_get() would leave the default-constructed
+  // (all-zero) cache, and mass/gravity/Jacobians would be evaluated at q = 0.
+  if (!cached_state_valid_) {
+    cached_robot_state_ = robot_state_box_->get();
+    cached_state_valid_ = true;
+    last_refresh_time_ = std::chrono::steady_clock::now();
+    return;
+  }
+  // Best-effort under mutex: if the hardware holds the box for set, keep the previous cache.
+  if (const auto state = robot_state_box_->try_get()) {
+    cached_robot_state_ = *state;
+    last_refresh_time_ = std::chrono::steady_clock::now();
+  }
 }
 
 auto FrankaRobotModel::getCachedRobotState() -> const franka::RobotState& {

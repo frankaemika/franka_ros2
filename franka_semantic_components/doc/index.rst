@@ -1,53 +1,62 @@
 franka_semantic_components
 ==========================
 
-This package contains franka_robot_model, franka_robot_state and cartesian command classes.
-These classes are used to convert franka_robot_model object and franka_robot_state objects,
-which are stored in the hardware_state_interface as a double pointer.
+This package provides semantic helper classes for Franka-specific state, model, and
+Cartesian command interfaces. The main classes are
+``FrankaRobotModel``, ``FrankaRobotState``, ``FrankaSemanticComponentInterface``,
+``FrankaCartesianPoseInterface``, and ``FrankaCartesianVelocityInterface``.
+
+These classes provide typed access to the model and robot state objects stored in the
+hardware state interfaces and simplify working with Cartesian command interfaces in
+controllers.
 
 For further reference on how to use these classes:
 `Franka Robot State Broadcaster <https://github.com/frankarobotics/franka_ros2/tree/jazzy/franka_robot_state_broadcaster>`_
 and
-`Franka Example Controllers(model_example_controller)
+`Franka example controller (model_example_controller)
 <https://github.com/frankarobotics/franka_ros2/blob/jazzy/franka_example_controllers/src/fr3/model_example_controller.cpp>`_
 
-Cartesian Pose Interface
--------------------------
+Franka Cartesian Pose Interface
+-------------------------------
 
-This interface is used to send Cartesian pose commands to the robot by using the loaned command interfaces.
-FrankaSemanticComponentInterface class is handling the loaned command interfaces and state interfaces.
-While starting the cartesian pose interface, the user needs to pass a boolean flag to the constructor
-to indicate whether the interface is for the elbow or not. If the robot is using an arm_prefix, 
-the prefix should also be passed to the constructor.
+``FrankaCartesianPoseInterface`` sends Cartesian pose commands through the loaned command
+interfaces. ``FrankaSemanticComponentInterface`` manages the loaned command and state
+interfaces.
+
+When constructing the interface, pass a boolean that enables or disables elbow
+commands. If the robot uses an ``arm_prefix``, pass that prefix to the constructor too.
 
 .. code-block:: cpp
 
-   auto is_elbow_active = false;
-   // Standard initialization
-    CartesianPoseInterface cartesian_pose_interface(is_elbow_active);
+    auto is_elbow_active = false;
+    franka_semantic_components::FrankaCartesianPoseInterface cartesian_pose_interface(
+        is_elbow_active);
 
     // Initialization with an arm prefix
     std::string arm_prefix = "arm_1";
-    CartesianPoseInterface prefixed_interface(arm_prefix, is_elbow_active);
+    franka_semantic_components::FrankaCartesianPoseInterface prefixed_interface(
+        arm_prefix, is_elbow_active);
 
-This interface allows users to read the current pose command interface values set by the franka hardware interface.
+You can use this interface to read the current Cartesian pose command values from the
+Franka hardware interface.
 
 .. code-block:: cpp
 
-   std::array<double, 16> pose;
-   pose = cartesian_pose_interface.getInitialPoseMatrix();
+    std::array<double, 16> pose = cartesian_pose_interface.getCurrentPoseMatrix();
 
-One could also read quaternion and translation values in Eigen format.
+You can also read the current orientation and translation in Eigen types.
 
 .. code-block:: cpp
 
     Eigen::Quaterniond quaternion;
     Eigen::Vector3d translation;
-    std::tie(quaternion, translation) = cartesian_pose_interface.getInitialOrientationAndTranslation();
+    std::tie(quaternion, translation) =
+        cartesian_pose_interface.getCurrentOrientationAndTranslation();
 
-After setting up the cartesian interface, you need to ``assign_loaned_command_interfaces`` and ``assign_loaned_state_interfaces`` in your controller.
-This needs to be done in the on_activate() function of the controller. Examples can be found in the
-`assign loaned comamand interface example
+After creating the interface, call ``assign_loaned_command_interfaces`` and
+``assign_loaned_state_interfaces`` in your controller ``on_activate()`` method. An
+example is available in
+`the Cartesian pose example controller
 <https://github.com/frankarobotics/franka_ros2/blob/jazzy/franka_example_controllers/src/fr3/cartesian_pose_example_controller.cpp>`_
 
 .. code-block:: cpp
@@ -55,15 +64,15 @@ This needs to be done in the on_activate() function of the controller. Examples 
     cartesian_pose_interface.assign_loaned_command_interfaces(command_interfaces_);
     cartesian_pose_interface.assign_loaned_state_interfaces(state_interfaces_);
 
-In the update function of the controller you can send pose commands to the robot.
+In the controller ``update()`` method, send Cartesian pose commands to the robot.
 
 .. code-block:: cpp
 
-    std::array<double, 16> pose;
-    pose = {1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0.5, 0, 0.5, 1};
-    cartesian_pose_interface.setCommanded(pose);
+    std::array<double, 16> pose = {1, 0, 0, 0, 0, 1, 0, 0,
+                                   0, 0, 1, 0, 0.5, 0, 0.5, 1};
+    cartesian_pose_interface.setCommand(pose);
 
-Or you can send quaternion, translation values in Eigen format.
+You can also send a quaternion and translation in Eigen format.
 
 .. code-block:: cpp
 
@@ -71,37 +80,41 @@ Or you can send quaternion, translation values in Eigen format.
     Eigen::Vector3d translation(0.5, 0, 0.5);
     cartesian_pose_interface.setCommand(quaternion, translation);
 
-Cartesian Velocity Interface
-----------------------------
+Franka Cartesian Velocity Interface
+-----------------------------------
 
-This interface is used to send Cartesian velocity commands to the robot by using the loaned command interfaces.
-FrankaSemanticComponentInterface class is handling the loaned command interfaces and state interfaces.
+``FrankaCartesianVelocityInterface`` sends Cartesian velocity commands through the
+loaned command interfaces. ``FrankaSemanticComponentInterface`` manages the loaned
+command and state interfaces here as well.
 
 .. code-block:: cpp
 
     auto is_elbow_active = false;
-    // Standard initialization
-    CartesianVelocityInterface cartesian_pose_interface(is_elbow_active);
+    franka_semantic_components::FrankaCartesianVelocityInterface
+        cartesian_velocity_interface(is_elbow_active);
 
     // Initialization with an arm prefix
     std::string arm_prefix = "arm_1";
-    CartesianVelocityInterface prefixed_interface(arm_prefix, is_elbow_active);
+    franka_semantic_components::FrankaCartesianVelocityInterface prefixed_interface(
+        arm_prefix, is_elbow_active);
 
-To send the velocity command to the robot, you need to assign_loaned_command_interface in your custom controller.
-
-.. code-block:: cpp
-
-    cartesian_velocity_interface.assign_loaned_command_interface(command_interfaces_);
-
-In the update function of the controller you can send cartesian velocity command to the robot.
+To send velocity commands, call ``assign_loaned_command_interfaces`` in your controller.
 
 .. code-block:: cpp
 
-    std::array<double, 6> cartesian_velocity;
-    cartesian_velocity = {0, 0, 0, 0, 0, 0.1};
-    cartesian_velocity_interface.setCommand(cartesian_velocity);
+    cartesian_velocity_interface.assign_loaned_command_interfaces(command_interfaces_);
+
+In the controller ``update()`` method, send Cartesian velocity commands to the robot.
+
+.. code-block:: cpp
+
+    Eigen::Vector3d linear_velocity(0.0, 0.0, 0.0);
+    Eigen::Vector3d angular_velocity(0.0, 0.0, 0.1);
+    cartesian_velocity_interface.setCommand(linear_velocity, angular_velocity);
 
 Robot State and Model Access
 -----------------------------
 
-The semantic components provide safe access to the robot state and model objects that are stored as pointers in the hardware interface. This approach ensures proper type casting and memory management when working with these complex objects in controllers.
+The semantic components provide safe access to the robot state and model objects stored
+as pointers in the hardware interface. This ensures correct type casting and safer
+controller code when working with these objects.

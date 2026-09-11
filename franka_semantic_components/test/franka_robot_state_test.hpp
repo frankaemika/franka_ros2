@@ -20,7 +20,7 @@
 
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include <fstream>
-#include <realtime_tools/realtime_buffer.hpp>
+#include <realtime_tools/realtime_thread_safe_box.hpp>
 #include <sstream>
 #include "franka/robot_state.h"
 #include "franka_semantic_components/franka_robot_state.hpp"
@@ -32,6 +32,7 @@ class FrankaRobotStateTestFriend : public franka_semantic_components::FrankaRobo
   FRIEND_TEST(FrankaRobotStateTest,
               givenFrankaSemanticStateInitialized_whenMessageReturnedExpectsCorrectValues);
   FRIEND_TEST(FrankaRobotStateTest, robot_state_ptr_uncasted_correctly);
+  FRIEND_TEST(FrankaRobotStateTest, a_null_state_box_fails_assignment);
 
  public:
   // Use generation of interface names
@@ -70,8 +71,8 @@ class FrankaRobotStateTest : public ::testing::Test {
   const std::string robot_name = "fr3";
   const std::string franka_state_interface_name = "robot_state";
   franka::RobotState robot_state;
-  realtime_tools::RealtimeBuffer<franka::RobotState> robot_state_buffer;
-  realtime_tools::RealtimeBuffer<franka::RobotState>* robot_state_buffer_ptr = &robot_state_buffer;
+  realtime_tools::RealtimeThreadSafeBox<franka::RobotState> robot_state_box;
+  realtime_tools::RealtimeThreadSafeBox<franka::RobotState>* robot_state_box_ptr = &robot_state_box;
 
   std::array<double, 7> joint_angles = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
   std::array<double, 7> joint_velocities = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};

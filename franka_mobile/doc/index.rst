@@ -33,3 +33,33 @@ Configuration
 -------------
 
 Please look into the `config/swerve_drive_controller_parameters.yaml` for available overrides in your yaml files.
+
+Battery service
+---------------
+
+ROS 2 interface for the Franka TMR Battery REST API
+(``https://<robot_ip>/battery/api``), using only standard message types.
+
+Launch
+^^^^^^
+
+.. code-block:: bash
+
+   ros2 launch franka_mobile battery.launch.py robot_ip:=172.16.0.1
+
+Topic
+^^^^^
+
+By default the node publishes ``sensor_msgs/BatteryState`` on
+``/franka_battery_node/battery_state`` at 1 Hz (parameters ``enable_battery_topic``
+and ``publish_rate``).
+
+Services
+^^^^^^^^
+
+Wireless charging control uses ``std_srvs/Trigger``:
+
+.. code-block:: bash
+
+   ros2 service call /franka_battery_node/stop_wireless_charging std_srvs/srv/Trigger
+   ros2 service call /franka_battery_node/try_start_wireless_charging std_srvs/srv/Trigger

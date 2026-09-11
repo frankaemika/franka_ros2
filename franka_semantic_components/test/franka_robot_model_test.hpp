@@ -19,7 +19,7 @@
 #include <string>
 #include <vector>
 
-#include <realtime_tools/realtime_buffer.hpp>
+#include <realtime_tools/realtime_thread_safe_box.hpp>
 #include "franka/model.h"
 #include "franka/robot_state.h"
 #include "franka_semantic_components/franka_robot_model.hpp"
@@ -94,8 +94,9 @@ class FrankaRobotModelTest : public ::testing::Test {
   MockModel* model_address = &mock_model;
 
   franka::RobotState robot_state;
-  realtime_tools::RealtimeBuffer<franka::RobotState> robot_state_buffer;
-  realtime_tools::RealtimeBuffer<franka::RobotState>* robot_state_buffer_ptr = &robot_state_buffer;
+  realtime_tools::RealtimeThreadSafeBox<franka::RobotState> robot_state_box;
+  realtime_tools::RealtimeThreadSafeBox<franka::RobotState>* robot_state_box_ptr =
+      &robot_state_box;
 
   std::unique_ptr<FrankaRobotModelTestFriend> franka_robot_model_friend;
 

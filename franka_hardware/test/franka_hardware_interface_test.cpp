@@ -14,6 +14,7 @@
 
 #include <gmock/gmock.h>
 #include <algorithm>
+#include <array>
 #include <exception>
 #include <rclcpp/rclcpp.hpp>
 
@@ -26,7 +27,9 @@
 #include <hardware_interface/types/hardware_interface_return_values.hpp>
 #include <hardware_interface/types/hardware_interface_type_values.hpp>
 
+#include "franka/errors.h"
 #include "franka/exception.h"
+#include "franka/robot_state.h"
 
 #include <franka_msgs/srv/set_cartesian_stiffness.hpp>
 #include <franka_msgs/srv/set_force_torque_collision_behavior.hpp>
@@ -47,6 +50,16 @@ static constexpr size_t kStateInterfaceSize = 48;  // 7*3 (pos/vel/eff) + robot_
                                                    // + robot_model + pose(16) + elbow(2)
                                                    // + robot_time(1) + F/T sensor(6)
 static constexpr size_t kStateInterfaceSizeWithoutSensor = 42;  // same without F/T sensor(6)
+// Index of joint_reflex in franka::Errors' bool array (errors.h field order).
+static constexpr size_t kJointReflexErrorIndex = 6;
+
+auto makeRobotStateWithJointReflexError() -> franka::RobotState {
+  std::array<bool, 41> error_flags{};
+  error_flags.at(kJointReflexErrorIndex) = true;
+  franka::RobotState robot_state;
+  robot_state.current_errors = franka::Errors(error_flags);
+  return robot_state;
+}
 
 class FrankaHardwareInterfaceTest : public ::testing::TestWithParam<std::string> {
  public:
@@ -78,6 +91,32 @@ class FrankaHardwareInterfaceTest : public ::testing::TestWithParam<std::string>
     EXPECT_EQ(default_franka_hardware_interface.read(time, duration),
               hardware_interface::return_type::OK);
     return default_franka_hardware_interface.export_state_interfaces();
+  }
+
+  static auto assertExportedJointStatesMatch(
+      std::vector<hardware_interface::StateInterface>& states,
+      const std::string& robot_type_name,
+      const franka::RobotState& expected) -> void {
+    auto find_state = [&states](const std::string& name) {
+      return std::find_if(states.begin(), states.end(),
+                          [&name](const auto& state) { return state.get_name() == name; });
+    };
+    for (size_t joint_index = 0; joint_index < k_number_of_joints; ++joint_index) {
+      const std::string joint_name =
+          robot_type_name + "_" + k_joint_name + std::to_string(joint_index + 1);
+
+      auto position = find_state(joint_name + "/" + k_position_controller);
+      ASSERT_NE(position, states.end()) << "Missing: " << joint_name << "/position";
+      EXPECT_NEAR(position->get_optional().value_or(-1.0), expected.q.at(joint_index), k_EPS);
+
+      auto velocity = find_state(joint_name + "/" + k_velocity_controller);
+      ASSERT_NE(velocity, states.end()) << "Missing: " << joint_name << "/velocity";
+      EXPECT_NEAR(velocity->get_optional().value_or(-1.0), expected.dq.at(joint_index), k_EPS);
+
+      auto effort = find_state(joint_name + "/" + k_effort_controller);
+      ASSERT_NE(effort, states.end()) << "Missing: " << joint_name << "/effort";
+      EXPECT_NEAR(effort->get_optional().value_or(-1.0), expected.tau_J.at(joint_index), k_EPS);
+    }
   }
 
   /* Helper function to get the response of a service */
@@ -242,7 +281,7 @@ TEST_F(
   ASSERT_EQ(states[21].get_name(),
             "fr3/robot_state");  // joint states (3*7) , then comes robot state
 
-  // The state interface exports a pointer to the RealtimeBuffer.
+  // The state interface exports a pointer to the RealtimeThreadSafeBox.
   // Verify it is a valid (non-zero) pointer value.
   ASSERT_NE(states[21].get_optional().value_or(0.0), 0.0);
 }
@@ -567,7 +606,7 @@ TEST_F(
                              franka_msgs::srv::SetJointStiffness::Response>(
       expect_call_set_joint_stiffness, "service_server/set_joint_stiffness", response);
 
-  ASSERT_TRUE(response.success);
+  ASSERT_TRUE(response.success) << "service error: " << response.error;
 }
 
 TEST_F(
@@ -582,7 +621,7 @@ TEST_F(
                              franka_msgs::srv::SetCartesianStiffness::Response>(
       expect_call_set_cartesian_stiffness, "service_server/set_cartesian_stiffness", response);
 
-  ASSERT_TRUE(response.success);
+  ASSERT_TRUE(response.success) << "service error: " << response.error;
 }
 
 TEST_F(
@@ -596,7 +635,7 @@ TEST_F(
                              franka_msgs::srv::SetLoad::Response>(
       expect_call_set_load, "service_server/set_load", response);
 
-  ASSERT_TRUE(response.success);
+  ASSERT_TRUE(response.success) << "service error: " << response.error;
 }
 
 TEST_F(
@@ -610,7 +649,7 @@ TEST_F(
                              franka_msgs::srv::SetTCPFrame::Response>(
       expect_call_set_tcp_frame, "service_server/set_tcp_frame", response);
 
-  ASSERT_TRUE(response.success);
+  ASSERT_TRUE(response.success) << "service error: " << response.error;
 }
 
 TEST_F(
@@ -625,7 +664,7 @@ TEST_F(
                              franka_msgs::srv::SetStiffnessFrame::Response>(
       expect_call_set_stiffness_frame, "service_server/set_stiffness_frame", response);
 
-  ASSERT_TRUE(response.success);
+  ASSERT_TRUE(response.success) << "service error: " << response.error;
 }
 
 TEST_F(
@@ -642,7 +681,7 @@ TEST_F(
       expect_call_set_force_torque_collision_behavior,
       "service_server/set_force_torque_collision_behavior", response);
 
-  ASSERT_TRUE(response.success);
+  ASSERT_TRUE(response.success) << "service error: " << response.error;
 }
 
 TEST_F(
@@ -658,7 +697,7 @@ TEST_F(
       expect_call_set_full_collision_behavior, "service_server/set_full_collision_behavior",
       response);
 
-  ASSERT_TRUE(response.success);
+  ASSERT_TRUE(response.success) << "service error: " << response.error;
 }
 
 TEST_F(FrankaHardwareInterfaceTest, set_joint_stiffness_throws_error) {
@@ -845,39 +884,250 @@ TEST_F(FrankaHardwareInterfaceTest,
 }
 
 TEST_F(FrankaHardwareInterfaceTest,
-       givenControlExceptionDuringRead_whenReadCalled_expectErrorAndStopRobot) {
+       givenControlExceptionDuringRead_whenWriteCalled_thenDeactivateWithoutStoppingRobot) {
   MockModel mock_model;
   MockModel* model_address = &mock_model;
 
   EXPECT_CALL(*default_mock_robot, getModel()).WillOnce(testing::Return(model_address));
   EXPECT_CALL(*default_mock_robot, readOnce())
       .WillOnce(testing::Throw(franka::ControlException("test reflex error")));
-  EXPECT_CALL(*default_mock_robot, stopRobot()).Times(1);
+  EXPECT_CALL(*default_mock_robot, stopRobot()).Times(0);
 
   auto time = rclcpp::Time(0, 0);
   auto duration = rclcpp::Duration(0, 0);
-  auto return_type = default_franka_hardware_interface.read(time, duration);
-  ASSERT_EQ(return_type, hardware_interface::return_type::ERROR);
+  // read() catches ControlException, latches, returns OK so the write cycle can request DEACTIVATE.
+  ASSERT_EQ(default_franka_hardware_interface.read(time, duration),
+            hardware_interface::return_type::OK);
+  ASSERT_EQ(default_franka_hardware_interface.write(time, duration),
+            hardware_interface::return_type::DEACTIVATE);
+  // Still latched: write keeps requesting DEACTIVATE and must not call stopRobot.
+  ASSERT_EQ(default_franka_hardware_interface.write(time, duration),
+            hardware_interface::return_type::DEACTIVATE);
 }
 
-TEST_F(FrankaHardwareInterfaceTest, givenControlExceptionDuringRead_whenReadCalledAgain_expectOk) {
+TEST_F(FrankaHardwareInterfaceTest,
+       givenControlFaultLatched_whenReadCalledAgain_thenRobotStateIsNotRefreshed) {
   MockModel mock_model;
   MockModel* model_address = &mock_model;
+
+  franka::RobotState pre_fault_state;
+  pre_fault_state.q = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7};
+  pre_fault_state.dq = {1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7};
+  pre_fault_state.tau_J = {2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7};
+
+  EXPECT_CALL(*default_mock_robot, getModel()).WillOnce(testing::Return(model_address));
+  // One successful read, one ControlException that latches. Further read() calls must not
+  // invoke readOnce — gmock fails on unexpected calls after this sequence is exhausted.
+  EXPECT_CALL(*default_mock_robot, readOnce())
+      .WillOnce(testing::Return(pre_fault_state))
+      .WillOnce(testing::Throw(franka::ControlException("test control fault")));
+
+  auto time = rclcpp::Time(0, 0);
+  auto duration = rclcpp::Duration(0, 0);
+
+  ASSERT_EQ(default_franka_hardware_interface.read(time, duration),
+            hardware_interface::return_type::OK);
+
+  auto states = default_franka_hardware_interface.export_state_interfaces();
+  assertExportedJointStatesMatch(states, robot_type, pre_fault_state);
+
+  // ControlException latches the fault and returns OK without refreshing exported state.
+  ASSERT_EQ(default_franka_hardware_interface.read(time, duration),
+            hardware_interface::return_type::OK);
+  assertExportedJointStatesMatch(states, robot_type, pre_fault_state);
+
+  // While latched, read() keeps returning OK and must leave exported state untouched.
+  ASSERT_EQ(default_franka_hardware_interface.read(time, duration),
+            hardware_interface::return_type::OK);
+  assertExportedJointStatesMatch(states, robot_type, pre_fault_state);
+}
+
+TEST_F(FrankaHardwareInterfaceTest,
+       givenNetworkExceptionDuringRead_whenReadCalled_thenReturnsError) {
+  MockModel mock_model;
+  MockModel* model_address = &mock_model;
+
+  EXPECT_CALL(*default_mock_robot, getModel()).WillOnce(testing::Return(model_address));
+  EXPECT_CALL(*default_mock_robot, readOnce())
+      .Times(1)
+      .WillOnce(testing::Throw(franka::NetworkException("connection lost")));
+
+  auto time = rclcpp::Time(0, 0);
+  auto duration = rclcpp::Duration(0, 0);
+  // NetworkException is not a control-fault latch — read must surface ERROR.
+  ASSERT_EQ(default_franka_hardware_interface.read(time, duration),
+            hardware_interface::return_type::ERROR);
+}
+
+TEST_F(FrankaHardwareInterfaceTest,
+       givenNetworkExceptionDuringWrite_whenWriteCalled_thenReturnsError) {
   franka::RobotState robot_state;
+  robot_state.q = std::array<double, 7>{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7};
+  robot_state.dq = std::array<double, 7>{1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7};
+  robot_state.tau_J = std::array<double, 7>{2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7};
+  MockModel mock_model;
+  MockModel* model_address = &mock_model;
+  auto expected_positions = std::vector<double>{robot_state.q.begin(), robot_state.q.end()};
+
+  EXPECT_CALL(*default_mock_robot, stopRobot()).Times(testing::AnyNumber());
+  EXPECT_CALL(*default_mock_robot, getModel()).WillRepeatedly(testing::Return(model_address));
+  EXPECT_CALL(*default_mock_robot, readOnce()).WillRepeatedly(testing::Return(robot_state));
+  EXPECT_CALL(*default_mock_robot, initializeJointPositionInterface());
+
+  ASSERT_EQ(default_franka_hardware_interface.on_activate(rclcpp_lifecycle::State()),
+            CallbackReturn::SUCCESS);
+
+  std::vector<std::string> start_interface;
+  for (size_t i = 0; i < default_hardware_info.joints.size(); i++) {
+    start_interface.push_back(k_robot_type + "_" + k_joint_name + std::to_string(i + 1) + "/" +
+                              k_position_controller);
+  }
+  std::vector<std::string> stop_interface = {};
+  default_franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface);
+  default_franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface);
+  testing::Mock::VerifyAndClearExpectations(default_mock_robot.get());
+
+  // NetworkException must not be absorbed by the mode-switch runtime_error path.
+  EXPECT_CALL(*default_mock_robot, getModel()).WillRepeatedly(testing::Return(model_address));
+  EXPECT_CALL(*default_mock_robot, readOnce()).WillRepeatedly(testing::Return(robot_state));
+  EXPECT_CALL(*default_mock_robot, stopRobot()).Times(0);
+  EXPECT_CALL(*default_mock_robot, writeOnce(expected_positions))
+      .Times(1)
+      .WillOnce(testing::Throw(franka::NetworkException("connection lost")));
+
+  auto time = rclcpp::Time(0, 0);
+  auto duration = rclcpp::Duration(0, 0);
+  ASSERT_EQ(default_franka_hardware_interface.read(time, duration),
+            hardware_interface::return_type::OK);
+  ASSERT_EQ(default_franka_hardware_interface.write(time, duration),
+            hardware_interface::return_type::ERROR);
+}
+
+TEST_F(FrankaHardwareInterfaceTest,
+       givenControlExceptionDuringWrite_whenWriteCalled_thenLatchesAndReturnsDeactivate) {
+  franka::RobotState robot_state;
+  robot_state.q = std::array<double, 7>{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7};
+  robot_state.dq = std::array<double, 7>{1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7};
+  robot_state.tau_J = std::array<double, 7>{2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7};
+  MockModel mock_model;
+  MockModel* model_address = &mock_model;
+  auto expected_positions = std::vector<double>{robot_state.q.begin(), robot_state.q.end()};
+
+  EXPECT_CALL(*default_mock_robot, stopRobot()).Times(testing::AnyNumber());
+  EXPECT_CALL(*default_mock_robot, getModel()).WillRepeatedly(testing::Return(model_address));
+  EXPECT_CALL(*default_mock_robot, readOnce()).WillRepeatedly(testing::Return(robot_state));
+  EXPECT_CALL(*default_mock_robot, initializeJointPositionInterface());
+
+  ASSERT_EQ(default_franka_hardware_interface.on_activate(rclcpp_lifecycle::State()),
+            CallbackReturn::SUCCESS);
+
+  std::vector<std::string> start_interface;
+  for (size_t i = 0; i < default_hardware_info.joints.size(); i++) {
+    start_interface.push_back(k_robot_type + "_" + k_joint_name + std::to_string(i + 1) + "/" +
+                              k_position_controller);
+  }
+  std::vector<std::string> stop_interface = {};
+  default_franka_hardware_interface.prepare_command_mode_switch(start_interface, stop_interface);
+  default_franka_hardware_interface.perform_command_mode_switch(start_interface, stop_interface);
+  testing::Mock::VerifyAndClearExpectations(default_mock_robot.get());
+
+  // After mode switch, ControlException on write must DEACTIVATE without stopRobot.
+  EXPECT_CALL(*default_mock_robot, getModel()).WillRepeatedly(testing::Return(model_address));
+  EXPECT_CALL(*default_mock_robot, readOnce()).WillRepeatedly(testing::Return(robot_state));
+  EXPECT_CALL(*default_mock_robot, stopRobot()).Times(0);
+  EXPECT_CALL(*default_mock_robot, writeOnce(expected_positions))
+      .Times(1)
+      .WillOnce(testing::Throw(franka::ControlException("test write reflex")));
+
+  auto time = rclcpp::Time(0, 0);
+  auto duration = rclcpp::Duration(0, 0);
+  ASSERT_EQ(default_franka_hardware_interface.read(time, duration),
+            hardware_interface::return_type::OK);
+
+  auto states = default_franka_hardware_interface.export_state_interfaces();
+  assertExportedJointStatesMatch(states, robot_type, robot_state);
+
+  ASSERT_EQ(default_franka_hardware_interface.write(time, duration),
+            hardware_interface::return_type::DEACTIVATE);
+  // Write-path ControlException latches: exported state stays at last successful read, and a
+  // second write must DEACTIVATE without calling writeOnce again (enforced by Times(1)).
+  assertExportedJointStatesMatch(states, robot_type, robot_state);
+  ASSERT_EQ(default_franka_hardware_interface.write(time, duration),
+            hardware_interface::return_type::DEACTIVATE);
+  assertExportedJointStatesMatch(states, robot_type, robot_state);
+}
+
+TEST_F(FrankaHardwareInterfaceTest,
+       givenControlExceptionDuringActivationRead_whenOnActivateCalled_thenActivationFails) {
+  MockModel mock_model;
+  MockModel* model_address = &mock_model;
 
   EXPECT_CALL(*default_mock_robot, getModel()).WillRepeatedly(testing::Return(model_address));
   EXPECT_CALL(*default_mock_robot, readOnce())
-      .WillOnce(testing::Throw(franka::ControlException("test reflex error")))
-      .WillOnce(testing::Return(robot_state));
-  EXPECT_CALL(*default_mock_robot, stopRobot()).Times(1);
+      .WillOnce(testing::Throw(franka::ControlException("test activation reflex")));
+  EXPECT_CALL(*default_mock_robot, stopRobot()).Times(0);
+
+  // read() returns OK after latching; activation must still fail before buffer inspect.
+  ASSERT_EQ(default_franka_hardware_interface.on_activate(rclcpp_lifecycle::State()),
+            CallbackReturn::FAILURE);
+}
+
+TEST_F(FrankaHardwareInterfaceTest,
+       givenReflexRobotStateDuringActivation_whenOnActivateCalled_thenActivationFails) {
+  MockModel mock_model;
+  MockModel* model_address = &mock_model;
+  franka::RobotState reflex_state;
+  reflex_state.robot_mode = franka::RobotMode::kReflex;
+  franka::RobotState recovered_state;
 
   auto time = rclcpp::Time(0, 0);
   auto duration = rclcpp::Duration(0, 0);
 
-  ASSERT_EQ(default_franka_hardware_interface.read(time, duration),
-            hardware_interface::return_type::ERROR);
+  // Operational ControlException → read OK + write DEACTIVATE; on_deactivate clears the latch.
+  EXPECT_CALL(*default_mock_robot, getModel()).WillRepeatedly(testing::Return(model_address));
+  EXPECT_CALL(*default_mock_robot, readOnce())
+      .WillOnce(testing::Throw(franka::ControlException("test reflex error")));
+  EXPECT_CALL(*default_mock_robot, stopRobot()).Times(1);
+
   ASSERT_EQ(default_franka_hardware_interface.read(time, duration),
             hardware_interface::return_type::OK);
+  ASSERT_EQ(default_franka_hardware_interface.write(time, duration),
+            hardware_interface::return_type::DEACTIVATE);
+  ASSERT_EQ(default_franka_hardware_interface.on_deactivate(rclcpp_lifecycle::State()),
+            CallbackReturn::SUCCESS);
+  testing::Mock::VerifyAndClearExpectations(default_mock_robot.get());
+
+  // After deactivate, real HW returns a RobotState with kReflex (not another ControlException).
+  // State-based activation FAILURE must not call stopRobot.
+  EXPECT_CALL(*default_mock_robot, getModel()).WillRepeatedly(testing::Return(model_address));
+  EXPECT_CALL(*default_mock_robot, readOnce())
+      .WillOnce(testing::Return(reflex_state))
+      .WillOnce(testing::Return(recovered_state));
+  EXPECT_CALL(*default_mock_robot, stopRobot()).Times(0);
+
+  ASSERT_EQ(default_franka_hardware_interface.on_activate(rclcpp_lifecycle::State()),
+            CallbackReturn::FAILURE);
+
+  // Retry after the robot reports a recovered state succeeds and clears the control-fault latch.
+  ASSERT_EQ(default_franka_hardware_interface.on_activate(rclcpp_lifecycle::State()),
+            CallbackReturn::SUCCESS);
+  ASSERT_EQ(default_franka_hardware_interface.write(time, duration),
+            hardware_interface::return_type::OK);
+}
+
+TEST_F(
+    FrankaHardwareInterfaceTest,
+    givenCurrentErrorsDuringActivation_whenOnActivateCalled_thenActivationFailsWithoutStopRobot) {
+  MockModel mock_model;
+  MockModel* model_address = &mock_model;
+  const franka::RobotState error_state = makeRobotStateWithJointReflexError();
+
+  EXPECT_CALL(*default_mock_robot, getModel()).WillRepeatedly(testing::Return(model_address));
+  EXPECT_CALL(*default_mock_robot, readOnce()).WillOnce(testing::Return(error_state));
+  EXPECT_CALL(*default_mock_robot, stopRobot()).Times(0);
+
+  ASSERT_EQ(default_franka_hardware_interface.on_activate(rclcpp_lifecycle::State()),
+            CallbackReturn::FAILURE);
 }
 
 TEST_F(FrankaHardwareInterfaceTest, whenOnActivateCalled_expectRunningFlagsReset) {
@@ -1078,7 +1328,11 @@ TEST_F(FrankaHardwareInterfaceTest,
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   rclcpp::init(0, nullptr);
-  return RUN_ALL_TESTS();
+  const auto ret = RUN_ALL_TESTS();
+  if (rclcpp::ok()) {
+    rclcpp::shutdown();
+  }
+  return ret;
 }
 
 INSTANTIATE_TEST_SUITE_P(FrankaHardwareTests,

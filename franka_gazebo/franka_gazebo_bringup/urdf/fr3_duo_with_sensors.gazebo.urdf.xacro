@@ -21,45 +21,38 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="fr3_duo_gazebo_sensors">
 
   <!-- ================================================================ -->
+  <!-- Arguments                                                        -->
+  <!-- ================================================================ -->
+
+  <!-- Gazebo-specific overrides of the description's shared args. Declared before the
+       description entry point is included so they win over its defaults: Gazebo attaches
+       the duo to the world frame and suppresses the self-collision capsule geometry. -->
+  <xacro:arg name="base_mount"                      default="world"/>
+  <xacro:arg name="include_self_collision_geometry" default="false"/>
+
+  <!-- Effort command interfaces for the Gazebo hardware plugin (Gazebo-only). -->
+  <xacro:arg name="gazebo_effort" default="false"/>
+
+  <!-- ================================================================ -->
   <!-- Includes                                                         -->
   <!-- ================================================================ -->
 
-  <!-- Base robot (Layer 1) -->
-  <xacro:include filename="$(find franka_description)/robots/fr3_duo/fr3_duo.xacro"/>
+  <!-- Base robot (Layer 1): declares the shared args, attaches to base_mount and calls
+       the duo macro with empty extras. -->
+  <xacro:include filename="$(find franka_description)/robots/fr3_duo/fr3_duo.urdf.xacro"/>
 
   <!-- Vision kit accessory components (Layer 2b) -->
   <xacro:include filename="$(find franka_vision_and_manipulation_kit)/robots/vision_kit_components.xacro"/>
 
-  <!-- ros2_control hardware interface (unified for both arms in gazebo) -->
-  <xacro:include filename="$(find franka_hardware)/ros2_control/fr3_duo.ros2_control.xacro"/>
+  <!-- ros2_control hardware interface (unified for both arms in gazebo) + gazebo overlay macro -->
+  <xacro:include filename="$(find franka_gazebo_bringup)/urdf/fr3_duo.ros2_control.xacro"/>
+  <!-- Gazebo hardware-plugin block + gz_ros2_control system (owned by franka_gazebo_bringup) -->
+  <xacro:include filename="$(find franka_gazebo_bringup)/urdf/franka_gazebo_hardware_plugins.xacro"/>
+  <!-- Gazebo transmissions and SDF tag macros -->
+  <xacro:include filename="$(find franka_gazebo_bringup)/urdf/franka_gazebo_transmissions.xacro"/>
 
   <!-- Gazebo sensor plugins (Layer 3) -->
   <xacro:include filename="$(find franka_gazebo_bringup)/urdf/sensors.xacro" />
-
-  <!-- ================================================================ -->
-  <!-- Arguments                                                        -->
-  <!-- ================================================================ -->
-
-  <xacro:arg name="robot_types" default="['fr3v2','fr3v2']" />
-  <xacro:property name="robot_types_list" value="${$(arg robot_types)}" />
-  <xacro:arg name="arm_prefixes" default="['left', 'right']" />
-  <xacro:property name="arm_prefixes_list" value="${$(arg arm_prefixes)}" />
-
-
-  <xacro:arg name="no_prefix"          default="false"/>
-  <xacro:arg name="hand"               default="true" />
-  <xacro:arg name="ee_id"              default="franka_hand" />
-  <xacro:arg name="special_connection" default="" />
-  <xacro:arg name="xyz_ee"             default="0 0 0" />
-  <xacro:arg name="rpy_ee"             default="0 0 ${-pi/4}" />
-  <xacro:arg name="tcp_xyz"            default="0 0 0.1034" />
-  <xacro:arg name="tcp_rpy"            default="0 0 0" />
-  <xacro:arg name="safety_distance"    default="0.03" />
-  <xacro:arg name="with_sc"            default="false" />
-  <xacro:arg name="gazebo_effort"        default="false" />
-  <xacro:arg name="description_pkg"      default="franka_description" />
-  <xacro:arg name="base_mount"           default="world"/>
-  <xacro:arg name="connected_to"         default="world"/>
 
   <!-- ================================================================ -->
   <!-- World link definition                                            -->
@@ -67,41 +60,13 @@
   <link name="world"/>
 
   <!-- ================================================================ -->
-  <!-- LAYER 1: Base Robot                                              -->
+  <!-- Base robot + transmissions + vision kit (Layer 2b) + ros2_control -->
   <!-- ================================================================ -->
-  <xacro:fr3_duo
-        name="fr3_duo"
-        robot_types="${robot_types_list}"
-        arm_prefixes="${arm_prefixes_list}"
-        hand="$(arg hand)"
-        gazebo="true"
-        description_pkg="$(arg description_pkg)"
-        base_mount="$(arg base_mount)"
-        connected_to="$(arg connected_to)"
-        no_prefix="$(arg no_prefix)"
-        ee_id="$(arg ee_id)"
-        special_connection="$(arg special_connection)"
-        xyz_ee="$(arg xyz_ee)"
-        rpy_ee="$(arg rpy_ee)"
-        tcp_xyz="$(arg tcp_xyz)"
-        tcp_rpy="$(arg tcp_rpy)"
-        safety_distance="$(arg safety_distance)"
-        with_sc="$(arg with_sc)"/>
-
-  <!-- ================================================================ -->
-  <!-- LAYER 2b: Vision Kit Accessories                                -->
-  <!-- ================================================================ -->
-  <xacro:vision_kit_components left_arm_type="fr3v2" right_arm_type="fr3v2" prefix="" robotiq_use_fake_hardware="true" robotiq_include_ros2_control="true" sim_gazebo="true" />
-
-  <!-- ================================================================ -->
-  <!-- ros2_control: Unified for both arms (gazebo mode)               -->
-  <!-- ================================================================ -->
-  <xacro:fr3_duo_ros2_control
-        robot_types="${robot_types_list}"
-        arm_prefixes="${arm_prefixes_list}"
-        hand="$(arg hand)"
-        gazebo="true"
-        gazebo_effort="$(arg gazebo_effort)"/>
+  <xacro:fr3_duo_gazebo_composition>
+    <sensor_layer>
+      <xacro:vision_kit_components left_arm_type="fr3v2" right_arm_type="fr3v2" prefix="" robotiq_use_fake_hardware="true" robotiq_include_ros2_control="true" sim_gazebo="true" />
+    </sensor_layer>
+  </xacro:fr3_duo_gazebo_composition>
 
   <!-- ================================================================ -->
   <!-- LAYER 3: Gazebo Sensor Plugins                                  -->

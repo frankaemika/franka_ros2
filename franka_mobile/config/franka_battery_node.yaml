@@ -1,0 +1,5 @@
+/**:
+  ros__parameters:
+    http_timeout: 10.0
+    publish_rate: 1.0
+    enable_battery_topic: true

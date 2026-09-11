@@ -29,17 +29,29 @@ if(BUILD_TESTING)
 
   function(add_ros_isolated_launch_test path)
     set(RUNNER "${ament_cmake_ros_DIR}/run_test_isolated.py")
-    add_launch_test("${path}" RUNNER "${RUNNER}" ARGS "robot_ip:=${ROBOT_IP}" TIMEOUT 500)
+    if(ARGN)
+      add_launch_test("${path}" RUNNER "${RUNNER}" ARGS ${ARGN} TIMEOUT 500)
+    else()
+      add_launch_test("${path}" RUNNER "${RUNNER}" TIMEOUT 500)
+    endif()
   endfunction()
 
-  add_ros_isolated_launch_test(test/test_hardware_example_controllers.py)
-  add_ros_isolated_launch_test(test/test_hardware_generic_controller.py)
+  add_ros_isolated_launch_test(test/test_hardware_example_controllers.py "robot_ip:=${ROBOT_IP}")
+  add_ros_isolated_launch_test(test/test_hardware_generic_controller.py "robot_ip:=${ROBOT_IP}")
+  add_ros_isolated_launch_test(test/test_controller_activation_order.py)
+  add_ros_isolated_launch_test(test/test_deactivate_write_hardware.py)
+  add_ros_isolated_launch_test(test/test_fake_hardware_controllers.py)
+  add_ros_isolated_launch_test(test/test_fake_hardware_fr3_duo.py)
+  add_ros_isolated_launch_test(test/test_fake_hardware_mobile_fr3_duo.py)
+  add_ros_isolated_launch_test(test/test_fake_hardware_tmr.py)
+  add_ros_isolated_launch_test(test/test_teleop_plumbing.py)
 
   find_package(ament_cmake_pytest REQUIRED)
   ament_add_pytest_test(test_franka_arm_interfaces test/test_franka_arm_interfaces.py)
   ament_add_pytest_test(test_fr3_duo_interfaces test/test_fr3_duo_interfaces.py)
   ament_add_pytest_test(test_mobile_fr3_duo_interfaces test/test_mobile_fr3_duo_interfaces.py)
   ament_add_pytest_test(test_gazebo_wrapper_expansion test/test_gazebo_wrapper_expansion.py)
+  ament_add_pytest_test(test_launch_file_parsing test/test_launch_file_parsing.py)
 
   install(
     DIRECTORY test

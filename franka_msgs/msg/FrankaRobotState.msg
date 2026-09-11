@@ -72,3 +72,9 @@ uint8 robot_mode
 
 Errors current_errors
 Errors last_motion_errors
+
+### Translational acceleration data from the joint-mounted accelerometers,
+# expressed in the "<prefix>link<i>_accelerometer_<side>" frame named in each header
+# (joints 1 through 6, mounted on links 0 through 5; no accelerometer on joint 7)
+geometry_msgs/Vector3Stamped[6] accelerometer_top
+geometry_msgs/Vector3Stamped[6] accelerometer_bottom

@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find franka_hardware)/ros2_control/franka_ros2_control_macros.xacro"/>
+
+  <xacro:macro name="fr3_duo_ros2_control"
+    params="robot_types
+            arm_prefixes
+            is_async:=false
+            thread_priority:=97
+            include_effort_command
+            include_finger_joint
+            **hardware_plugin">
+    <ros2_control name="controller_manager" type="system" is_async="${is_async}">
+      <xacro:if value="${is_async}">
+        <properties>
+          <async scheduling_policy="detached" print_warnings="true" thread_priority="${thread_priority}"
+            manage_overruns="false"/>
+        </properties>
+      </xacro:if>
+      <hardware>
+        <param name="version">1.1.0</param>
+        <param name="robot_type">fr3_duo</param>
+        <xacro:insert_block name="hardware_plugin"/>
+      </hardware>
+
+      <!-- Arm joints -->
+      <xacro:property name="robot_types_list" value="${robot_types}"/>
+      <xacro:property name="arm_prefixes_list" value="${arm_prefixes}"/>
+
+      <xacro:property name="arm1_type" value="${robot_types_list[0]}"/>
+      <xacro:property name="arm2_type" value="${robot_types_list[1]}"/>
+      <xacro:property name="arm1_prefix" value="${arm_prefixes_list[0]}"/>
+      <xacro:property name="arm2_prefix" value="${arm_prefixes_list[1]}"/>
+
+      <!-- Both arms' joints (fr3_duo fingers use position-only command in gazebo) -->
+      <xacro:configure_duo_gazebo_arm_joints
+          arm1_prefix="${arm1_prefix}" arm1_type="${arm1_type}"
+          arm2_prefix="${arm2_prefix}" arm2_type="${arm2_type}"
+          include_effort_command="${include_effort_command}"
+          include_finger_joint="${include_finger_joint}"/>
+
+    </ros2_control>
+
+  </xacro:macro>
+
+  <!--
+    Gazebo overlay for the FR3 Duo, emitted as siblings of the description's own <robot>
+    content (the entry point includes fr3_duo.urdf.xacro for the base robot). Emits the
+    per-arm gazebo transmissions, the optional sensor accessory layer, the unified duo
+    ros2_control block and the gz_ros2_control system element. The transmissions carry
+    top-level, name-referencing tags, so they are valid as siblings of the arm links. The
+    sensor_layer block is empty for the plain variant. Reads the top-level robot_types_list
+    / arm_prefixes_list properties (set by the included description entry point) and the
+    shared gazebo args.
+  -->
+  <xacro:macro name="fr3_duo_gazebo_composition" params="arm1_index:=0 arm2_index:=1 **sensor_layer">
+    <xacro:franka_gazebo_transmissions robot_type="${robot_types_list[arm1_index]}"
+      arm_prefix="${arm_prefixes_list[0]}_" ee_id="$(arg ee_id)" hand="$(arg hand)"/>
+    <xacro:franka_gazebo_transmissions robot_type="${robot_types_list[arm2_index]}"
+      arm_prefix="${arm_prefixes_list[1]}_" ee_id="$(arg ee_id)" hand="$(arg hand)"/>
+
+    <xacro:insert_block name="sensor_layer"/>
+
+    <xacro:fr3_duo_ros2_control
+          robot_types="${robot_types_list}"
+          arm_prefixes="${arm_prefixes_list}"
+          include_effort_command="$(arg gazebo_effort)"
+          include_finger_joint="$(arg hand)">
+      <hardware_plugin>
+        <xacro:franka_gazebo_hardware_plugin gazebo_effort="$(arg gazebo_effort)"/>
+      </hardware_plugin>
+    </xacro:fr3_duo_ros2_control>
+
+    <xacro:franka_gazebo_ros2_control_system/>
+  </xacro:macro>
+</robot>

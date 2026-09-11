@@ -9,75 +9,157 @@ Please refer to the `README.md <https://github.com/frankarobotics/franka_ros2/bl
 Package Overview
 ----------------
 
-This package contains the launch files for the examples as well as the basic ``franka.launch.py`` launch file, that
-can be used to start the robot without any controllers.
+This package contains the main launch files for bringing up a Franka robot, loading
+example controllers, and starting multi-robot setups.
 
-When you start the robot with::
+To start a single robot without any example controller, run:
 
-    ros2 launch franka_bringup franka.launch.py robot_type:=fr3 robot_ip:=<fci-ip>
+.. code-block:: shell
 
-There is no controller running apart from the ``joint_state_broadcaster``. However, a connection with the robot is still
-established and the current robot pose is visualized in RViz. In this mode the robot can be guided when the user stop
-button is pressed. However, once a controller that uses the ``effort_command_interface`` is started, the robot will be
-using the torque interface from libfranka. For example it is possible to launch the
-``gravity_compensation_example_controller`` by running::
+    ros2 launch franka_bringup franka.launch.py robot_type:=fr3 robot_ip:=172.16.0.3
 
-    ros2 control load_controller --set-state active  gravity_compensation_example_controller
+Only the ``joint_state_broadcaster`` is started. The connection to the robot is
+still established and the current robot pose is visualized in RViz. In this mode
+the robot can be guided when the user-stop button is pressed. Once a controller
+that uses the ``effort_command_interface`` is started, the robot switches to the
+libfranka torque interface. For example, you can start the
+``gravity_compensation_example_controller`` with:
+
+.. code-block:: shell
+
+    ros2 control load_controller --set-state active gravity_compensation_example_controller
 
 This is the equivalent of running the ``gravity_compensation_example_controller`` example mentioned in
 :doc:`Gravity Compensation <../../franka_example_controllers/doc/index>`.
 
-When the controller is stopped with::
+To stop the controller again, run:
+
+.. code-block:: shell
 
     ros2 control set_controller_state gravity_compensation_example_controller inactive
 
-the robot will stop the torque control and will only send its current state over the FCI.
+The robot then stops torque control and only publishes its current state over FCI.
 
-You can now choose to start the same controller again with::
+You can restart the same controller with:
+
+.. code-block:: shell
 
     ros2 control set_controller_state gravity_compensation_example_controller active
 
-or load and start a different one::
+or load and start a different one:
+
+.. code-block:: shell
 
     ros2 control load_controller --set-state active joint_impedance_example_controller
 
+``franka.launch.py`` launch arguments
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Namespace enabled launch files
+.. list-table::
+    :header-rows: 1
+
+    * - Name
+      - Type
+      - Default
+      - Description
+    * - ``robot_type``
+      - string
+      - ``''``
+      - Robot model identifier passed to the URDF xacro, for example ``fr3``.
+    * - ``arm_prefix``
+      - string
+      - ``''``
+      - Prefix added to arm-specific topic and joint names.
+    * - ``namespace``
+      - string
+      - ``''``
+      - ROS namespace applied to the robot nodes and services.
+    * - ``robot_ip``
+      - string
+      - ``172.16.0.3``
+      - Hostname or IP address of the robot.
+    * - ``load_gripper``
+      - bool
+      - ``false``
+      - Load the Franka Gripper launch file.
+    * - ``use_fake_hardware``
+      - bool
+      - ``false``
+      - Start ``ros2_control`` with fake hardware instead of a real robot.
+    * - ``fake_sensor_commands``
+      - bool
+      - ``false``
+      - Enable fake sensor command interfaces when fake hardware is used.
+    * - ``joint_state_rate``
+      - integer
+      - ``30``
+      - Joint state publisher rate in Hz.
+    * - ``load_franka_robot_state_broadcaster``
+      - bool
+      - ``true``
+      - Load ``franka_robot_state_broadcaster``. Set this to ``false`` for robots
+        that do not support it, such as TMR.
+    * - ``controllers_yaml``
+      - string
+      - ``franka_bringup/config/controllers.yaml``
+      - Override the controller configuration file passed to ``ros2_control_node``.
+
+
+Namespace-enabled launch files
 ------------------------------
 
-To demonstrate how to launch the robot within a specified namespace, we provide an example launch file located at
-``franka_bringup/launch/example.launch.py``.
+Use ``franka_bringup/launch/example.launch.py`` when you want to start one or more
+single-robot setups from a YAML file.
 
-By default ``example.launch.py`` file is configured to read essential robot configuration details from a YAML file, ``franka.ns-config.yaml``,
-located in the franka_bringup/launch/ directory. You may provide a different YAML file by specifying the path to it in the command line.
+By default, ``example.launch.py`` reads ``franka_bringup/config/franka.config.yaml``.
+Each top-level YAML entry describes one robot. Namespacing is handled by the
+``namespace`` key in that config file, which is passed through to
+``franka.launch.py``. If you want to launch a single robot directly, you can also
+set the ``namespace`` launch argument on ``franka.launch.py`` itself.
 
-``franka.ns-config.yaml`` file specifies critical parameters, including:
+For example, this command starts a single robot in the ``franka1`` namespace:
 
-* The path to the robot's URDF file.
-* The namespace to be used for the robot instance.
-* Additional configuration details specific to the robot instance.
+.. code-block:: shell
 
-example.launch.py "includes" ``franka.ns-launch.py`` which defines the core nodes typically required for robot operation..
+    ros2 launch franka_bringup franka.launch.py \
+        robot_type:=fr3 \
+        robot_ip:=172.16.0.3 \
+        namespace:=franka1
 
-The franka.ns-launch.py file, in turn, relies on ``ns-controllers.yaml`` to configure the ros2_controller framework.
-This configuration ensures that controllers are loaded in a namespace-agnostic manner, supporting consistent behavior across multiple namespaces.
+``example.launch.py`` launch arguments
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ns-controllers.yaml file is designed to accommodate zero or more namespaces, provided all namespaces share the same node configuration parameters.
+.. list-table::
+    :header-rows: 1
 
-Each of the configuration and launch files (franka.ns-config.yaml, example.launch.py, franka.ns-launch.py, and ns-controllers.yaml)
-contains detailed inline documentation to guide users through their structure and usage.  Further information about namespaces in ROS 2 can be found in the
-`ROS 2 documentation <https://docs.ros.org/en/jazzy/Tutorials/Intermediate/Launch/Using-ROS2-Launch-For-Large-Projects.html#namespaces>`_.
+    * - Name
+      - Type
+      - Default
+      - Description
+    * - ``robot_config_file``
+      - string
+      - ``franka.config.yaml``
+      - Config file name looked up in ``franka_bringup/config/`` or an absolute path.
+    * - ``controller_names``
+      - string
+      - none
+      - Comma-separated controller names to spawn. This argument is required.
+    * - ``robot_ips``
+      - string
+      - ``''``
+      - Optional comma-separated IP addresses that override ``robot_ip`` values in
+        the config file.
 
-To execute any of the example controllers defined in ns-controllers.yaml, you can use the example.launch.py launch file and specify
-the desired controller name as a command-line argument.
-
-First - modify ``franka.ns-config.yaml`` as appropriate for your setup.
-
-Then, for example, to run the *move_to_start_example_controller*, use the following command:
+Update ``franka_bringup/config/franka.config.yaml`` with your robot IP address and,
+if needed, a unique ``namespace`` for each robot. Then start an example controller
+with:
 
 .. code-block:: shell
 
     ros2 launch franka_bringup example.launch.py controller_names:=move_to_start_example_controller
+
+Further information about namespaces in ROS 2 is available in the
+`ROS 2 documentation <https://docs.ros.org/en/jazzy/Tutorials/Intermediate/Launch/Using-ROS2-Launch-For-Large-Projects.html#namespaces>`_.
 
 FR3 Duo
 ------------------------
@@ -93,17 +175,92 @@ launch file with the ``fr3_duo.config.yaml`` configuration file.
 Configuration
 ^^^^^^^^^^^^^
 
-The dual-arm configuration is defined in ``franka_bringup/config/fr3_duo.config.yaml``. The key parameters are:
+``fr3_duo.launch.py`` accepts three CLI launch arguments. The long header comment at
+the top of the file also lists keys from the YAML config file; those are not
+additional ``ros2 launch`` command-line arguments.
 
-* ``robot_types``: Types of the robot arms as a string list (e.g., ``"['fr3','fr3']"``)
-* ``arm_prefixes``: Unique prefixes for each arm (e.g., ``"['right','left']"``)
-* ``robot_ips``: IP addresses of the robots as a string list (e.g., ``"['172.16.0.3','172.16.0.5']"``)
-* ``check_selfcollision``:  Enables the self_collision_node (e.g., ``"true"``)
+``fr3_duo.launch.py`` launch arguments
+""""""""""""""""""""""""""""""""""""""
+
+.. list-table::
+    :header-rows: 1
+
+    * - Name
+      - Type
+      - Default
+      - Description
+    * - ``robot_config_file``
+      - string
+      - ``franka_bringup/config/fr3_duo.config.yaml``
+      - Config file name looked up in ``franka_bringup/config/`` or an absolute path.
+    * - ``controllers_yaml``
+      - string
+      - ``franka_bringup/config/controllers.yaml``
+      - Override the controller definition file passed to ``ros2_control_node``.
+    * - ``controller_name``
+      - string
+      - none
+      - Controller to spawn. This argument is required.
+
+The dual-arm configuration is defined in ``franka_bringup/config/fr3_duo.config.yaml``.
+The main config file keys are:
+
+.. list-table::
+    :header-rows: 1
+
+    * - Key
+      - Type
+      - Example
+      - Description
+    * - ``robot_types``
+      - stringified list
+      - ``"['fr3v2','fr3v2']"``
+      - Robot model identifiers for the two arms.
+    * - ``arm_prefixes``
+      - stringified list
+      - ``"['left','right']"``
+      - Unique prefixes used for the two arms.
+    * - ``robot_ips``
+      - stringified list
+      - ``"['172.16.16.11','172.16.16.12']"``
+      - FCI IP addresses of the two robots.
+    * - ``load_gripper``
+      - bool
+      - ``"false"``
+      - Enable the gripper launch integration.
+    * - ``use_fake_hardware``
+      - bool
+      - ``"false"``
+      - Use fake hardware instead of real robots.
+    * - ``fake_sensor_commands``
+      - bool
+      - ``"false"``
+      - Enable fake sensor commands when fake hardware is used.
+    * - ``namespace``
+      - string
+      - ``""``
+      - ROS namespace applied to the whole dual-arm setup.
+    * - ``joint_state_rate``
+      - integer
+      - ``1000``
+      - Joint state publisher rate in Hz.
+    * - ``use_rviz``
+      - bool
+      - ``"true"``
+      - Start RViz together with the launch file.
+    * - ``thread_priority``
+      - integer
+      - ``98``
+      - Thread priority used by the hardware interface. Must stay above the controller
+        manager's ``thread_priority``, since this thread owns the 1 kHz robot socket.
 
 .. note::
 
     All three arrays (``robot_types``, ``robot_ips``, ``arm_prefixes``) must have the same length,
     and ``arm_prefixes`` must contain unique values.
+
+    The self-collision node is started automatically by ``fr3_duo.launch.py``.
+    There is no ``check_selfcollision`` config key in ``fr3_duo.config.yaml``.
 
 Launching the FR3 Duo
 ^^^^^^^^^^^^^^^^^^^^^
@@ -136,36 +293,101 @@ using the ``mobile_fr3_duo.launch.py`` launch file with the ``mobile_fr3_duo.con
     The Mobile FR3 Duo setup combines:
 
     * **Dual FR3 arms**: Controlled via joint impedance using the torque (effort) command interface
-    * **Mobile base**: Controlled via cartesian velocity using GPIO interfaces
+    * **Mobile base**: Controlled via Cartesian velocity using GPIO interfaces
 
     Like the FR3 Duo, this setup currently only supports the **torque (effort) command interface** for the arms.
 
 Configuration
 ^^^^^^^^^^^^^
 
-The mobile dual-arm configuration is defined in ``franka_bringup/config/mobile_fr3_duo.config.yaml``. The key parameters are:
+``mobile_fr3_duo.launch.py`` also exposes only three CLI launch arguments. As with
+``fr3_duo.launch.py``, the header comment in the launch file mostly documents keys
+from the YAML config file, not extra command-line arguments.
 
-* ``robot_types``: Types of all robot components as a string list (e.g., ``"['tmrv0_2','fr3','fr3']"``)
+``mobile_fr3_duo.launch.py`` launch arguments
+""""""""""""""""""""""""""""""""""""""""""""""
 
-  * First entry: Mobile base type (``tmrv0_2``)
-  * Remaining entries: Arm types (``fr3``)
+.. list-table::
+    :header-rows: 1
 
-* ``arm_prefixes``: Prefixes for all robot components (e.g., ``"['','left','right']"``)
+    * - Name
+      - Type
+      - Default
+      - Description
+    * - ``robot_config_file``
+      - string
+      - ``mobile_fr3_duo.config.yaml``
+      - Config file name looked up in ``franka_bringup/config/`` or an absolute path.
+    * - ``controllers_yaml``
+      - string
+      - ``franka_bringup/config/controllers.yaml``
+      - Override the controller definition file passed to ``ros2_control_node``.
+    * - ``controller_name``
+      - string
+      - none
+      - Controller to spawn. This argument is required.
 
-  * First entry: Empty string ``''`` for mobile base (no prefix)
-  * Remaining entries: Unique prefixes for each arm
+The mobile dual-arm configuration is defined in
+``franka_bringup/config/mobile_fr3_duo.config.yaml``. The main config file keys are:
 
-* ``robot_ips``: IP addresses of all robots as a string list (e.g., ``"['172.16.0.1','172.16.0.5','172.16.0.6']"``)
+.. list-table::
+    :header-rows: 1
 
-  * First entry: Mobile base IP address
-  * Remaining entries: Arm IP addresses
-
-* ``check_selfcollision``:  Enables the self_collision_node (e.g., ``"true"``)
+    * - Key
+      - Type
+      - Example
+      - Description
+    * - ``robot_types``
+      - stringified list
+      - ``"['tmrv0_2', 'fr3v2', 'fr3v2']"``
+      - Robot model identifiers for the mobile base and both arms.
+    * - ``robot_prefixes``
+      - stringified list
+      - ``"['', 'left', 'right']"``
+      - Prefixes for the mobile base and both arms. The first entry is the mobile
+        base prefix and is usually empty.
+    * - ``robot_ips``
+      - stringified list
+      - ``"['172.16.16.10', '172.16.16.11', '172.16.16.12']"``
+      - IP addresses for the mobile base and both arms.
+    * - ``load_gripper``
+      - bool
+      - ``false``
+      - Enable the gripper launch integration.
+    * - ``use_fake_hardware``
+      - bool
+      - ``false``
+      - Use fake hardware instead of real robots.
+    * - ``fake_sensor_commands``
+      - bool
+      - ``false``
+      - Enable fake sensor commands when fake hardware is used.
+    * - ``namespace``
+      - string
+      - ``''``
+      - ROS namespace applied to the full mobile dual-arm setup.
+    * - ``joint_state_rate``
+      - integer
+      - ``30``
+      - Joint state publisher rate in Hz.
+    * - ``use_rviz``
+      - bool
+      - ``true``
+      - Start RViz together with the launch file.
+    * - ``thread_priority``
+      - integer
+      - ``98``
+      - Thread priority used by the hardware interface. Must stay above the controller
+        manager's ``thread_priority``, since this thread owns the 1 kHz robot socket.
 
 .. note::
 
-    All three arrays (``robot_types``, ``robot_ips``, ``arm_prefixes``) must have exactly **3 entries**
-    (mobile base + 2 arms), and arm prefixes must be unique.
+    All three arrays (``robot_types``, ``robot_ips``, ``robot_prefixes``) must have
+    exactly **3 entries** (mobile base + 2 arms), and ``robot_prefixes`` must be unique.
+
+    The self-collision node is started automatically by
+    ``mobile_fr3_duo.launch.py``. There is no ``check_selfcollision`` config key in
+    ``mobile_fr3_duo.config.yaml``.
 
 
 Launching the Mobile FR3 Duo
@@ -192,14 +414,16 @@ The mobile dual-arm system has the following kinematic structure:
     base → base_link (TMRv0.2) → franka_spine → franka_spine_support (prismatic)
          → mount_link → left/right FR3 arms
 
-The Franka spine includes a **prismatic joint** for vertical adjustment (0-0.85m range).
+The Franka spine includes a **prismatic joint** for vertical adjustment
+(0 to 0.85 m range).
 
 Non-realtime robot parameter setting
 ------------------------------------
 
-Non-realtime robot parameter setting can be done via ROS 2 services. They are advertised after the robot hardware is initialized.
+Non-realtime robot parameter setting can be done via ROS 2 services. The services
+are advertised after the robot hardware is initialized.
 
-Service names are given below::
+Service names are:
 
  * /service_server/set_cartesian_stiffness
  * /service_server/set_force_torque_collision_behavior
@@ -229,9 +453,11 @@ Service message descriptions are given below.
    and joint level to configure the collision reflex.
  * ``franka_msgs::srv::SetLoad`` sets an external load to compensate (e.g. of a grasped object).
 
-Launch franka_bringup/franka.launch.py file to initialize robot hardware::
+Launch ``franka_bringup/franka.launch.py`` to initialize the robot hardware:
 
-    ros2 launch franka_bringup franka.launch.py robot_ip:=<fci-ip>
+.. code-block:: shell
+
+    ros2 launch franka_bringup franka.launch.py robot_type:=fr3 robot_ip:=172.16.0.3
 
 Here is a minimal example:
 
@@ -254,7 +480,7 @@ Here is a minimal example:
     <robot_type>_K frame marks the center of the internal
     Cartesian impedance. It also serves as a reference frame for external wrenches. *Neither the
     <robot_type>_EE nor the <robot_type>_K are contained in the URDF as they can be changed at run time*.
-    By default, <robot_type> is set to "panda".
+    In the examples above, ``<robot_type>`` is ``fr3``.
 
     .. figure:: ../../docs/assets/frames.svg
         :align: center
@@ -265,19 +491,23 @@ Here is a minimal example:
 Non-realtime ROS 2 actions
 --------------------------
 
-Non-realtime ROS 2 actions can be done via the `ActionServer`. Following actions are available:
+Non-realtime ROS 2 actions are exposed by the action server. The following action is
+available:
 
 * ``/action_server/error_recovery`` - Recovers automatically from a robot error.
 
-The used messages are:
+The following message type is used:
 
 * ``franka_msgs::action::ErrorRecovery`` - no parameters.
 
-Example usage:::
+Example usage:
+
+.. code-block:: shell
 
     ros2 action send_goal /action_server/error_recovery franka_msgs/action/ErrorRecovery {}
 
 Known Issues
 ------------
 
-* When using the ``fake_hardware`` with MoveIt, it takes some time until the default position is applied.
+* When using fake hardware with MoveIt, it takes some time until the default
+  position is applied.

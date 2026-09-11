@@ -7,6 +7,7 @@ endif()
 
 find_package(pluginlib REQUIRED)
 find_package(ament_cmake REQUIRED)
+find_package(ament_cmake_python REQUIRED)
 find_package(controller_interface REQUIRED)
 find_package(hardware_interface REQUIRED)
 find_package(rclcpp REQUIRED)
@@ -68,11 +69,23 @@ ament_target_dependencies(
         urdf
 )
 
+ament_python_install_package(${PROJECT_NAME})
+
 install(
   TARGETS ${PROJECT_NAME}
   RUNTIME DESTINATION bin
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
+)
+
+install(PROGRAMS
+  scripts/battery_server_node.py
+  DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY
+  launch config
+  DESTINATION share/${PROJECT_NAME}/
 )
 
 if(BUILD_TESTING)

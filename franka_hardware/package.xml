@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>franka_hardware</name>
-  <version>3.4.1</version>
+  <version>3.5.3</version>
   <description>franka_hardware provides hardware interfaces for using Franka Robotics research robots with ros2_control</description>
   <maintainer email="support@franka.de">Franka Robotics GmbH</maintainer>
   <license>Apache 2.0</license>
@@ -12,6 +12,7 @@
   <depend>libfranka</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_action</depend>
+  <depend>rclcpp_components</depend>
   <depend>franka_msgs</depend>
   <depend>hardware_interface</depend>
   <depend>pluginlib</depend>
@@ -27,6 +28,7 @@
   <test_depend>ament_cmake_pep257</test_depend>
   <test_depend>ament_cmake_xmllint</test_depend>
   <test_depend>ament_cmake_gmock</test_depend>
+  <test_depend>ament_cmake_ros</test_depend>
   <test_depend>ament_cmake_clang_tidy</test_depend>
   <test_depend>xacro</test_depend>
   <test_depend>franka_description</test_depend>

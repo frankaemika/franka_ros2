@@ -145,10 +145,12 @@ class AsyncBuffer {
     return true;
   }
 
+  static constexpr size_t kSize = 3;
+
  private:
   struct State {
     [[nodiscard]] bool is_consistent() const {
-      return active_index < 3 && mailbox_index < 3 && free_index < 3 &&
+      return active_index < kSize && mailbox_index < kSize && free_index < kSize &&
              (active_index != mailbox_index) && (mailbox_index != free_index) &&
              (free_index != active_index);
     }
@@ -163,5 +165,5 @@ class AsyncBuffer {
                 "AsyncBuffer::State must be lock-free atomically swappable");
   // Only accessed by the producer thread -- not atomic by design (single-producer contract).
   bool free_buffer_checked_out_ = false;
-  std::array<std::unique_ptr<T>, 3> buffers_;
+  std::array<std::unique_ptr<T>, kSize> buffers_;
 };

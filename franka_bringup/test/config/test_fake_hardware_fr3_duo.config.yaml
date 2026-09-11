@@ -1,0 +1,10 @@
+FR3_DUO:
+  robot_types: "['fr3v2', 'fr3v2']"
+  arm_prefixes: "['left', 'right']"
+  robot_ips: "['', '']"
+  use_fake_hardware: "true"
+  fake_sensor_commands: "true"
+  load_gripper: "false"
+  use_rviz: "false"
+  joint_state_rate: 30
+  namespace: ""

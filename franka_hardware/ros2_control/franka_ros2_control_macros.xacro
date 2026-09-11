@@ -2,11 +2,11 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
   <!-- Configure a single Franka arm joint with position/velocity/conditional-effort commands -->
-  <xacro:macro name="configure_arm_joint" params="joint_name initial_position gazebo:=0 gazebo_effort:=0">
+  <xacro:macro name="configure_arm_joint" params="joint_name initial_position include_effort_command:=1">
     <joint name="${joint_name}">
       <command_interface name="position"/>
       <command_interface name="velocity"/>
-      <xacro:if value="${gazebo == 0 or gazebo_effort == 1}">
+      <xacro:if value="${include_effort_command}">
         <command_interface name="effort"/>
       </xacro:if>
       <state_interface name="position">
@@ -18,23 +18,23 @@
   </xacro:macro>
 
   <!-- Configure all 7 arm joints for a given prefix with standard initial positions -->
-  <xacro:macro name="configure_arm_joints" params="joint_prefix gazebo:=0 gazebo_effort:=0">
-    <xacro:configure_arm_joint joint_name="${joint_prefix}_joint1" initial_position="0.0" gazebo="${gazebo}" gazebo_effort="${gazebo_effort}"/>
-    <xacro:configure_arm_joint joint_name="${joint_prefix}_joint2" initial_position="${-pi/4}" gazebo="${gazebo}" gazebo_effort="${gazebo_effort}"/>
-    <xacro:configure_arm_joint joint_name="${joint_prefix}_joint3" initial_position="0.0" gazebo="${gazebo}" gazebo_effort="${gazebo_effort}"/>
-    <xacro:configure_arm_joint joint_name="${joint_prefix}_joint4" initial_position="${-3*pi/4}" gazebo="${gazebo}" gazebo_effort="${gazebo_effort}"/>
-    <xacro:configure_arm_joint joint_name="${joint_prefix}_joint5" initial_position="0.0" gazebo="${gazebo}" gazebo_effort="${gazebo_effort}"/>
-    <xacro:configure_arm_joint joint_name="${joint_prefix}_joint6" initial_position="${pi/2}" gazebo="${gazebo}" gazebo_effort="${gazebo_effort}"/>
-    <xacro:configure_arm_joint joint_name="${joint_prefix}_joint7" initial_position="${pi/4}" gazebo="${gazebo}" gazebo_effort="${gazebo_effort}"/>
+  <xacro:macro name="configure_arm_joints" params="joint_prefix include_effort_command:=1">
+    <xacro:configure_arm_joint joint_name="${joint_prefix}_joint1" initial_position="0.0" include_effort_command="${include_effort_command}"/>
+    <xacro:configure_arm_joint joint_name="${joint_prefix}_joint2" initial_position="${-pi/4}" include_effort_command="${include_effort_command}"/>
+    <xacro:configure_arm_joint joint_name="${joint_prefix}_joint3" initial_position="0.0" include_effort_command="${include_effort_command}"/>
+    <xacro:configure_arm_joint joint_name="${joint_prefix}_joint4" initial_position="${-3*pi/4}" include_effort_command="${include_effort_command}"/>
+    <xacro:configure_arm_joint joint_name="${joint_prefix}_joint5" initial_position="0.0" include_effort_command="${include_effort_command}"/>
+    <xacro:configure_arm_joint joint_name="${joint_prefix}_joint6" initial_position="${pi/2}" include_effort_command="${include_effort_command}"/>
+    <xacro:configure_arm_joint joint_name="${joint_prefix}_joint7" initial_position="${pi/4}" include_effort_command="${include_effort_command}"/>
   </xacro:macro>
 
-  <!-- Configure a finger joint (position_only=1 for fr3_duo gazebo pattern: only position command) -->
-  <xacro:macro name="configure_finger_joint" params="joint_name gazebo:=0 gazebo_effort:=0 position_only:=0">
+  <!-- Configure a finger joint (position_only=1: only a position command, no velocity/effort) -->
+  <xacro:macro name="configure_finger_joint" params="joint_name include_effort_command:=1 position_only:=0">
     <joint name="${joint_name}">
       <command_interface name="position"/>
       <xacro:unless value="${position_only}">
         <command_interface name="velocity"/>
-        <xacro:if value="${gazebo == 0 or gazebo_effort == 1}">
+        <xacro:if value="${include_effort_command}">
           <command_interface name="effort"/>
         </xacro:if>
       </xacro:unless>
@@ -44,6 +44,27 @@
       <state_interface name="velocity"/>
       <state_interface name="effort"/>
     </joint>
+  </xacro:macro>
+
+  <!-- Emit the arm joints (and optional finger joint) for both arms of a dual-arm gazebo
+       ros2_control block. gz_ros2_control supports only joint command interfaces, so this
+       covers the full per-arm joint set. finger_position_only threads through to
+       configure_finger_joint (default 1: single position command, avoids the
+       gz_ros2_control position+velocity command interface bug). -->
+  <xacro:macro name="configure_duo_gazebo_arm_joints"
+    params="arm1_prefix arm1_type arm2_prefix arm2_type
+            include_effort_command:=1 include_finger_joint:=0
+            finger_position_only:=1">
+    <!-- Left arm joints -->
+    <xacro:configure_arm_joints joint_prefix="${arm1_prefix}_${arm1_type}" include_effort_command="${include_effort_command}"/>
+    <xacro:if value="${include_finger_joint}">
+      <xacro:configure_finger_joint joint_name="${arm1_prefix}_${arm1_type}_finger_joint1" include_effort_command="${include_effort_command}" position_only="${finger_position_only}"/>
+    </xacro:if>
+    <!-- Right arm joints -->
+    <xacro:configure_arm_joints joint_prefix="${arm2_prefix}_${arm2_type}" include_effort_command="${include_effort_command}"/>
+    <xacro:if value="${include_finger_joint}">
+      <xacro:configure_finger_joint joint_name="${arm2_prefix}_${arm2_type}_finger_joint1" include_effort_command="${include_effort_command}" position_only="${finger_position_only}"/>
+    </xacro:if>
   </xacro:macro>
 
   <!-- A state-only joint: position + velocity state interfaces, no command interfaces -->
@@ -93,13 +114,13 @@
   </xacro:macro>
 
   <!-- Emit 6 cartesian_velocity GPIO entries (vx, vy, vz, wx, wy, wz) for a given prefix -->
-  <xacro:macro name="cartesian_velocity_io" params="prefix:='' start_index:=0">
-    <xacro:general_purpose_io prefix="${prefix}vx" command_interface="cartesian_velocity" index="${start_index + 0}"/>
-    <xacro:general_purpose_io prefix="${prefix}vy" command_interface="cartesian_velocity" index="${start_index + 1}"/>
-    <xacro:general_purpose_io prefix="${prefix}vz" command_interface="cartesian_velocity" index="${start_index + 2}"/>
-    <xacro:general_purpose_io prefix="${prefix}wx" command_interface="cartesian_velocity" index="${start_index + 3}"/>
-    <xacro:general_purpose_io prefix="${prefix}wy" command_interface="cartesian_velocity" index="${start_index + 4}"/>
-    <xacro:general_purpose_io prefix="${prefix}wz" command_interface="cartesian_velocity" index="${start_index + 5}"/>
+  <xacro:macro name="cartesian_velocity_io" params="prefix:=''">
+    <xacro:general_purpose_io prefix="${prefix}vx" command_interface="cartesian_velocity" index="0"/>
+    <xacro:general_purpose_io prefix="${prefix}vy" command_interface="cartesian_velocity" index="1"/>
+    <xacro:general_purpose_io prefix="${prefix}vz" command_interface="cartesian_velocity" index="2"/>
+    <xacro:general_purpose_io prefix="${prefix}wx" command_interface="cartesian_velocity" index="3"/>
+    <xacro:general_purpose_io prefix="${prefix}wy" command_interface="cartesian_velocity" index="4"/>
+    <xacro:general_purpose_io prefix="${prefix}wz" command_interface="cartesian_velocity" index="5"/>
   </xacro:macro>
 
   <!-- Configure the 4 TMR drive joints (2 steering + 2 driving) -->
@@ -114,12 +135,13 @@
   <xacro:macro name="configure_passive_mobile_base_joints" params="include_spine:=0">
     <xacro:if value="${include_spine}">
       <!-- Spine: the prismatic spine carries the full upper-body weight. With
-           gravity enabled globally in Gazebo it would collapse unless actively
-           held, so (this macro is only instantiated under Gazebo) it gets a
-           position command interface and is held at its initial height by
-           spine_joint_trajectory_controller. gz_ros2_control issue #343
-           (position+velocity command interface bug) does not apply here: the
-           spine declares only a single position command interface. -->
+           gravity enabled globally in the simulator it would collapse unless
+           actively held, so (this macro is only instantiated when the passive
+           base joints are emitted) it gets a position command interface and is
+           held at its initial height by spine_joint_trajectory_controller.
+           gz_ros2_control issue #343 (position+velocity command interface bug)
+           does not apply here: the spine declares only a single position command
+           interface. -->
       <joint name="franka_spine_vertical_joint">
         <command_interface name="position"/>
         <state_interface name="position">
@@ -150,30 +172,29 @@
   </xacro:macro>
 
   <!-- Complete per-arm interface set: joints + finger + cartesian_velocity + elbow + cartesian_pose + sensor.
-       Each component is optional via boolean flags. Indices are parameterized for shared hardware blocks. -->
+       Each component is optional via boolean flags. Indices start at 0 (single-arm hardware block). -->
   <xacro:macro name="configure_arm_interfaces"
-    params="joint_prefix gpio_prefix gazebo:=0 gazebo_effort:=0 hand:=0
-            cv_start_index:=0
-            include_elbow:=0 elbow_start_index:=0
+    params="joint_prefix gpio_prefix include_effort_command:=1 include_finger_joint:=0
+            include_elbow:=0
             include_cartesian_pose:=0
             include_sensor:=0 sensor_name:=''
             finger_position_only:=0">
 
     <!-- 7 arm joints (position/velocity/conditional-effort) -->
-    <xacro:configure_arm_joints joint_prefix="${joint_prefix}" gazebo="${gazebo}" gazebo_effort="${gazebo_effort}"/>
+    <xacro:configure_arm_joints joint_prefix="${joint_prefix}" include_effort_command="${include_effort_command}"/>
 
-    <!-- Finger joint (only in gazebo with hand) -->
-    <xacro:if value="${gazebo and hand}">
-      <xacro:configure_finger_joint joint_name="${joint_prefix}_finger_joint1" gazebo="${gazebo}" gazebo_effort="${gazebo_effort}" position_only="${finger_position_only}"/>
+    <!-- Optional finger joint -->
+    <xacro:if value="${include_finger_joint}">
+      <xacro:configure_finger_joint joint_name="${joint_prefix}_finger_joint1" include_effort_command="${include_effort_command}" position_only="${finger_position_only}"/>
     </xacro:if>
 
     <!-- Cartesian velocity GPIOs (6 entries: vx–wz) -->
-    <xacro:cartesian_velocity_io prefix="${gpio_prefix}" start_index="${cv_start_index}"/>
+    <xacro:cartesian_velocity_io prefix="${gpio_prefix}"/>
 
     <!-- Elbow command GPIOs (2 entries: joint_3_position, joint_4_sign) -->
     <xacro:if value="${include_elbow}">
-      <xacro:general_purpose_io prefix="${gpio_prefix}joint_3_position" command_interface="elbow_command" index="${elbow_start_index + 0}"/>
-      <xacro:general_purpose_io prefix="${gpio_prefix}joint_4_sign" command_interface="elbow_command" index="${elbow_start_index + 1}"/>
+      <xacro:general_purpose_io prefix="${gpio_prefix}joint_3_position" command_interface="elbow_command" index="0"/>
+      <xacro:general_purpose_io prefix="${gpio_prefix}joint_4_sign" command_interface="elbow_command" index="1"/>
     </xacro:if>
 
     <!-- Cartesian pose GPIOs (16 entries) -->

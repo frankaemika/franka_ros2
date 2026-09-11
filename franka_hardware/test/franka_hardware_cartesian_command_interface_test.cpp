@@ -544,7 +544,11 @@ TEST_F(
 }
 
 int main(int argc, char** argv) {
-  rclcpp::init(0, nullptr);
   testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  rclcpp::init(0, nullptr);
+  const auto ret = RUN_ALL_TESTS();
+  if (rclcpp::ok()) {
+    rclcpp::shutdown();
+  }
+  return ret;
 }

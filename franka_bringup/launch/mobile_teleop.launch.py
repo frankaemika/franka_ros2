@@ -67,8 +67,8 @@ def generate_robot_nodes(context):
             parameters=[
                 {
                     'dev': '/dev/input/js0',
-                    'deadzone': 0.3,
-                    'autorepeat_rate': 20.0,
+                    'deadzone': 0.1,
+                    'autorepeat_rate': 50.0,
                 }
             ],
         ),

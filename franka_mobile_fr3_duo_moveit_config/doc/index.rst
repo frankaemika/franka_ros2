@@ -1,26 +1,30 @@
 franka_mobile_fr3_duo_moveit_config
 ===================================
 
-This package contains the configuration for for the Mobile FR3 Duo with MoveIt 2.
+This package contains the MoveIt 2 configuration for the Mobile FR3 Duo.
 
 Move Group
 ----------
 
-There are 3 move groups called ``left_arm``, ``right_arm`` and ``mobile_base`` and one group ``full_Body`` combining them all. There is also a move group for the ``spine``, which you can use for planning and visualization, but it currently lacks support to move the real hardware or simulation.
+There are three move groups called ``left_arm``, ``right_arm``, and ``mobile_base``,
+plus one group called ``full_body`` that combines them all. There is also a move group
+for the ``spine`` that you can use for planning and visualization, but it does not yet
+support motion on the real hardware or in simulation.
 
 
 Configuration Files
 -------------------
 
-In the `config` folder you will find:
+In the ``config`` folder you will find:
 
-* Motion planning configuration for the Mobile FR3 Duo (`moveit_defaults.json`)
-* Joint limits (`joint_limits.yaml`)
-* Kinematics solver configuration (`kinematics.yaml`)
-* ROS 2 controller configuration (`mobile_fr3_duo_controllers.yaml`)
-* MoveIt controller configuration (`moveit_controllers.yaml`)
+* Motion planning configuration for the Mobile FR3 Duo (``moveit_defaults.json``)
+* Joint limits (``joint_limits.yaml``)
+* Kinematics solver configuration (``kinematics.yaml``)
+* ROS 2 controller configuration (``mobile_fr3_duo_controllers.yaml``)
+* MoveIt controller configuration (``moveit_controllers.yaml``)
 
-Planning groups and collisions are defined in the `mobile_fr3_duo.srdf.xacro` in the `franka_description` package.
+Planning groups and collisions are defined in ``mobile_fr3_duo.srdf.xacro`` in the
+``franka_description`` package.
 
 Usage
 -----

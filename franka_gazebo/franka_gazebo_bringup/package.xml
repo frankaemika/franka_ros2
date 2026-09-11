@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>franka_gazebo_bringup</name>
-  <version>3.4.1</version>
+  <version>3.5.3</version>
   <description>Launch files, worlds, urdf-xacro and config assets for running Franka robots in Gazebo</description>
   <maintainer email="support@franka.de">Franka Robotics GmbH</maintainer>
   <license>Apache 2.0</license>
@@ -20,10 +20,17 @@
   <exec_depend>franka_mobile_sensors</exec_depend>
   <exec_depend>franka_mobile</exec_depend>
   <exec_depend>franka_example_controllers</exec_depend>
+  <exec_depend>realsense2_description</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_cmake_ros</test_depend>
+  <test_depend>ament_cmake_pytest</test_depend>
   <test_depend>launch_testing_ament_cmake</test_depend>
+  <test_depend>launch</test_depend>
+  <test_depend>launch_ros</test_depend>
+  <test_depend>launch_testing</test_depend>
+  <test_depend>rclpy</test_depend>
+  <test_depend>sensor_msgs</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

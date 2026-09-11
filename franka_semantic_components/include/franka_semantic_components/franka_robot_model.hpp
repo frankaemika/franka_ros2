@@ -23,7 +23,7 @@
 #include "franka/robot_state.h"
 #include "franka_hardware/model.hpp"
 
-#include <realtime_tools/realtime_buffer.hpp>
+#include <realtime_tools/realtime_thread_safe_box.hpp>
 #include "semantic_components/semantic_component_interface.hpp"
 
 namespace franka_semantic_components {
@@ -172,7 +172,11 @@ class FrankaRobotModel
   static constexpr std::chrono::microseconds kCacheMaxAge{1000};  // 1 ms
 
   /**
-   * @brief Refreshes the cached robot state from the RealtimeBuffer.
+   * @brief Refreshes the cached robot state from the RealtimeThreadSafeBox.
+   *
+   * The first sample blocks via get() so a default-constructed (all-zero) state
+   * can never reach model evaluations. Later refreshes are best-effort try_get();
+   * under contention the previous valid cache is kept.
    */
   auto refreshRobotState() -> void;
 
@@ -184,10 +188,11 @@ class FrankaRobotModel
   auto getCachedRobotState() -> const franka::RobotState&;
 
   bool initialized_{false};
+  bool cached_state_valid_{false};
   std::chrono::steady_clock::time_point last_refresh_time_{};
   franka::RobotState cached_robot_state_{};
   franka_hardware::Model* robot_model_;
-  realtime_tools::RealtimeBuffer<franka::RobotState>* robot_state_buffer_;
+  realtime_tools::RealtimeThreadSafeBox<franka::RobotState>* robot_state_box_{nullptr};
 
   std::string robot_type_;
 

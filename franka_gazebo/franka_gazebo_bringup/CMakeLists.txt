@@ -22,6 +22,14 @@ if(BUILD_TESTING)
     add_launch_test("${path}" RUNNER "${RUNNER}" ${ARGN})
   endfunction()
   add_ros_isolated_launch_test(test/test_gazebo_launch.py TIMEOUT 600)
+  add_ros_isolated_launch_test(test/test_gazebo_contact_wrench.py TIMEOUT 600)
+  add_ros_isolated_launch_test(test/test_gazebo_fr3_duo.py TIMEOUT 120)
+  add_ros_isolated_launch_test(test/test_gazebo_mobile_fr3_duo.py TIMEOUT 120)
+  find_package(ament_cmake_pytest REQUIRED)
+  ament_add_pytest_test(
+    test_gz_sim_resource_path
+    test/test_gz_sim_resource_path.py
+  )
 endif()
 
 ament_package()

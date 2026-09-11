@@ -12,16 +12,17 @@
   <!-- ros2_control hardware interface macros -->
   <xacro:include filename="$(find franka_hardware)/ros2_control/franka_arm.ros2_control.xacro"/>
   <xacro:include filename="$(find franka_hardware)/ros2_control/tmrv0_2.ros2_control.xacro"/>
+  <!-- Real/mock hardware-plugin blocks (owned by franka_hardware) -->
+  <xacro:include filename="$(find franka_hardware)/ros2_control/franka_arm_hardware_plugins.xacro"/>
+  <xacro:include filename="$(find franka_hardware)/ros2_control/tmrv0_2_hardware_plugins.xacro"/>
 
   <!-- ros2_control-specific arguments (not declared by description) -->
   <xacro:arg name="robot_ips" default="['172.16.0.1','172.16.0.2','172.16.0.3']"/>
   <xacro:property name="robot_ips_list" value="${$(arg robot_ips)}"/>
-  <xacro:arg name="robot_prefixes" default="['','left','right']"/>
   <xacro:arg name="use_fake_hardware" default="false"/>
   <xacro:arg name="fake_sensor_commands" default="false"/>
-  <xacro:arg name="gazebo_effort" default="false"/>
   <xacro:arg name="is_async" default="false"/>
-  <xacro:arg name="thread_priority" default="50"/>
+  <xacro:arg name="thread_priority" default="98"/>
 
   <!-- Arm prefixes (hardcoded as in mobile_fr3_duo_v0_2.xacro) -->
   <xacro:property name="arm_prefixes_list" value="${['left','right']}"/>
@@ -29,39 +30,46 @@
   <!-- TMR mobile base ros2_control -->
   <xacro:tmrv0_2_ros2_control
       mobile_robot_type="${robot_types_list[0]}"
-      robot_ip="${robot_ips_list[0]}"
-      use_fake_hardware="$(arg use_fake_hardware)"
-      fake_sensor_commands="$(arg fake_sensor_commands)"
-      gazebo="$(arg gazebo)"
-      robot_namespace=""
+      include_passive_base="false"
       is_async="$(arg is_async)"
       thread_priority="$(arg thread_priority)"
-      include_spine="1"/>
+      include_spine="1">
+    <hardware_plugin>
+      <xacro:tmrv0_2_selected_hardware_plugin
+          use_fake_hardware="$(arg use_fake_hardware)"
+          robot_ip="${robot_ips_list[0]}"
+          fake_sensor_commands="$(arg fake_sensor_commands)"/>
+    </hardware_plugin>
+  </xacro:tmrv0_2_ros2_control>
 
-  <!-- Per-arm ros2_control hardware interfaces: one franka_arm_ros2_control call per arm
-       (two independent hardware components, each with its own robot_ip). -->
-  <xacro:franka_arm_ros2_control
-      robot_type="${robot_types_list[1]}"
-      robot_ip="${robot_ips_list[1]}"
-      use_fake_hardware="$(arg use_fake_hardware)"
-      fake_sensor_commands="$(arg fake_sensor_commands)"
-      gazebo="$(arg gazebo)"
-      hand="$(arg hand)"
-      gazebo_effort="$(arg gazebo_effort)"
-      arm_prefix="${arm_prefixes_list[0]}_"
-      is_async="$(arg is_async)"
-      thread_priority="$(arg thread_priority)"/>
+  <!-- One franka_arm_ros2_control hardware component per arm (each with its own robot_ip).
+       The TMR base occupies index 0 of robot_types/robot_ips, so arm i reads
+       robot_types_list[i + 1], robot_ips_list[i + 1] and arm_prefixes_list[i]. -->
+  <xacro:macro name="mobile_fr3_duo_arm_ros2_control" params="arm_index">
+    <xacro:franka_arm_ros2_control
+        robot_type="${robot_types_list[arm_index + 1]}"
+        include_effort_command="true"
+        include_finger_joint="false"
+        arm_prefix="${arm_prefixes_list[arm_index]}_"
+        is_async="$(arg is_async)"
+        thread_priority="$(arg thread_priority)">
+      <hardware_plugin>
+        <xacro:franka_selected_arm_hardware_plugin
+            use_fake_hardware="$(arg use_fake_hardware)"
+            robot_ip="${robot_ips_list[arm_index + 1]}"
+            arm_prefix="${arm_prefixes_list[arm_index]}_"
+            fake_sensor_commands="$(arg fake_sensor_commands)"/>
+      </hardware_plugin>
+    </xacro:franka_arm_ros2_control>
+  </xacro:macro>
 
-  <xacro:franka_arm_ros2_control
-      robot_type="${robot_types_list[2]}"
-      robot_ip="${robot_ips_list[2]}"
-      use_fake_hardware="$(arg use_fake_hardware)"
-      fake_sensor_commands="$(arg fake_sensor_commands)"
-      gazebo="$(arg gazebo)"
-      hand="$(arg hand)"
-      gazebo_effort="$(arg gazebo_effort)"
-      arm_prefix="${arm_prefixes_list[1]}_"
-      is_async="$(arg is_async)"
-      thread_priority="$(arg thread_priority)"/>
+  <xacro:macro name="mobile_fr3_duo_arm_loop" params="arm_index arm_count">
+    <xacro:if value="${arm_index &lt; arm_count}">
+      <xacro:mobile_fr3_duo_arm_ros2_control arm_index="${arm_index}"/>
+      <xacro:mobile_fr3_duo_arm_loop arm_index="${arm_index + 1}" arm_count="${arm_count}"/>
+    </xacro:if>
+  </xacro:macro>
+
+  <xacro:mobile_fr3_duo_arm_loop arm_index="0" arm_count="2"/>
 
 </robot>

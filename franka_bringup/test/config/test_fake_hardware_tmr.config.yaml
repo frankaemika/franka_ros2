@@ -1,0 +1,11 @@
+TEST_TMR:
+  robot_type: "tmrv0_2"
+  arm_prefix: ""
+  fake_sensor_commands: "true"
+  joint_state_rate: 30
+  load_gripper: "false"
+  namespace: ""
+  robot_ip: "dont-care"
+  use_fake_hardware: "true"
+  load_franka_robot_state_broadcaster: "false"
+  use_rviz: "false"

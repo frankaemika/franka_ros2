@@ -30,9 +30,15 @@ description: 'Audit and fix documentation drift in franka_ros2 packages. Use whe
 - `franka_gripper/doc/`
 - `franka_mobile/doc/`
 - `franka_mobile_fr3_duo_moveit_config/doc/`
-- `franka_mobile_sensors/doc/`
-- `franka_vision_and_manipulation_kit/doc/`
+- `franka_description_extensions/doc/`
+- `franka_description_extensions/franka_mobile_sensors/doc/`
+- `franka_description_extensions/franka_vision_and_manipulation_kit/doc/`
 - `franka_ros2/doc/` (compatibility matrix)
+
+The relocated description packages are exposed through the umbrella
+`franka_description_extensions/doc/index.rst`. The repository-level
+`docs/index.rst` lists that umbrella, which keeps the two child package docs
+reachable without duplicating them in the root toctree.
 
 ## Audit Procedure
 

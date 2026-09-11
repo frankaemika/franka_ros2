@@ -2,7 +2,7 @@
   controller_manager:
     ros__parameters:
       update_rate: 1000  # Hz
-      thread_priority: 98
+      thread_priority: 97
       overruns:
         manage: false
         print_warnings: false
@@ -16,7 +16,7 @@
       franka_robot_state_broadcaster:
         type: franka_robot_state_broadcaster/FrankaRobotStateBroadcaster
 
-/**: 
+/**:
   fr3_arm_controller:
     ros__parameters:
       command_interfaces:

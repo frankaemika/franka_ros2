@@ -26,6 +26,7 @@ from builtin_interfaces.msg import Duration
 from controller_manager_msgs.srv import (
     ConfigureController,
     ListControllers,
+    ListHardwareInterfaces,
     LoadController,
     SwitchController,
     UnloadController,
@@ -112,6 +113,10 @@ class ControllerServiceClient:
         )
         self._list_client = node.create_client(
             ListControllers, f'{controller_manager_name}/list_controllers'
+        )
+        self._list_hardware_interfaces_client = node.create_client(
+            ListHardwareInterfaces,
+            f'{controller_manager_name}/list_hardware_interfaces',
         )
 
     def wait_for_services(self, timeout_sec: float = 10.0) -> bool:
@@ -358,6 +363,33 @@ class ControllerServiceClient:
             return list(future.result().controller)
         return []
 
+    def list_hardware_interfaces(self, timeout_sec: float = 10.0):
+        """
+        List ros2_control hardware command/state interfaces.
+
+        Returns
+        -------
+        ListHardwareInterfaces.Response or None
+            Service response, or None on timeout/failure.
+
+        """
+        if not self._list_hardware_interfaces_client.wait_for_service(
+            timeout_sec=timeout_sec
+        ):
+            self._logger.error('list_hardware_interfaces service not available')
+            return None
+
+        request = ListHardwareInterfaces.Request()
+        future = self._list_hardware_interfaces_client.call_async(request)
+        rclpy.spin_until_future_complete(
+            self._node, future, timeout_sec=timeout_sec
+        )
+
+        if not future.done() or future.result() is None:
+            self._logger.error('list_hardware_interfaces request failed')
+            return None
+        return future.result()
+
     def wait_for_controller_state(
         self,
         controller_name: str,
@@ -386,8 +418,8 @@ class ControllerServiceClient:
             f'Waiting for controller {controller_name} to reach state {target_states}...'
         )
 
-        start_time = time.time()
-        while time.time() - start_time < timeout_sec:
+        start_time = time.monotonic()
+        while time.monotonic() - start_time < timeout_sec:
             controllers = self.list_controllers()
 
             controller_found = False
@@ -426,3 +458,4 @@ class ControllerServiceClient:
         self._node.destroy_client(self._switch_client)
         self._node.destroy_client(self._unload_client)
         self._node.destroy_client(self._list_client)
+        self._node.destroy_client(self._list_hardware_interfaces_client)

@@ -3,31 +3,31 @@
     ros__parameters:
 
       # Joystick axis assignments (Xbox controller)
-      axis_linear: # Left joystick
-        x: 1        
-        y: 0        
+      axis_linear:             # Left joystick
+        x: 1
+        y: 0
 
-      axis_angular: # Right joystick sideways
-        yaw: 3   
+      axis_angular:            # Right joystick sideways
+        yaw: 3
 
-      # Speed scaling
+      # Normal speed (fine control) -- kept below the RCU ceilings
       scale_linear:
-        x: 2.0
-        y: 2.0
-
+        x: 0.0525
+        y: 0.0525
       scale_angular:
-        yaw: 3.0
+        yaw: 0.075
 
+      # Turbo = 100% of controllers.yaml swerve max_velocity
+      #   linear 0.35 m/s (well below RCU translational 1.75 m/s, 2-norm)
+      #   yaw    0.5 rad/s (just below RCU rotational 0.525 rad/s, 2-norm)
       scale_linear_turbo:
-        x: 10.0
-        y: 10.0
-
+        x: 0.35
+        y: 0.35
       scale_angular_turbo:
-        yaw: 4.0
-
+        yaw: 0.5
 
       # Buttons (Xbox)
-      enable_button: 5        # Hold RB
+      enable_button: 5         # Hold RB
       enable_turbo_button: 4   # Hold LB
 
       publish_stamped_twist: true

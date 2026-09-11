@@ -60,6 +60,8 @@ class PTPMotionTests : public ::testing::Test {
     std::copy(std::cbegin(default_goal_joint_configuration),
               std::cend(default_goal_joint_configuration), std::begin(default_joint_positions.q));
     default_joint_positions.motion_finished = false;
+    std::copy(std::cbegin(default_goal_joint_configuration),
+              std::cend(default_goal_joint_configuration), std::begin(stopping_joint_positions.q));
     stopping_joint_positions.motion_finished = true;
   }
 

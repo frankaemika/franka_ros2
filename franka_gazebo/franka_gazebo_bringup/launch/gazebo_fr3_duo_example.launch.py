@@ -107,20 +107,22 @@ def get_self_collision_node(context: LaunchContext, load_gripper, franka_hand, w
 
 def set_gz_sim_resource_path(context, with_sensors):
     with_sensors_val = context.perform_substitution(with_sensors).lower()
+    resource_paths = [
+        os.path.dirname(get_package_share_directory('franka_description')),
+    ]
     if with_sensors_val == 'true':
-        vmk_share = os.path.dirname(
-            get_package_share_directory('franka_vision_and_manipulation_kit'))
-        description_share = os.path.dirname(
-            get_package_share_directory('franka_description'))
-        robotiq_description_share = os.path.dirname(
-            get_package_share_directory('robotiq_description'))
-        zed_description_share = os.path.dirname(
-            get_package_share_directory('zed_description'))
-        os.environ['GZ_SIM_RESOURCE_PATH'] = f"{vmk_share}:{description_share}:{robotiq_description_share}:{zed_description_share}"
-    else:
-        description_share = os.path.dirname(
-            get_package_share_directory('franka_description'))
-        os.environ['GZ_SIM_RESOURCE_PATH'] = description_share
+        resource_paths.extend([
+            os.path.dirname(
+                get_package_share_directory('franka_vision_and_manipulation_kit')),
+            os.path.dirname(get_package_share_directory('robotiq_description')),
+            os.path.dirname(get_package_share_directory('zed_description')),
+            os.path.dirname(get_package_share_directory('realsense2_description')),
+        ])
+
+    resource_paths.extend(
+        os.environ.get('GZ_SIM_RESOURCE_PATH', '').split(os.pathsep))
+    os.environ['GZ_SIM_RESOURCE_PATH'] = os.pathsep.join(
+        dict.fromkeys(path for path in resource_paths if path))
     return []
 
 

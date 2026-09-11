@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find franka_hardware)/ros2_control/franka_ros2_control_macros.xacro"/>
+
+  <xacro:macro name="mobile_fr3_duo_ros2_control"
+    params="mobile_robot_type
+            robot_types
+            arm_prefixes
+            is_async:=false
+            thread_priority:=97
+            include_effort_command
+            include_finger_joint
+            include_passive_base
+            **hardware_plugin">
+    <ros2_control name="controller_manager" type="system" is_async="${is_async}">
+      <xacro:if value="${is_async}">
+        <properties>
+          <async scheduling_policy="detached" print_warnings="true" thread_priority="${thread_priority}"
+            manage_overruns="false"/>
+        </properties>
+      </xacro:if>
+      <hardware>
+        <param name="version">1.1.0</param>
+        <param name="mobile_robot_type">${mobile_robot_type}</param>
+        <param name="robot_type">mobile_fr3_duo</param>
+        <xacro:insert_block name="hardware_plugin"/>
+      </hardware>
+
+      <!-- Mobile base joints -->
+      <xacro:configure_mobile_drive_joints mobile_robot_type="${mobile_robot_type}"/>
+
+      <!-- Arm joints -->
+      <xacro:property name="robot_types_list" value="${robot_types}"/>
+      <xacro:property name="arm_prefixes_list" value="${arm_prefixes}"/>
+
+      <xacro:property name="arm1_type" value="${robot_types_list[1]}"/>
+      <xacro:property name="arm2_type" value="${robot_types_list[2]}"/>
+      <xacro:property name="arm1_prefix" value="${arm_prefixes_list[0]}"/>
+      <xacro:property name="arm2_prefix" value="${arm_prefixes_list[1]}"/>
+
+      <!-- Both arms' joints (mobile fingers keep full command set: position_only=0) -->
+      <xacro:configure_duo_gazebo_arm_joints
+          arm1_prefix="${arm1_prefix}" arm1_type="${arm1_type}"
+          arm2_prefix="${arm2_prefix}" arm2_type="${arm2_type}"
+          include_effort_command="${include_effort_command}"
+          include_finger_joint="${include_finger_joint}"
+          finger_position_only="0"/>
+
+      <!-- Passive base joints (rocker, casters, spine): simulation-only -->
+      <xacro:if value="${include_passive_base}">
+        <xacro:configure_passive_mobile_base_joints include_spine="1"/>
+      </xacro:if>
+    </ros2_control>
+  </xacro:macro>
+
+  <!--
+    Gazebo overlay for the Mobile FR3 Duo, emitted as siblings of the description's own
+    <robot> content (the entry point includes mobile_fr3_duo_v0_2.urdf.xacro for the base
+    robot). Emits the per-arm gazebo transmissions, the optional sensor accessory layer,
+    the unified mobile-base + duo ros2_control block and the gz_ros2_control system element.
+    The transmissions carry top-level, name-referencing tags, so they are valid as siblings
+    of the arm links. The sensor_layer block is empty for the plain variant. Reads the
+    top-level robot_types_list / arm_prefixes_list properties (robot_types_list set by the
+    included description entry point, arm_prefixes_list by the entry file) and the shared
+    gazebo args.
+  -->
+  <xacro:macro name="mobile_fr3_duo_gazebo_composition" params="arm1_index:=1 arm2_index:=2 **sensor_layer">
+    <xacro:franka_gazebo_transmissions robot_type="${robot_types_list[arm1_index]}"
+      arm_prefix="${arm_prefixes_list[0]}_" ee_id="$(arg ee_id)" hand="$(arg hand)"/>
+    <xacro:franka_gazebo_transmissions robot_type="${robot_types_list[arm2_index]}"
+      arm_prefix="${arm_prefixes_list[1]}_" ee_id="$(arg ee_id)" hand="$(arg hand)"/>
+
+    <xacro:insert_block name="sensor_layer"/>
+
+    <xacro:mobile_fr3_duo_ros2_control
+          mobile_robot_type="tmrv0_2"
+          robot_types="${robot_types_list}"
+          arm_prefixes="${arm_prefixes_list}"
+          include_effort_command="$(arg gazebo_effort)"
+          include_finger_joint="$(arg hand)"
+          include_passive_base="true">
+      <hardware_plugin>
+        <xacro:franka_gazebo_hardware_plugin gazebo_effort="$(arg gazebo_effort)"/>
+      </hardware_plugin>
+    </xacro:mobile_fr3_duo_ros2_control>
+
+    <xacro:franka_gazebo_ros2_control_system/>
+  </xacro:macro>
+</robot>

@@ -98,7 +98,7 @@ std::vector<StateInterface> FrankaHardwareInterface::export_state_interfaces() {
   state_interfaces.emplace_back(StateInterface(
       prefix_ + robot_type_, k_robot_state_interface_name,
       reinterpret_cast<double*>(  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
-          &rt_robot_state_buffer_ptr_)));
+          &robot_state_box_ptr_)));
   state_interfaces.emplace_back(StateInterface(
       prefix_ + robot_type_, k_robot_model_interface_name,
       reinterpret_cast<double*>(  // NOLINT(cppcoreguidelines-pro-type-reinterpret-cast)
@@ -169,9 +169,36 @@ CallbackReturn FrankaHardwareInterface::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   active_mode_ = ControlInterface::None;
   needs_initial_command_ = true;
+  control_fault_latched_.store(false);
   hw_franka_model_ptr_ = nullptr;
 
-  read(rclcpp::Time(0), rclcpp::Duration(0, 0));
+  if (read(rclcpp::Time(0), rclcpp::Duration(0, 0)) != hardware_interface::return_type::OK) {
+    return CallbackReturn::ERROR;
+  }
+
+  // Defensive: read() returns OK when it latches a ControlException without refreshing state.
+  // Refuse activation on that latch before inspecting the robot state box.
+  if (control_fault_latched_.load()) {
+    RCLCPP_ERROR(getLogger(),
+                 "Cannot activate hardware while a control fault is latched. "
+                 "Clear the robot error before activating the hardware.");
+    return CallbackReturn::FAILURE;
+  }
+
+  // Refuse activation while the robot is still in reflex or reports active errors.
+  const franka::RobotState robot_state = robot_state_box_.get();
+  if (robot_state.robot_mode == franka::RobotMode::kReflex ||
+      static_cast<bool>(robot_state.current_errors)) {
+    const std::string error_detail =
+        static_cast<bool>(robot_state.current_errors)
+            ? (": " + static_cast<std::string>(robot_state.current_errors))
+            : "";
+    RCLCPP_ERROR(getLogger(),
+                 "Cannot activate hardware while the robot is in reflex or has active errors%s. "
+                 "Clear the robot error before activating the hardware.",
+                 error_detail.c_str());
+    return CallbackReturn::FAILURE;
+  }
   return CallbackReturn::SUCCESS;
 }
 
@@ -200,6 +227,7 @@ CallbackReturn FrankaHardwareInterface::on_deactivate(
 
   active_mode_ = ControlInterface::None;
   needs_initial_command_ = true;
+  control_fault_latched_.store(false);
   return CallbackReturn::SUCCESS;
 }
 
@@ -241,8 +269,25 @@ void FrankaHardwareInterface::initializePositionCommands(const franka::RobotStat
   needs_initial_command_ = false;
 }
 
+void FrankaHardwareInterface::updateStateInterfaces(const franka::RobotState& robot_state) {
+  // robot state topic is reliable, this set is blocking!
+  robot_state_box_.set(robot_state);
+  robot_time_state_ = robot_state.time.toSec();
+  hw_positions_ = robot_state.q;
+  hw_velocities_ = robot_state.dq;
+  hw_efforts_ = robot_state.tau_J;
+  elbow_state_ = robot_state.elbow;
+  cartesian_pose_state_ = robot_state.O_T_EE;
+  force_torque_sensor_state_ = robot_state.K_F_ext_hat_K;
+}
+
 hardware_interface::return_type FrankaHardwareInterface::read(const rclcpp::Time& /*time*/,
                                                               const rclcpp::Duration& /*period*/) {
+
+  if (control_fault_latched_.load()) {
+    // Preserve the last captured state while the control fault remains latched.
+    return hardware_interface::return_type::OK;
+  }
   // Try, do not wait.  perform_command_mode_switch() holds control_mutex_ across blocking
   // libfranka calls: stopRobot() -> ~ActiveControl -> cancelMotion() busy-waits on the robot
   // decelerating at one 1 kHz UDP packet per iteration, and initializeXInterface() ->
@@ -266,24 +311,20 @@ hardware_interface::return_type FrankaHardwareInterface::read(const rclcpp::Time
 
   franka::RobotState robot_state;
   try {
-    // Write new state into the RealtimeBuffer for thread-safe access by consumers
     robot_state = robot_->readOnce();
   } catch (const franka::ControlException& e) {
+    if (!control_fault_latched_.exchange(true)) {
+      RCLCPP_ERROR(getLogger(), "%s Clear the robot error before activating the hardware.",
+                   e.what());
+    }
+    return hardware_interface::return_type::OK;
+  } catch (const franka::NetworkException& e) {
     RCLCPP_ERROR(getLogger(), "%s", e.what());
-    robot_->stopRobot();
     return hardware_interface::return_type::ERROR;
   }
 
-  rt_robot_state_buffer_.writeFromNonRT(robot_state);
-  robot_time_state_ = robot_state.time.toSec();
+  updateStateInterfaces(robot_state);
   initializePositionCommands(robot_state);
-
-  hw_positions_ = robot_state.q;
-  hw_velocities_ = robot_state.dq;
-  hw_efforts_ = robot_state.tau_J;
-  elbow_state_ = robot_state.elbow;
-  cartesian_pose_state_ = robot_state.O_T_EE;
-  force_torque_sensor_state_ = robot_state.K_F_ext_hat_K;
 
   return hardware_interface::return_type::OK;
 }
@@ -296,9 +337,14 @@ bool hasInfinite(const CommandType& commands) {
 
 hardware_interface::return_type FrankaHardwareInterface::write(const rclcpp::Time& /*time*/,
                                                                const rclcpp::Duration& /*period*/) {
+  if (control_fault_latched_.load()) {
+    return hardware_interface::return_type::DEACTIVATE;
+  }
+
   if (hasInfinite(hw_position_commands_) || hasInfinite(hw_effort_commands_) ||
       hasInfinite(hw_velocity_commands_) || hasInfinite(hw_cartesian_velocities_) ||
       hasInfinite(hw_elbow_command_) || hasInfinite(hw_cartesian_pose_commands_)) {
+    RCLCPP_ERROR(getLogger(), "Rejecting non-finite command values.");
     return hardware_interface::return_type::ERROR;
   }
   // Try, do not wait.  Same reasoning as read() above.
@@ -338,6 +384,15 @@ hardware_interface::return_type FrankaHardwareInterface::write(const rclcpp::Tim
       case ControlInterface::None:
         break;
     }
+  } catch (const franka::ControlException& e) {
+    if (!control_fault_latched_.exchange(true)) {
+      RCLCPP_ERROR(getLogger(), "%s Clear the robot error before activating the hardware.",
+                   e.what());
+    }
+    return hardware_interface::return_type::DEACTIVATE;
+  } catch (const franka::NetworkException& e) {
+    RCLCPP_ERROR(getLogger(), "%s", e.what());
+    return hardware_interface::return_type::ERROR;
   } catch (const std::runtime_error& e) {
     // Transient race during mode switch — the RT write() can overlap with
     // perform_command_mode_switch on the non-RT thread.  Warn instead of

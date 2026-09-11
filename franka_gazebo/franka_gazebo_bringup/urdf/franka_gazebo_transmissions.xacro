@@ -1,0 +1,195 @@
+<?xml version="1.0"?>
+<!-- Copyright (c) 2026 Franka Robotics GmbH
+     Licensed under the Apache License, Version 2.0 (the "License");
+     you may not use this file except in compliance with the License.
+     You may obtain a copy of the License at
+         http://www.apache.org/licenses/LICENSE-2.0 -->
+
+<!--
+  Gazebo simulation transmissions and SDF tags for a Franka arm.
+
+  The gazebo entry points call `franka_gazebo_transmissions` after the base robot
+  include to emit the per-joint Position/Velocity/Effort transmissions, the
+  FrankaState/FrankaModel transmissions, and (for a franka_hand end effector) the
+  finger transmissions and rubber-on-rubber friction tuning. This is the
+  gazebo-owned counterpart consumed by the *.gazebo* entry points.
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- ========================================================== -->
+  <!-- Adds the required tags to simulate one joint in gazebo     -->
+  <!--                                                            -->
+  <!-- joint - Name of the fer joint to simulate                  -->
+  <!-- transmission - type of the transmission of the joint       -->
+  <!-- ========================================================== -->
+  <xacro:macro name="gazebo-joint" params="joint transmission:=hardware_interface/EffortJointInterface">
+    <gazebo reference="${joint}">
+      <!-- Needed for ODE to output external wrenches on joints -->
+      <provideFeedback>true</provideFeedback>
+    </gazebo>
+
+    <transmission name="${joint}_transmission">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${joint}">
+        <hardwareInterface>${transmission}</hardwareInterface>
+      </joint>
+      <actuator name="${joint}_motor">
+        <hardwareInterface>${transmission}</hardwareInterface>
+      </actuator>
+    </transmission>
+  </xacro:macro>
+
+  <xacro:macro name="gazebo-friction" params="link mu">
+    <gazebo reference="${link}">
+      <collision>
+        <max_contacts>10</max_contacts>
+        <surface>
+          <contact>
+            <ode>
+              <!-- These two parameter need application specific tuning. -->
+              <!-- Usually you want no "snap out" velocity and a generous -->
+              <!-- penetration depth to keep the grasping stable -->
+              <max_vel>0</max_vel>
+              <min_depth>0.001</min_depth>
+            </ode>
+          </contact>
+          <friction>
+            <ode>
+              <mu>${mu}</mu>
+              <mu2>${mu}</mu2>
+            </ode>
+          </friction>
+          <bounce/>
+        </surface>
+      </collision>
+    </gazebo>
+  </xacro:macro>
+
+  <!-- ========================================================== -->
+  <!-- Adds the required tags to provide a `FrankaStateInterface` -->
+  <!-- when simulating with franka_hw_sim plugin                  -->
+  <!--                                                            -->
+  <!-- robot_type - Arm ID of the fer to simulate (default 'fer')     -->
+  <!-- ========================================================== -->
+  <xacro:macro name="transmission-franka-state" params="robot_type:=fer">
+    <transmission name="${arm_prefix}${robot_type}_franka_state">
+      <type>franka_hw/FrankaStateInterface</type>
+      <joint name="${arm_prefix}${robot_type}_joint1"><hardwareInterface>franka_hw/FrankaStateInterface</hardwareInterface></joint>
+      <joint name="${arm_prefix}${robot_type}_joint2"><hardwareInterface>franka_hw/FrankaStateInterface</hardwareInterface></joint>
+      <joint name="${arm_prefix}${robot_type}_joint3"><hardwareInterface>franka_hw/FrankaStateInterface</hardwareInterface></joint>
+      <joint name="${arm_prefix}${robot_type}_joint4"><hardwareInterface>franka_hw/FrankaStateInterface</hardwareInterface></joint>
+      <joint name="${arm_prefix}${robot_type}_joint5"><hardwareInterface>franka_hw/FrankaStateInterface</hardwareInterface></joint>
+      <joint name="${arm_prefix}${robot_type}_joint6"><hardwareInterface>franka_hw/FrankaStateInterface</hardwareInterface></joint>
+      <joint name="${arm_prefix}${robot_type}_joint7"><hardwareInterface>franka_hw/FrankaStateInterface</hardwareInterface></joint>
+
+      <actuator name="${arm_prefix}${robot_type}_motor1"><hardwareInterface>franka_hw/FrankaStateInterface</hardwareInterface></actuator>
+      <actuator name="${arm_prefix}${robot_type}_motor2"><hardwareInterface>franka_hw/FrankaStateInterface</hardwareInterface></actuator>
+      <actuator name="${arm_prefix}${robot_type}_motor3"><hardwareInterface>franka_hw/FrankaStateInterface</hardwareInterface></actuator>
+      <actuator name="${arm_prefix}${robot_type}_motor4"><hardwareInterface>franka_hw/FrankaStateInterface</hardwareInterface></actuator>
+      <actuator name="${arm_prefix}${robot_type}_motor5"><hardwareInterface>franka_hw/FrankaStateInterface</hardwareInterface></actuator>
+      <actuator name="${arm_prefix}${robot_type}_motor6"><hardwareInterface>franka_hw/FrankaStateInterface</hardwareInterface></actuator>
+      <actuator name="${arm_prefix}${robot_type}_motor7"><hardwareInterface>franka_hw/FrankaStateInterface</hardwareInterface></actuator>
+    </transmission>
+  </xacro:macro>
+
+  <!-- ============================================================ -->
+  <!-- Adds the required tags to provide a `FrankaModelInterface`   -->
+  <!-- when simulating with franka_hw_sim plugin                    -->
+  <!--                                                              -->
+  <!-- robot_type - Arm ID of the fer to simulate (default 'fer')       -->
+  <!-- root   - Joint name of the base of the robot                 -->
+  <!-- tip    - Joint name of the tip of the robot (flange or hand) -->
+  <!-- ============================================================ -->
+  <xacro:macro name="transmission-franka-model" params="robot_type:=fer root:=fer_joint1 tip:=fer_joint7">
+    <transmission name="${arm_prefix}${robot_type}_franka_model">
+      <type>franka_hw/FrankaModelInterface</type>
+      <joint name="${root}">
+        <role>root</role>
+        <hardwareInterface>franka_hw/FrankaModelInterface</hardwareInterface>
+      </joint>
+      <joint name="${tip}">
+        <role>tip</role>
+        <hardwareInterface>franka_hw/FrankaModelInterface</hardwareInterface>
+      </joint>
+
+      <actuator name="${root}_motor_root"><hardwareInterface>franka_hw/FrankaModelInterface</hardwareInterface></actuator>
+      <actuator name="${tip}_motor_tip"  ><hardwareInterface>franka_hw/FrankaModelInterface</hardwareInterface></actuator>
+    </transmission>
+  </xacro:macro>
+
+  <!-- ============================================================ -->
+  <!-- Emits the per-joint transmissions + SDF tags for a franka    -->
+  <!-- arm in gazebo.                                               -->
+  <!--                                                              -->
+  <!-- robot_type - Arm ID (e.g. fr3, fp3, fer)                     -->
+  <!-- arm_prefix - Joint/link name prefix (e.g. 'left_' or '')     -->
+  <!-- ee_id      - End-effector id; finger transmissions and       -->
+  <!--              friction are emitted when it is 'franka_hand'    -->
+  <!--              AND the arm actually carries a hand              -->
+  <!-- hand       - Whether the arm carries a hand; gates the finger -->
+  <!--              transmission/friction block together with ee_id  -->
+  <!-- ============================================================ -->
+  <xacro:macro name="franka_gazebo_transmissions" params="robot_type arm_prefix:='' ee_id:='none' hand:=true">
+
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint1"
+      transmission="hardware_interface/PositionJointInterface"/>
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint2"
+      transmission="hardware_interface/PositionJointInterface"/>
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint3"
+      transmission="hardware_interface/PositionJointInterface"/>
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint4"
+      transmission="hardware_interface/PositionJointInterface"/>
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint5"
+      transmission="hardware_interface/PositionJointInterface"/>
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint6"
+      transmission="hardware_interface/PositionJointInterface"/>
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint7"
+      transmission="hardware_interface/PositionJointInterface"/>
+
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint1"
+      transmission="hardware_interface/VelocityJointInterface"/>
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint2"
+      transmission="hardware_interface/VelocityJointInterface"/>
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint3"
+      transmission="hardware_interface/VelocityJointInterface"/>
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint4"
+      transmission="hardware_interface/VelocityJointInterface"/>
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint5"
+      transmission="hardware_interface/VelocityJointInterface"/>
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint6"
+      transmission="hardware_interface/VelocityJointInterface"/>
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint7"
+      transmission="hardware_interface/VelocityJointInterface"/>
+
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint1"
+      transmission="hardware_interface/EffortJointInterface"/>
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint2"
+      transmission="hardware_interface/EffortJointInterface"/>
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint3"
+      transmission="hardware_interface/EffortJointInterface"/>
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint4"
+      transmission="hardware_interface/EffortJointInterface"/>
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint5"
+      transmission="hardware_interface/EffortJointInterface"/>
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint6"
+      transmission="hardware_interface/EffortJointInterface"/>
+    <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_joint7"
+      transmission="hardware_interface/EffortJointInterface"/>
+
+    <xacro:transmission-franka-state robot_type="${robot_type}"/>
+    <xacro:transmission-franka-model robot_type="${robot_type}"
+      root="${arm_prefix}${robot_type}_joint1"
+      tip="${arm_prefix}${robot_type}_joint8"
+    />
+
+    <xacro:if value="${hand and ee_id == 'franka_hand'}">
+      <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_finger_joint1"
+        transmission="hardware_interface/EffortJointInterface"/>
+      <xacro:gazebo-joint joint="${arm_prefix}${robot_type}_finger_joint2"
+        transmission="hardware_interface/EffortJointInterface"/>
+      <!-- Friction specific material for Rubber/Rubber contact -->
+      <xacro:gazebo-friction link="${arm_prefix}${robot_type}_leftfinger" mu="1.13"/>
+      <xacro:gazebo-friction link="${arm_prefix}${robot_type}_rightfinger" mu="1.13"/>
+    </xacro:if>
+  </xacro:macro>
+</robot>

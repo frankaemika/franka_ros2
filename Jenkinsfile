@@ -30,6 +30,10 @@ pipeline {
            defaultValue: true,
            description: "Run the franka_ros2 tests on the real hardware")
 
+    booleanParam(name: 'executeGazeboTests',
+           defaultValue: false,
+           description: "Run Gazebo simulation tests (headless, no GPU required)")
+
     string(name: "robotIp",
             defaultValue: "172.16.0.1",
             description: "The static IP of the robot to run tests onto")
@@ -168,9 +172,10 @@ pipeline {
           . install/setup.sh
           colcon test \
             --base-paths src \
-            --packages-select-regex '^franka_(?!bringup$|gripper$)' \
+            --packages-select-regex '^(franka_|mobile_fr3_duo)' \
+            --packages-skip franka_gazebo_bringup \
             --event-handlers console_direct+ \
-            --ctest-args --exclude-regex test_hardware
+            --ctest-args --exclude-regex 'test_hardware'
           colcon test-result --verbose
         '''
       }
@@ -216,6 +221,45 @@ pipeline {
             chmod +x ./src/franka_ros2/scripts/*.sh
             ./src/franka_ros2/scripts/run_hardware_tests.sh ${params.robotIp}
           """
+        }
+      }
+    }
+
+    // Gazebo simulation tests (non-blocking, separate from unit tests)
+    stage('Gazebo Tests') {
+      when { expression { params.executeGazeboTests ?: false } }
+      options { skipDefaultCheckout true }
+      agent {
+        dockerfile {
+          dir 'src'
+          reuseNode true
+        }
+      }
+      steps {
+        // Keep the overall build green (Gazebo tests are advisory) but mark the
+        // stage UNSTABLE on failure instead of hiding it behind `|| true`, so a
+        // crash, missing dependency, or CTest startup failure is visible.
+        catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+          sh '''
+            . install/setup.sh
+            # gz-transport multicast discovery is unreliable inside containers;
+            # force discovery over loopback so the spawner/bridge find the sim.
+            export GZ_IP=127.0.0.1
+            colcon test \
+              --base-paths src \
+              --packages-select franka_gazebo_bringup \
+              --event-handlers console_direct+ \
+              --ctest-args --tests-regex test_gazebo \
+              --return-code-on-test-failure
+            colcon test-result --verbose
+          '''
+        }
+      }
+      post {
+        always {
+          // Do not allow empty results: if the stage ran but produced no XML
+          // (e.g. the sim never launched), surface it rather than passing green.
+          junit allowEmptyResults: false, testResults: 'build/franka_gazebo_bringup/**/test_results/**/*.xml'
         }
       }
     }

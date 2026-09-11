@@ -26,6 +26,7 @@ import pytest
 from ros2_control_test_helpers import (
     expand_wrapper_urdf,
     get_bringup_wrapper,
+    get_gazebo_bringup_wrapper,
     get_gpio_command_interfaces,
     get_gpio_indices,
     parse_hardware_components,
@@ -40,6 +41,16 @@ def load_franka_arm(robot_type: str, **extra_mappings) -> list:
     mappings = {'robot_type': robot_type}
     mappings.update(extra_mappings)
     urdf = expand_wrapper_urdf(get_bringup_wrapper('franka_arm.urdf.xacro'), mappings)
+    return parse_hardware_components(urdf)
+
+
+def load_franka_arm_gazebo(robot_type: str, **extra_mappings) -> list:
+    """Expand the gazebo franka_arm wrapper and return parsed hardware components."""
+    mappings = {'robot_type': robot_type}
+    mappings.update(extra_mappings)
+    urdf = expand_wrapper_urdf(
+        get_gazebo_bringup_wrapper('franka_arm.gazebo.xacro'), mappings
+    )
     return parse_hardware_components(urdf)
 
 
@@ -174,9 +185,7 @@ class TestFrankaArmEffortGating:
 
     def test_effort_absent_in_gazebo_without_gazebo_effort(self):
         """Gazebo without gazebo_effort omits effort to prevent invalid torque commands."""
-        components = load_franka_arm(
-            'fr3', gazebo='true', hand='true', gazebo_effort='false'
-        )
+        components = load_franka_arm_gazebo('fr3', hand='true', gazebo_effort='false')
         component = components[0]
         arm_joints = [j for j in component.joints if 'fr3_joint' in j.name]
 
@@ -189,9 +198,7 @@ class TestFrankaArmEffortGating:
 
     def test_effort_present_in_gazebo_with_gazebo_effort(self):
         """Gazebo with gazebo_effort=true enables effort for torque-capable simulation."""
-        components = load_franka_arm(
-            'fr3', gazebo='true', hand='true', gazebo_effort='true'
-        )
+        components = load_franka_arm_gazebo('fr3', hand='true', gazebo_effort='true')
         component = components[0]
         arm_joints = [j for j in component.joints if 'fr3_joint' in j.name]
 

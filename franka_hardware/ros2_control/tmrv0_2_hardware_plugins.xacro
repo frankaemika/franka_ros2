@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<!--
+  Hardware-plugin blocks for the TMR v0.2 mobile-base ros2_control interface, owned by
+  franka_hardware.
+
+  These macros emit only the <plugin> element plus its plugin-specific <param>s. They are
+  injected into the tmrv0_2_ros2_control macro via its **hardware_plugin block param, so the
+  plugin-selection knowledge lives alongside the ros2_control interface in franka_hardware.
+
+  The blocks differ from the single-arm ones in franka_arm_hardware_plugins.xacro: the TMR
+  mock additionally enables mock_gpio_commands, and the TMR real plugin carries no arm_prefix.
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Real mobile base: franka_hardware FrankaHardwareInterface driving the TMR over robot_ip. -->
+  <xacro:macro name="tmrv0_2_real_hardware_plugin" params="robot_ip:=''">
+    <plugin>franka_hardware/FrankaHardwareInterface</plugin>
+    <param name="robot_ip">${robot_ip}</param>
+  </xacro:macro>
+
+  <!-- Fake hardware: ros2_control generic mock system with mocked GPIO. -->
+  <xacro:macro name="tmrv0_2_mock_hardware_plugin" params="fake_sensor_commands:=false">
+    <plugin>mock_components/GenericSystem</plugin>
+    <param name="mock_gpio_commands">true</param>
+    <param name="mock_sensor_commands">${fake_sensor_commands}</param>
+    <param name="state_following_offset">0.0</param>
+  </xacro:macro>
+
+  <!-- Selects the mock or real TMR-base plugin from use_fake_hardware, so call sites emit
+       one macro instead of a duplicated if/unless pair. -->
+  <xacro:macro name="tmrv0_2_selected_hardware_plugin"
+    params="use_fake_hardware robot_ip:='' fake_sensor_commands:=false">
+    <xacro:if value="${use_fake_hardware}">
+      <xacro:tmrv0_2_mock_hardware_plugin fake_sensor_commands="${fake_sensor_commands}"/>
+    </xacro:if>
+    <xacro:unless value="${use_fake_hardware}">
+      <xacro:tmrv0_2_real_hardware_plugin robot_ip="${robot_ip}"/>
+    </xacro:unless>
+  </xacro:macro>
+
+</robot>

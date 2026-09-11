@@ -25,7 +25,7 @@ from launch.actions import (
     IncludeLaunchDescription,
     Shutdown
 )
-from launch.conditions import UnlessCondition
+from launch.conditions import IfCondition, UnlessCondition
 from launch.launch_description_sources import PythonLaunchDescriptionSource
 from launch.substitutions import (
     Command,
@@ -71,6 +71,10 @@ def generate_launch_description():
 
     db_arg = DeclareLaunchArgument(
         'db', default_value='False', description='Database flag'
+    )
+
+    use_rviz_arg = DeclareLaunchArgument(
+        'use_rviz', default_value='true', description='Launch RViz'
     )
 
     # planning_context
@@ -126,12 +130,12 @@ def generate_launch_description():
                 'default_planning_request_adapters/ValidateWorkspaceBounds',
                 'default_planning_request_adapters/CheckStartStateBounds',
                 'default_planning_request_adapters/CheckStartStateCollision',
-                                ],
+            ],
             'response_adapters': [
                 'default_planning_response_adapters/AddTimeOptimalParameterization',
                 'default_planning_response_adapters/ValidateSolution',
-                'default_planning_response_adapters/DisplayMotionPath'
-                                  ],
+                'default_planning_response_adapters/DisplayMotionPath',
+            ],
             'start_state_max_bounds_error': 0.1,
         }
     }
@@ -199,6 +203,7 @@ def generate_launch_description():
             ompl_planning_pipeline_config,
             kinematics_config,
         ],
+        condition=IfCondition(LaunchConfiguration('use_rviz')),
     )
 
     # Publish TF
@@ -250,7 +255,7 @@ def generate_launch_description():
         name='joint_state_publisher',
         namespace=namespace,
         parameters=[
-            {'source_list': ['franka/joint_states', 'fr3_gripper/joint_states'], 'rate': 30}],
+            {'source_list': ['franka/joint_states', 'franka_gripper/joint_states'], 'rate': 30}],
     )
 
     franka_robot_state_broadcaster = Node(
@@ -305,6 +310,7 @@ def generate_launch_description():
          use_fake_hardware_arg,
          fake_sensor_commands_arg,
          db_arg,
+         use_rviz_arg,
          rviz_node,
          robot_state_publisher,
          run_move_group_node,

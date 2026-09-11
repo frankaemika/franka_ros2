@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>franka_mobile_fr3_duo_moveit_config</name>
-  <version>3.4.1</version>
+  <version>3.5.3</version>
   <description>
      An automatically generated package with all the configuration and launch files for using the mobile_fr3_duo_v0_2 with the MoveIt Motion Planning Framework
   </description>
@@ -36,6 +36,9 @@
   <exec_depend>rviz_default_plugins</exec_depend>
   <exec_depend>xacro</exec_depend>
   <exec_depend>franka_hardware</exec_depend>
+
+  <test_depend>ament_cmake_pytest</test_depend>
+  <test_depend>python3-pytest</test_depend>
 
   <export>
       <build_type>ament_cmake</build_type>

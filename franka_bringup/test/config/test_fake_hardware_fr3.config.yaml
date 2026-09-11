@@ -1,0 +1,10 @@
+TEST_ROBOT_0:
+  robot_type: "fr3v2"
+  arm_prefix: ""
+  fake_sensor_commands: "true"
+  joint_state_rate: 30
+  load_gripper: "false"
+  namespace: ""
+  robot_ip: ""
+  use_fake_hardware: "true"
+  use_rviz: "false"

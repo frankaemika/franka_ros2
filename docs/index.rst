@@ -17,11 +17,10 @@ Documentation for franka_ros2 Jazzy.
    ../franka_hardware/doc/index
    ../franka_mobile/doc/index
    ../franka_mobile_fr3_duo_moveit_config/doc/index
-   ../franka_mobile_sensors/doc/index
+   ../franka_description_extensions/doc/index
    ../franka_msgs/doc/index
    ../franka_robot_state_broadcaster/doc/index
    ../franka_selfcollision/doc/index
    ../franka_semantic_components/doc/index
    ../franka_spine/index
-   ../franka_vision_and_manipulation_kit/doc/index
    ../mobile_fr3_duo_trajectory_controller/doc/index

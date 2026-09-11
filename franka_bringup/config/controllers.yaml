@@ -7,7 +7,7 @@
   controller_manager:
     ros__parameters:
       update_rate: 1000
-      thread_priority: 98
+      thread_priority: 97
       overruns:
         manage: false
         print_warnings: false
@@ -68,9 +68,6 @@
       move_to_start_example_controller:
         type: franka_example_controllers/MoveToStartExampleController
 
-      mobile_cartesian_velocity_example_controller:
-        type: franka_example_controllers/MobileCartesianVelocityExampleController
-
       mobile_fr3_duo_joint_impedance_example_controller:
         type: franka_example_controllers/MobileFr3DuoJointImpedanceExampleController
 
@@ -102,7 +99,8 @@
   franka_robot_state_broadcaster:
     ros__parameters:
       # Publish rate in Hz for convenience topics (current_pose, joint_states, wrenches, etc.).
-      # Full robot state always publishes at the controller update rate (1kHz).
+      # Clamped to this controller's update_rate, which defaults to the controller
+      # manager's. The full robot state always publishes at the update rate.
       convenience_publish_rate: 1000
 
 /**:
@@ -200,31 +198,32 @@
       linear:
         x:
           has_velocity_limits    : true
-          max_velocity           : 0.1  # m/s
-          min_velocity           : -0.1 # m/s
+          max_velocity           : 0.35   # m/s    translational limit = 2-norm of (vx,vy,vz) <= RCU 1.75 (shared budget); 0.35/axis conservative
+          min_velocity           : -0.35  # m/s
           has_acceleration_limits: true
-          max_acceleration       : 0.1  # m/s^2
-          min_acceleration       : -0.1 # m/s^2
+          max_acceleration       : 0.4    # m/s^2   translational accel = 2-norm <= RCU 2.0; 0.4 = 20%
+          min_acceleration       : -0.4   # m/s^2
           has_jerk_limits        : false
           max_jerk               : 10.0  # m/s^3
           min_jerk               : -10.0  # m/s^3
         y:
           has_velocity_limits    : true
-          max_velocity           : 0.1  # m/s
-          min_velocity           : -0.1 # m/s
+          max_velocity           : 0.35   # m/s    translational limit = 2-norm of (vx,vy,vz) <= RCU 1.75 (shared budget); 0.35/axis conservative
+          min_velocity           : -0.35  # m/s
           has_acceleration_limits: true
-          max_acceleration       : 0.1  # m/s^2
-          min_acceleration       : -0.1 # m/s^2
+          max_acceleration       : 0.4    # m/s^2   translational accel = 2-norm <= RCU 2.0; 0.4 = 20%
+          min_acceleration       : -0.4   # m/s^2
           has_jerk_limits        : false
           max_jerk               : 10.0  # m/s^3
           min_jerk               : -10.0  # m/s^3
       angular:
         z:
           has_velocity_limits    : true
-          max_velocity           : 0.1  # rad/s
+          max_velocity           : 0.5     # rad/s   rotational limit = 2-norm of (wx,wy,wz) <= RCU 0.525 (= |wz| here); 0.5 keeps a small margin
+          min_velocity           : -0.5    # rad/s
           has_acceleration_limits: true
-          max_acceleration       : 0.1  # rad/s^2
-          min_acceleration       : -0.1  # rad/s^2
+          max_acceleration       : 0.3    # rad/s^2 rotational accel = 2-norm <= RCU 0.6; 0.3 = 50% (0.45 trips reflex; 0.3 tested-safe)
+          min_acceleration       : -0.3   # rad/s^2
           has_jerk_limits        : false
           max_jerk               : 10.0  # rad/s^3
           min_jerk               : -10.0  # rad/s^3

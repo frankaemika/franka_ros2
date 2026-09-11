@@ -14,12 +14,17 @@
 
 """HTTP client for the Franka Spine REST API."""
 
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Tuple
 
-import requests
+from franka_desk_api._rest_client import _FrankaRestClient
+
+# Hang guard for motion-mm:start. Connect still uses the short REST timeout.
+# Far longer than any real spine travel; the device holds this POST until the
+# move finishes or is quick-stopped.
+MOTION_READ_TIMEOUT = 600.0
 
 
-class SpineApiClient:
+class SpineApiClient(_FrankaRestClient):
     """Client for the Franka Spine REST API."""
 
     def __init__(self, spine_ip: str, timeout: float):
@@ -29,68 +34,34 @@ class SpineApiClient:
         :param spine_ip: IP address or hostname of the spine device.
         :param timeout: HTTP request timeout in seconds.
         """
-        self.base_url = f'https://{spine_ip}/spine/api'
-        self.timeout = timeout
-        self.session = requests.Session()
-        self.session.headers.update({'Content-Type': 'application/json'})
-        self.session.verify = False
-
-    def _get(self, endpoint: str) -> Tuple[bool, Any]:
-        """
-        Perform a GET request.
-
-        :return: Tuple of (success, response_data_or_error_message).
-        """
-        try:
-            response = self.session.get(f'{self.base_url}/{endpoint}', timeout=self.timeout)
-            response.raise_for_status()
-            return True, response.json()
-        except requests.exceptions.RequestException as e:
-            return False, str(e)
-
-    def _post(self, endpoint: str, data: Optional[Dict] = None) -> Tuple[bool, Any]:
-        """
-        Perform a POST request.
-
-        :return: Tuple of (success, response_data_or_error_message).
-        """
-        try:
-            response = self.session.post(
-                f'{self.base_url}/{endpoint}',
-                json=data,
-                timeout=self.timeout,
-            )
-            response.raise_for_status()
-            return True, response.json()
-        except requests.exceptions.RequestException as e:
-            return False, str(e)
+        super().__init__(spine_ip, 'spine/api', timeout)
 
     def get_position(self) -> Tuple[bool, Any]:
         """
-        GET /api/spine/position-mm.
+        GET /spine/api/position-mm.
 
         Returns position converted from mm to metres.
         """
-        success, data = self._get('position-mm')
+        success, data = self.get('position-mm')
         if success and isinstance(data, dict) and 'position' in data:
             data['position'] = data['position'] / 1000.0
         return success, data
 
     def get_state(self) -> Tuple[bool, Any]:
-        """GET /api/spine/state."""
-        return self._get('state')
+        """GET /spine/api/state."""
+        return self.get('state')
 
     def fault_reset(self) -> Tuple[bool, Any]:
-        """POST /api/spine/spine:fault-reset."""
-        return self._post('spine:fault-reset')
+        """POST /spine/api/spine:fault-reset."""
+        return self.post('spine:fault-reset')
 
     def switch_off(self) -> Tuple[bool, Any]:
-        """POST /api/spine/spine:switch-off."""
-        return self._post('spine:switch-off')
+        """POST /spine/api/spine:switch-off."""
+        return self.post('spine:switch-off')
 
     def switch_on(self) -> Tuple[bool, Any]:
-        """POST /api/spine/spine:switch-on."""
-        return self._post('spine:switch-on')
+        """POST /spine/api/spine:switch-on."""
+        return self.post('spine:switch-on')
 
     def start_motion(
         self,
@@ -100,9 +71,11 @@ class SpineApiClient:
         deceleration: float,
     ) -> Tuple[bool, Any]:
         """
-        POST /api/spine/motion-mm:start.
+        POST /spine/api/motion-mm:start.
 
         Accepts values in metres and converts from (m/s) / (m/s²) to (mm/s) / (mm/s²).
+        The HTTP read uses ``MOTION_READ_TIMEOUT`` (not ``http_timeout``): the
+        device holds this connection until the move finishes or is quick-stopped.
 
         :param position: Target position in metres.
         :param velocity: Motion velocity in m/s.
@@ -115,19 +88,25 @@ class SpineApiClient:
             'acceleration': int(round(acceleration * 1000)),
             'deceleration': int(round(deceleration * 1000)),
         }
-        return self._post('motion-mm:start', data)
+        return self.post(
+            'motion-mm:start', data, timeout=(self.timeout, MOTION_READ_TIMEOUT)
+        )
 
     def halt_motion(self) -> Tuple[bool, Any]:
-        """POST /api/spine/motion:halt."""
-        return self._post('motion:halt')
+        """POST /spine/api/motion:quick-stop.
+
+        The device has no ``motion:halt`` route. This is a DS402 quick-stop:
+        the drive enters QuickStopActive and then SwitchedOff.
+        """
+        return self.post('motion:quick-stop')
 
     def get_parameters(self) -> Tuple[bool, Any]:
         """
-        GET /api/spine/parameters.
+        GET /spine/api/parameters.
 
         Converts user-limit values from mm to metres.
         """
-        success, data = self._get('parameters')
+        success, data = self.get('parameters')
         if success and isinstance(data, dict):
             limits = data.get('user_limits', {})
             if limits:

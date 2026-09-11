@@ -1,10 +1,10 @@
 <library path="franka_gz_hardware_plugins">
   <class
-    name="franka_gazebo_hardware/GazeboGravityCompensationSystem"
-    type="franka_gazebo_hardware::GazeboGravityCompensationSystem"
+    name="franka_gazebo_hardware/FrankaGazeboHardwareInterface"
+    type="franka_gazebo_hardware::FrankaGazeboHardwareInterface"
     base_class_type="gz_ros2_control::GazeboSimSystemInterface">
     <description>
-      Gazebo ros2_control hardware component that adds model-based gravity compensation for effort-controlled Franka joints.
+      Gazebo ros2_control hardware component that adds model-based gravity compensation for effort-controlled Franka joints and exports the robot model, full franka::RobotState, and tcp force/torque (external wrench) interfaces in simulation.
     </description>
   </class>
 </library>

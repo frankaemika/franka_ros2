@@ -14,10 +14,16 @@
 
 #include <gmock/gmock.h>
 
+#include <utility>
+#include <vector>
+
+#include <realtime_tools/realtime_thread_safe_box.hpp>
 #include <ros2_control_test_assets/descriptions.hpp>
 #include "controller_interface/controller_interface.hpp"
+#include "franka/robot_state.h"
 #include "franka_robot_state_broadcaster/franka_robot_state_broadcaster.hpp"
 #include "franka_semantic_components/franka_robot_state.hpp"
+#include "hardware_interface/loaned_state_interface.hpp"
 #include "hardware_interface/types/hardware_interface_return_values.hpp"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include "rclcpp/rclcpp.hpp"
@@ -47,7 +53,25 @@ class TestFrankaRobotStateBroadcaster : public ::testing::Test {
                            .automatically_declare_parameters_from_overrides(true));
     broadcaster_->get_node()->set_parameter(
         {"robot_description", ros2_control_test_assets::minimal_robot_urdf});
+
+    // The broadcaster claims the robot state interface on activation, so offer one that
+    // carries the address of a state box the way the hardware does.
+    std::vector<hardware_interface::LoanedStateInterface> loaned_state_interfaces;
+    loaned_state_interfaces.emplace_back(robot_state_interface_);
+    broadcaster_->assign_interfaces({}, std::move(loaned_state_interfaces));
   }
+
+  realtime_tools::RealtimeThreadSafeBox<franka::RobotState> robot_state_box_;
+  realtime_tools::RealtimeThreadSafeBox<franka::RobotState>* robot_state_box_ptr_ =
+      &robot_state_box_;
+  hardware_interface::StateInterface robot_state_interface_{
+      "mock_franka_robot_state", "robot_state",
+      reinterpret_cast<double*>(&robot_state_box_ptr_)};
+  // AsyncBuffer has three slots; each is initialized once in on_configure().
+  void expectMessageInitialized() {
+    EXPECT_CALL(*franka_robot_state_raw_, initialize_robot_state_msg(::testing::_)).Times(3);
+  }
+
   std::unique_ptr<FrankaRobotStateBroadcaster> broadcaster_;
   MockFrankaRobotState* franka_robot_state_raw_;
 };
@@ -57,24 +81,41 @@ TEST_F(TestFrankaRobotStateBroadcaster, test_init_return_success) {
 }
 
 TEST_F(TestFrankaRobotStateBroadcaster, test_configure_return_success) {
-  // Avoid the "Uninteresting mock function call - returning default value"
-  EXPECT_CALL(*franka_robot_state_raw_, initialize_robot_state_msg(::testing::_)).Times(3);
+  expectMessageInitialized();
   EXPECT_EQ(broadcaster_->on_configure(rclcpp_lifecycle::State()),
             controller_interface::CallbackReturn::SUCCESS);
 }
 
 TEST_F(TestFrankaRobotStateBroadcaster, test_activate_return_success) {
-  // Avoid the "Uninteresting mock function call - returning default value"
-  EXPECT_CALL(*franka_robot_state_raw_, initialize_robot_state_msg(::testing::_)).Times(3);
+  expectMessageInitialized();
   EXPECT_EQ(broadcaster_->on_configure(rclcpp_lifecycle::State()),
             controller_interface::CallbackReturn::SUCCESS);
   EXPECT_EQ(broadcaster_->on_activate(rclcpp_lifecycle::State()),
             controller_interface::CallbackReturn::SUCCESS);
 }
 
+TEST_F(TestFrankaRobotStateBroadcaster, an_unclaimable_state_interface_fails_activation) {
+  expectMessageInitialized();
+  broadcaster_->release_interfaces();
+
+  EXPECT_EQ(broadcaster_->on_configure(rclcpp_lifecycle::State()),
+            controller_interface::CallbackReturn::SUCCESS);
+  EXPECT_EQ(broadcaster_->on_activate(rclcpp_lifecycle::State()),
+            controller_interface::CallbackReturn::ERROR);
+}
+
+TEST_F(TestFrankaRobotStateBroadcaster, an_unresolvable_state_buffer_fails_activation) {
+  expectMessageInitialized();
+  robot_state_box_ptr_ = nullptr;
+
+  EXPECT_EQ(broadcaster_->on_configure(rclcpp_lifecycle::State()),
+            controller_interface::CallbackReturn::SUCCESS);
+  EXPECT_EQ(broadcaster_->on_activate(rclcpp_lifecycle::State()),
+            controller_interface::CallbackReturn::ERROR);
+}
+
 TEST_F(TestFrankaRobotStateBroadcaster, test_deactivate_return_success) {
-  // Avoid the "Uninteresting mock function call - returning default value"
-  EXPECT_CALL(*franka_robot_state_raw_, initialize_robot_state_msg(::testing::_)).Times(3);
+  expectMessageInitialized();
   EXPECT_EQ(broadcaster_->on_configure(rclcpp_lifecycle::State()),
             controller_interface::CallbackReturn::SUCCESS);
   EXPECT_EQ(broadcaster_->on_deactivate(rclcpp_lifecycle::State()),
@@ -82,7 +123,7 @@ TEST_F(TestFrankaRobotStateBroadcaster, test_deactivate_return_success) {
 }
 
 TEST_F(TestFrankaRobotStateBroadcaster, test_update_without_franka_state_interface_returns_error) {
-  EXPECT_CALL(*franka_robot_state_raw_, initialize_robot_state_msg(::testing::_)).Times(3);
+  expectMessageInitialized();
 
   // Simulate failure: no valid state interface
   EXPECT_CALL(*franka_robot_state_raw_, get_values_as_message(::testing::_))
@@ -100,7 +141,7 @@ TEST_F(TestFrankaRobotStateBroadcaster, test_update_without_franka_state_interfa
 }
 
 TEST_F(TestFrankaRobotStateBroadcaster, test_update_with_franka_state_returns_success) {
-  EXPECT_CALL(*franka_robot_state_raw_, initialize_robot_state_msg(::testing::_)).Times(3);
+  expectMessageInitialized();
 
   // Simulate success: valid state interface
   EXPECT_CALL(*franka_robot_state_raw_, get_values_as_message(::testing::_))

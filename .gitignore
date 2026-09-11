@@ -14,7 +14,7 @@ franka_description
 
 #Third party packages
 gz_ros2_control/
-ros2_control/
+/ros2_control/
 olvx_descriptions_module
 ros2_robotiq_gripper
 zed_description

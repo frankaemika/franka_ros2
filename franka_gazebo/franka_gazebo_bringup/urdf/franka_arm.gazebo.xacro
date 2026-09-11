@@ -8,38 +8,72 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="$(arg robot_type)">
 
     <!-- ================================================================ -->
-    <!-- Macro includes                                                    -->
-    <!-- ================================================================ -->
-    <xacro:arg name="robot_type" default="fr3"/>
-
-    <!-- Base robot (Layer 1) -->
-    <xacro:include filename="$(find franka_description)/robots/$(arg robot_type)/$(arg robot_type).urdf.xacro"/>
-    <!-- ros2_control hardware interface -->
-    <xacro:include filename="$(find franka_hardware)/ros2_control/franka_arm.ros2_control.xacro"/>
-    <!-- Gazebo extras -->
-    <xacro:include filename="$(find franka_gazebo_bringup)/urdf/sensors.xacro"/>
-
-    <!-- ================================================================ -->
     <!-- Arguments                                                        -->
     <!-- ================================================================ -->
+    <xacro:arg name="robot_type" default="fr3"/>
     <xacro:arg name="arm_prefix" default=""/>
     <xacro:arg name="hand" default="true"/>
     <xacro:arg name="ee_id" default="franka_hand"/>
     <xacro:arg name="gazebo_effort" default="false"/>
 
-    <!-- Compute prefix (same logic as fr3.urdf.xacro) -->
+    <!-- World-anchor pose (the robot is spawned fixed to the world frame) -->
+    <xacro:arg name="xyz" default="0 0 0"/>
+    <xacro:arg name="rpy" default="0 0 0"/>
+
+    <!-- Simulation overrides for the base robot: anchor link0 to world (no
+         intermediate base link) and drop the coarse self-collision capsules. -->
+    <xacro:arg name="connected_to" default=""/>
+    <xacro:arg name="include_self_collision_geometry" default="false"/>
+
+    <!-- ================================================================ -->
+    <!-- Macro includes (definitions only - no top-level emission)        -->
+    <!-- ================================================================ -->
+    <!-- ros2_control hardware interface -->
+    <xacro:include filename="$(find franka_hardware)/ros2_control/franka_arm.ros2_control.xacro"/>
+    <!-- Gazebo hardware-plugin block + gz_ros2_control system (owned by franka_gazebo_bringup) -->
+    <xacro:include filename="$(find franka_gazebo_bringup)/urdf/franka_gazebo_hardware_plugins.xacro"/>
+    <!-- Gazebo transmissions and SDF tag macros -->
+    <xacro:include filename="$(find franka_gazebo_bringup)/urdf/franka_gazebo_transmissions.xacro"/>
+
+    <!-- Compute prefix (same logic as the description robot urdf.xacro) -->
     <xacro:property name="prefix" value="$(arg arm_prefix)"/>
     <xacro:property name="modified_prefix" value="${prefix + '_' if prefix else ''}"/>
+
+    <link name="world"/>
+    <joint name="world_joint" type="fixed">
+      <origin xyz="$(arg xyz)" rpy="$(arg rpy)"/>
+      <parent link="world"/>
+      <child link="${modified_prefix}$(arg robot_type)_link0"/>
+    </joint>
+
+    <!-- Base robot (Layer 1) -->
+    <xacro:include filename="$(find franka_description)/robots/$(arg robot_type)/$(arg robot_type).urdf.xacro"/>
+
+    <!-- Gazebo transmissions and SDF tags for the arm joints -->
+    <xacro:franka_gazebo_transmissions
+        robot_type="$(arg robot_type)"
+        arm_prefix="${modified_prefix}"
+        ee_id="$(arg ee_id)"
+        hand="$(arg hand)"/>
+
+    <!-- Gazebo sensor macros -->
+    <xacro:include filename="$(find franka_gazebo_bringup)/urdf/sensors.xacro"/>
 
     <!-- ================================================================ -->
     <!-- ros2_control hardware interface (gazebo mode)                    -->
     <!-- ================================================================ -->
     <xacro:franka_arm_ros2_control
         robot_type="$(arg robot_type)"
-        gazebo="true"
-        hand="$(arg hand)"
-        gazebo_effort="$(arg gazebo_effort)"
-        arm_prefix="${modified_prefix}"/>
+        include_effort_command="$(arg gazebo_effort)"
+        include_finger_joint="$(arg hand)"
+        arm_prefix="${modified_prefix}">
+      <hardware_plugin>
+        <xacro:franka_gazebo_hardware_plugin gazebo_effort="$(arg gazebo_effort)"/>
+      </hardware_plugin>
+    </xacro:franka_arm_ros2_control>
+
+    <!-- gz_ros2_control system element (sibling of ros2_control) -->
+    <xacro:franka_gazebo_ros2_control_system/>
 
     <!-- ================================================================ -->
     <!-- Gazebo sensors and physics overrides                             -->

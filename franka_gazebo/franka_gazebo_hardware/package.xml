@@ -2,21 +2,28 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>franka_gazebo_hardware</name>
-  <version>3.4.1</version>
-  <description>Gazebo (gz_ros2_control) system plugin providing model-based gravity compensation for effort-controlled Franka joints</description>
+  <version>3.5.3</version>
+  <description>Gazebo (gz_ros2_control) system plugin providing model-based gravity compensation and the robot model/state interfaces for Franka joints in simulation</description>
   <maintainer email="support@franka.de">Franka Robotics GmbH</maintainer>
   <license>Apache 2.0</license>
 
   <buildtool_depend>ament_cmake</buildtool_depend>
 
+  <depend>ament_index_cpp</depend>
+  <depend>franka_hardware</depend>
   <depend>gz_ros2_control</depend>
   <depend>gz_sim_vendor</depend>
   <depend>hardware_interface</depend>
+  <depend>libfranka</depend>
   <depend>pinocchio</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp</depend>
   <depend>rclcpp_lifecycle</depend>
+  <depend>realtime_tools</depend>
   <depend>eigen</depend>
+
+  <exec_depend>franka_description</exec_depend>
+  <exec_depend>xacro</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_cmake_gmock</test_depend>

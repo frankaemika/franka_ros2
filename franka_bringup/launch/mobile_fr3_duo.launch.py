@@ -38,7 +38,7 @@
 # joint_state_rate: Rate for joint state publishing in Hz (default: '30')
 # namespace: Namespace for the robot (default: '')
 # use_rviz: Launch RViz for the robot (default: 'true')
-# thread_priority: Thread priority for the hardware interface (default: '50')
+# thread_priority: Thread priority for the hardware interface (default: '98')
 #
 # The mobile_fr3_duo.launch.py launch file provides a robust interface for launching
 # a Franka Robotics mobile dual-arm setup. It generates the robot description from the
@@ -118,7 +118,7 @@ def generate_robot_nodes(context):
     load_gripper_str = str(config.get('load_gripper', 'false'))
     namespace = str(config.get('namespace', ''))
     joint_state_rate = int(config.get('joint_state_rate', 30))
-    thread_priority_str = str(config.get('thread_priority', 50))
+    thread_priority_str = str(config.get('thread_priority', 98))
     use_rviz = str(config.get('use_rviz', 'true')).lower() == 'true'
     controllers_yaml = LaunchConfiguration('controllers_yaml').perform(context)
 
@@ -145,7 +145,6 @@ def generate_robot_nodes(context):
         urdf_path,
         mappings={
             'robot_types': robot_types_str,
-            'robot_prefixes': robot_prefixes_str,
             'robot_ips': robot_ips_str,
             'hand': load_gripper_str,
             'use_fake_hardware': use_fake_hardware_str,

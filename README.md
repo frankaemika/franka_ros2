@@ -20,7 +20,14 @@
 ## About
 The **franka_ros2** repository provides a **ROS 2** integration of **libfranka**, allowing efficient control of the Franka Robotics arm within the ROS 2 framework. This project is designed to facilitate robotic research and development by providing a robust interface for controlling the research versions of Franka Robotics robots.
 
-For convenience, we provide Dockerfile and docker-compose.yml files. While it is possible to build **franka_ros2** directly on your local machine, this approach requires manual installation of certain dependencies, while many others will be automatically installed by the **ROS 2** build system (e.g., via **rosdep**). This can result in a large number of libraries being installed on your system, potentially causing conflicts. Using Docker encapsulates these dependencies within the container, minimizing such risks. Docker also ensures a consistent and reproducible build environment across systems. For these reasons, we recommend using Docker.
+For convenience, this repository includes a `Dockerfile` and `docker-compose.yml`.
+While it is possible to build **franka_ros2** directly on your local machine, that
+approach requires manual installation of some dependencies, while many others are
+installed automatically by the **ROS 2** build system (for example through
+**rosdep**). This can install a large number of libraries on your system and may
+cause conflicts. Docker keeps these dependencies inside the container and provides
+a more consistent, reproducible build environment. For most users, we recommend
+using Docker.
 
 ## Caution
 This package is in rapid development. Users should expect breaking changes and are encouraged to report any bugs via [GitHub Issues page](https://github.com/frankarobotics/franka_ros2/issues).
@@ -51,8 +58,9 @@ This repository contains a `.repos` file that helps you clone the required depen
       Suitable for resource-constrained environments or headless systems.
 
     ```bash
-    # replace <YOUR CHOICE> with either ros-jazzy-desktop or ros-jazzy-ros-base
-    sudo apt install <YOUR CHOICE>
+    sudo apt install ros-jazzy-desktop
+    # or, for a minimal installation:
+    sudo apt install ros-jazzy-ros-base
     ```
     ---
     Also install the **Development Tools** package:
@@ -71,7 +79,7 @@ This repository contains a `.repos` file that helps you clone the required depen
    ```
 3. **Clone the Repositories:**
    ```bash
-    git clone https://github.com/frankarobotics/franka_ros2.git src
+    git clone -b jazzy https://github.com/frankarobotics/franka_ros2.git src
     ```
 4. **Install the dependencies**
     ```bash
@@ -86,23 +94,27 @@ This repository contains a `.repos` file that helps you clone the required depen
    # use the --symlinks option to reduce disk usage, and facilitate development.
    colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF
    ```
-7. **Adjust Enviroment**
+7. **Adjust Environment**
    ```bash
    # Adjust environment to recognize packages and dependencies in your newly built ROS 2 workspace.
    source install/setup.sh
    ```
 
 ## Docker Container Installation
-The **franka_ros2** package includes a `Dockerfile` and a `docker-compose.yml`, which allows you to use `franka_ros2` packages without manually installing **ROS 2**. Also, the support for Dev Containers in Visual Studio Code is provided.
+This repository includes a `Dockerfile` and `docker-compose.yml` so you can use
+the `franka_ros2` packages without installing **ROS 2** directly on your host
+system. Support for Dev Containers in Visual Studio Code is also provided.
 
-For detailed instructions, on preparing VSCode to use the `.devcontainer` follow the setup guide from [VSCode devcontainer_setup](https://code.visualstudio.com/docs/devcontainers/tutorial).
+For detailed instructions on preparing VS Code to use `.devcontainer`, follow the
+[VS Code Dev Containers tutorial](https://code.visualstudio.com/docs/devcontainers/tutorial).
 
 1. **Clone the Repositories:**
     ```bash
     git clone https://github.com/frankarobotics/franka_ros2.git
     cd franka_ros2
     ```
-    We provide separate instructions for using Docker with Visual Studio Code or the command line. Choose one of the following options:
+    We provide separate instructions for using Docker from the command line or
+    from Visual Studio Code. Choose one of the following options:
 
     Option A: Set up and use Docker from the command line (without Visual Studio Code).
 
@@ -110,11 +122,12 @@ For detailed instructions, on preparing VSCode to use the `.devcontainer` follow
 
 ### Option A: using Docker Compose
 
-  2. **Save the current user id into a file:**
+  2. **Create a `.env` file for Docker Compose:**
       ```bash
-      echo -e "USER_UID=$(id -u $USER)\nUSER_GID=$(id -g $USER)" > .env
+      printf "USER_UID=%s\nUSER_GID=%s\nCONTAINER_NAME=%s_jazzy\n" "$(id -u)" "$(id -g)" "$(basename "$PWD")" > .env
       ```
-      It is needed to mount the folder from inside the Docker container.
+      The Compose file reads `USER_UID`, `USER_GID`, and `CONTAINER_NAME` from
+      this file.
 
   3. **Build the container:**
       ```bash
@@ -126,9 +139,9 @@ For detailed instructions, on preparing VSCode to use the `.devcontainer` follow
       ```
   5. **Open a shell inside the container:**
       ```bash
-      docker exec -it franka_ros2 /bin/bash
+      docker compose exec franka_ros2_jazzy bash
       ```
-  6. **Clone the latests dependencies:**
+  6. **Import the workspace dependencies:**
       ```bash
       vcs import src < src/dependency.repos --recursive --skip-existing
       ```
@@ -136,26 +149,26 @@ For detailed instructions, on preparing VSCode to use the `.devcontainer` follow
       ```bash
       colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
       ```
-  7. **Source the built workspace:**
+  8. **Source the built workspace:**
       ```bash
       source install/setup.bash
       ```
-  8. **When you are done, you can exit the shell and delete the container**:
+  9. **When you are done, stop and remove the container:**
       ```bash
       docker compose down -t 0
       ```
 
 ### Option B: using Dev Containers in Visual Studio Code
 
-  2. **Open Visual Studio Code ...**
+  2. **Open Visual Studio Code.**
 
-        Then, open folder  `franka_ros2`
+        Then open the `franka_ros2` folder.
 
   3. **Choose `Reopen in container` when prompted.**
 
       The container will be built automatically, as required.
 
-  4. **Clone the latests dependencies:**
+  4. **Import the workspace dependencies:**
       ```bash
       vcs import src < src/dependency.repos --recursive --skip-existing
       ```
@@ -170,7 +183,7 @@ For detailed instructions, on preparing VSCode to use the `.devcontainer` follow
       ```
 
 
-# Test the build
+## Test the build
    ```bash
    colcon test
    ```
@@ -186,9 +199,14 @@ To verify that your setup works correctly without a robot, you can run the follo
 ```bash
 ros2 launch franka_fr3_moveit_config moveit.launch.py robot_ip:=dont-care use_fake_hardware:=true
 ```
-You can use the arguments `load_gripper` to activate or deactivate the end-effector and `ee_id` to set which end-effector you want to use. By default, the Franka Hand is activated.
+The same `franka_fr3_moveit_config moveit.launch.py` launch file also accepts
+`load_gripper`, `ee_id`, and `namespace`. Use `load_gripper` to enable or disable
+the end effector, and `ee_id` to select which end effector to use. By default,
+the Franka Hand is enabled.
 
-If you want to run this example with namespaces, you would need to use the argument `namespace` and manually write your namespace in `moveit.rviz` under `Move Group Namespace`.
+If you want to run this example with namespaces, pass the `namespace` launch
+argument and then set the same namespace in `moveit.rviz` under **Move Group
+Namespace**.
 
 ### Run a ROS 2 example controller
 
@@ -232,7 +250,7 @@ ros2 launch franka_bringup mobile_fr3_duo.launch.py \
 
 ### Move the TMRv0.2
 
-Be sure to configure your robot ip in `franka_bringup/config/tmr.config.yaml` and optionally change robot namespace.
+Be sure to configure your robot IP in `franka_bringup/config/tmr.config.yaml` and optionally change the robot namespace.
 
 You can move the TMRv0.2 either:
 
@@ -257,7 +275,8 @@ ros2 run teleop_twist_keyboard teleop_twist_keyboard --ros-args -p stamped:=true
 
 ### Run Gazebo examples with ROS 2
 
-If you want to use Gazebo to run your code, you can find some examples here: [franka_gazebo_bringup](./franka_gazebo/franka_gazebo_bringup/doc/index)
+If you want to use Gazebo to run your code, you can find examples in
+[franka_gazebo_bringup](./franka_gazebo/franka_gazebo_bringup/doc/index.rst).
 
 ## Troubleshooting
 ### `libfranka: UDP receive: Timeout error`

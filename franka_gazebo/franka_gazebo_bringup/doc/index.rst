@@ -6,29 +6,55 @@ franka_gazebo_bringup
     Minimum necessary `franka_description` version is 0.3.0.
     You can clone franka_description package from https://github.com/frankarobotics/franka_description.
 
-A project integrating Franka ROS 2 with the Gazebo simulator.
+This package integrates Franka ROS 2 with Gazebo Sim.
 
-Launch RVIZ + Gazebo
+Launch RViz + Gazebo
 --------------------
 
-Launch an example which spawns RVIZ and Gazebo showing the robot:
-
+Launch Gazebo Sim and RViz with the default FR3 model:
 
 .. code-block:: shell
 
     ros2 launch franka_gazebo_bringup visualize_franka_robot.launch.py
 
-If you want to display another robot, you can define the robot_type:
+To display a different robot model, set ``robot_type``:
 
 .. code-block:: shell
 
     ros2 launch franka_gazebo_bringup visualize_franka_robot.launch.py robot_type:=fp3
 
-If you want to start the simulation including the franka_hand:
+To include the Franka gripper in the simulation:
 
 .. code-block:: shell
 
     ros2 launch franka_gazebo_bringup visualize_franka_robot.launch.py load_gripper:=true franka_hand:='franka_hand'
+
+Launch arguments
+^^^^^^^^^^^^^^^^
+
+* ``robot_type``
+
+  * Type: ``string``
+  * Default: ``fr3``
+  * Description: Robot model to load. The launch file documents ``fr3``, ``fp3``, and ``fer`` as supported values.
+
+* ``load_gripper``
+
+  * Type: ``bool``
+  * Default: ``false``
+  * Description: Whether to include the gripper in the robot description.
+
+* ``franka_hand``
+
+  * Type: ``string``
+  * Default: ``franka_hand``
+  * Description: End-effector ID passed to the robot description when the gripper is enabled.
+
+* ``namespace``
+
+  * Type: ``string``
+  * Default: ``''``
+  * Description: Namespace for the robot. If empty, the launch file uses the root namespace.
 
 Joint Velocity Control Example with Gazebo
 -------------------------------------------
@@ -42,7 +68,7 @@ Before starting, be sure to build `franka_example_controllers` and `franka_descr
     colcon build --packages-select franka_example_controllers
 
 
-Now you can launch the velocity example with Gazebo simulator.
+Now you can launch the velocity example in Gazebo Sim.
 
 .. code-block:: shell
 
@@ -50,15 +76,16 @@ Now you can launch the velocity example with Gazebo simulator.
 
 
 Keep in mind that the gripper joint has a bug with the joint velocity controller.
-If you are interested in controlling the gripper please use joint position interface.
+If you need to control the gripper, use the joint position interface instead.
 
 
 Joint Position Control Example with Gazebo
 -------------------------------------------
 
-To run the joint position control example you need to have the required software listed in the joint velocity control section.
+To run the joint position control example, make sure the software listed in the joint velocity
+control section is available.
 
-Then you can run with the following command.
+Then run:
 
 .. code-block:: shell
 
@@ -91,7 +118,7 @@ Before starting, be sure to build ``franka_example_controllers``, ``franka_gazeb
     colcon build --packages-select franka_example_controllers franka_gazebo_bringup franka_description gz_ros2_control
     source install/setup.bash
 
-Now you can launch the FR3 duo example with Gazebo:
+Now you can launch the FR3 Duo example in Gazebo Sim:
 
 .. code-block:: shell
 
@@ -132,12 +159,50 @@ Wrist cameras (Vision and Manipulation Kit):
 Head camera (ZED Mini):
   - ``/head_camera/image_raw``, ``/head_camera/image_raw/camera_info``
 
-**Arguments:**
+Launch arguments
+^^^^^^^^^^^^^^^^
 
-- ``with_sensors``: If set to ``true``, uses the complete sensor-enhanced description from the Vision and Manipulation Kit sensors (``franka_vision_and_manipulation_kit``)
-  with Gazebo sensor plugins. Defaults to ``false``.
-- ``world``: SDF world filename inside ``franka_gazebo_bringup/worlds/`` to load.
-  Overrides the default world selection.
+* ``load_gripper``
+
+  * Type: ``bool``
+  * Default: ``true``
+  * Description: Whether to include the Franka gripper. When ``with_sensors:=true``, the launch file forces this to ``false`` because the sensor-enhanced description already includes Robotiq grippers.
+
+* ``franka_hand``
+
+  * Type: ``string``
+  * Default: ``franka_hand``
+  * Description: End-effector ID passed to the robot description.
+
+* ``namespace``
+
+  * Type: ``string``
+  * Default: ``''``
+  * Description: Namespace for the robot. If empty, the launch file uses the root namespace.
+
+* ``with_sensors``
+
+  * Type: ``bool``
+  * Default: ``false``
+  * Description: Whether to use the sensor-enhanced description from ``franka_vision_and_manipulation_kit`` with Gazebo sensor plugins.
+
+* ``world``
+
+  * Type: ``string``
+  * Default: ``''``
+  * Description: SDF world filename inside ``franka_gazebo_bringup/worlds/``. If empty, the launch file uses ``robot_with_sensors.sdf`` when ``with_sensors:=true`` and ``empty.sdf`` otherwise.
+
+* ``rviz``
+
+  * Type: ``bool``
+  * Default: ``true``
+  * Description: Whether to start RViz.
+
+* ``gz_args``
+
+  * Type: ``string``
+  * Default: ``-r``
+  * Description: Additional arguments forwarded to Gazebo Sim.
 
 This will spawn two FR3 arms with gripper and wrist cameras, and start the joint impedance controller
 for both arms. RViz will also launch for visualization.
@@ -153,7 +218,7 @@ Before starting, be sure to build ``franka_example_controllers``, ``franka_gazeb
     colcon build --packages-select franka_example_controllers franka_gazebo_bringup franka_description gz_ros2_control
     source install/setup.bash
 
-Now you can launch the mobile FR3 duo example with Gazebo:
+Now you can launch the Mobile FR3 Duo example in Gazebo Sim:
 
 .. code-block:: shell
 
@@ -215,13 +280,50 @@ Wrist cameras (Vision and Manipulation Kit):
 Head camera (ZED Mini):
   - ``/head_camera/image_raw``, ``/head_camera/image_raw/camera_info``
 
-**Arguments:**
+Launch arguments
+^^^^^^^^^^^^^^^^
 
-- ``with_sensors``: If set to ``true``, uses the complete sensor-enhanced description with both mobile platform sensors
-  (``franka_mobile_sensors``) and Vision and Manipulation Kit sensors (``franka_vision_and_manipulation_kit``)
-  with Gazebo sensor plugins. Defaults to ``false``.
-- ``world``: SDF world filename inside ``franka_gazebo_bringup/worlds/`` to load.
-  Overrides the default world selection.
+* ``load_gripper``
+
+  * Type: ``bool``
+  * Default: ``true``
+  * Description: Whether to include the Franka gripper. When ``with_sensors:=true``, the launch file forces this to ``false`` because the sensor-enhanced description already includes Robotiq grippers.
+
+* ``franka_hand``
+
+  * Type: ``string``
+  * Default: ``franka_hand``
+  * Description: End-effector ID passed to the robot description.
+
+* ``namespace``
+
+  * Type: ``string``
+  * Default: ``''``
+  * Description: Namespace for the robot. If empty, the launch file uses the root namespace.
+
+* ``with_sensors``
+
+  * Type: ``bool``
+  * Default: ``false``
+  * Description: Whether to use the sensor-enhanced description with both ``franka_mobile_sensors`` and ``franka_vision_and_manipulation_kit`` sensor plugins.
+
+* ``world``
+
+  * Type: ``string``
+  * Default: ``''``
+  * Description: SDF world filename inside ``franka_gazebo_bringup/worlds/``. If empty, the launch file uses ``robot_with_sensors.sdf`` when ``with_sensors:=true`` and ``empty.sdf`` otherwise.
+
+* ``rviz``
+
+  * Type: ``bool``
+  * Default: ``true``
+  * Description: Whether to start RViz.
+
+* ``gz_args``
+
+  * Type: ``string``
+  * Default: ``-r``
+  * Description: Additional arguments forwarded to Gazebo Sim.
 
 This will spawn the mobile base and two FR3 arms with gripper and wrist cameras, and start the joint impedance controller
 for both arms and cartesian velocity control for the mobile base. RViz will also launch
@@ -246,6 +348,23 @@ command interface, which is started automatically by the mobile example launch f
 You normally don't need to configure any of this — it is wired up by the example launch
 files. Gravity being enabled is engine-independent and does not depend on a particular
 physics engine forwarding a gravity-disable flag.
+
+Simulated Robot State and Interfaces
+------------------------------------
+
+The Gazebo hardware interface publishes a faithful ``franka::RobotState`` and exports the
+same state interfaces as the real hardware, so model-based controllers, gravity compensation
+and Cartesian-pose controllers work in simulation just as they do on the robot. The exported
+state interfaces are:
+
+* ``robot_model`` and ``robot_state`` — the full model and state surface;
+* the ``_tcp`` force/torque interfaces — the estimated external wrench at the TCP;
+* the 16 ``<i>/cartesian_pose_state`` interfaces — the current Cartesian pose, so
+  Cartesian-pose controllers can activate in simulation.
+
+The estimated external wrench is reported in two frames: ``O_F_ext_hat_K`` is expressed in
+the base frame and ``K_F_ext_hat_K`` in the stiffness frame K. The wrench sign follows the
+reaction convention — a push in +x reads a measured external force of -x.
 
 Troubleshooting
 ---------------

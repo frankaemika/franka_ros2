@@ -18,11 +18,52 @@ from dataclasses import dataclass
 import logging
 import threading
 import time
-from typing import Callable, Optional
+from typing import Any, Callable, Optional, Tuple
 
+from franka_spine_server.spine_api import SpineMotion, SpineStatus
 from franka_spine_server.spine_api_client import SpineApiClient
 
-FAULT_STATES = ('Fault', 'FaultReactionActive')
+
+def _motion_payload_label(data: Any) -> str:
+    """Normalize a start_motion body to a stop-reason string."""
+    if isinstance(data, str):
+        return data
+    if isinstance(data, dict):
+        return str(data.get('StopBy', ''))
+    return str(data) if data is not None else ''
+
+
+def _start_finished_at_target(start_result: list) -> bool:
+    """True if start_motion returned HTTP OK with body Finished."""
+    if not start_result:
+        return False
+    success, data = start_result[0]
+    return bool(success) and _motion_payload_label(data) == SpineMotion.Finished
+
+
+def _state_from_payload(data: Any) -> str:
+    """Extract a DS402 state string from a REST payload."""
+    if isinstance(data, str):
+        return data
+    if isinstance(data, dict):
+        return str(data.get('state', ''))
+    return str(data) if data is not None else ''
+
+
+def _not_ready_to_move(state: str = '') -> str:
+    """Error when motion-mm:start is refused because the drive is not on."""
+    if state:
+        return (
+            f'Cannot start motion: spine is {state} '
+            f'(expected {SpineStatus.SwitchedOn})'
+        )
+    return f'Cannot start motion: spine is not {SpineStatus.SwitchedOn}'
+
+
+def _is_failed_dependency(data: Any) -> bool:
+    """True if the device rejected the call with HTTP 424."""
+    text = str(data)
+    return '424' in text or 'Failed Dependency' in text
 
 
 @dataclass
@@ -33,6 +74,14 @@ class MotionResult:
     stop_by: str = ''
     error: str = ''
     cancelled: bool = False
+
+
+@dataclass
+class _PollOutcome:
+    """Internal result of polling while a start_motion call is in flight."""
+
+    cancelled: bool = False
+    error: str = ''
 
 
 @dataclass
@@ -156,14 +205,22 @@ class SpineController:
         return CommandResult(success=True, state=state, message='Switch off successful')
 
     def halt(self) -> CommandResult:
-        """Halt any ongoing motion."""
-        success, data = self.api.halt_motion()
-        if not success:
-            msg = f'Halt failed: {data}'
-            self.logger.error(msg)
-            return CommandResult(success=False, message=msg)
-        state = data if isinstance(data, str) else str(data)
-        return CommandResult(success=True, state=state, message='Halt successful')
+        """Halt any ongoing motion and restore SwitchedOn (Halt.srv contract).
+
+        The device only exposes DS402 quick-stop, which lands in SwitchedOff.
+        After the drive leaves QuickStopActive, this re-arms with switch-on.
+        """
+        stop = self._quick_stop()
+        if not stop.success:
+            return stop
+        rearm = self._rearm_after_quick_stop()
+        if not rearm.success:
+            return CommandResult(
+                success=False,
+                state=rearm.state,
+                message=f'Halt stopped motion but failed to restore SwitchedOn: {rearm.message}',
+            )
+        return CommandResult(success=True, state=rearm.state, message='Halt successful')
 
     def get_parameters(self) -> ParametersResult:
         """Retrieve spine parameters (user limits)."""
@@ -195,6 +252,7 @@ class SpineController:
     ) -> MotionResult:
         """
         Execute an absolute move and block until completion.
+        Spine is expected to be in the ``SwitchedOn`` state before starting the motion.
 
         :param position: Target position in metres.
         :param velocity: Motion velocity in m/s.
@@ -205,73 +263,175 @@ class SpineController:
         :param is_active: Callable returning True while system is running.
         """
         with self._motion_lock:
-            success, data = self.api.start_motion(position, velocity, acceleration, deceleration)
-            if not success:
-                self.logger.error(f'Failed to start motion: {data}')
-                return MotionResult(success=False, error=str(data))
+            ready = self.get_state()
+            if not ready.success:
+                return MotionResult(
+                    success=False, error='Cannot start motion: failed to read spine state'
+                )
+            if ready.state != SpineStatus.SwitchedOn:
+                msg = _not_ready_to_move(ready.state)
+                self.logger.error(msg)
+                return MotionResult(success=False, error=msg)
 
-            stop_by = data.get('StopBy', '') if isinstance(data, dict) else ''
+            motion_done = threading.Event()
+            start_result = []
 
-            cancelled = self._poll_position_until_done(
+            def _start():
+                try:
+                    start_result.append(
+                        self.api.start_motion(
+                            position, velocity, acceleration, deceleration
+                        )
+                    )
+                except Exception as exc:
+                    start_result.append((False, str(exc)))
+                finally:
+                    motion_done.set()
+
+            worker = threading.Thread(target=_start, name='spine-start-motion', daemon=True)
+            worker.start()
+
+            poll = self._poll_position_until_done(
                 is_cancelled=is_cancelled,
                 on_feedback=on_feedback,
                 is_active=is_active,
+                motion_done=motion_done,
             )
 
-        if cancelled:
-            return MotionResult(
-                success=False,
-                stop_by=stop_by,
-                error='Motion cancelled',
-                cancelled=True,
-            )
-        return MotionResult(success=True, stop_by=stop_by)
+            worker.join()
+
+            if poll.cancelled:
+                if poll.error:
+                    return MotionResult(success=False, error=poll.error, cancelled=False)
+                # start may have returned Finished between the cancel check
+                # and the quick-stop POST; do not re-arm or report cancel.
+                if _start_finished_at_target(start_result):
+                    return MotionResult(success=True, stop_by=SpineMotion.Finished)
+                rearm = self._rearm_after_quick_stop()
+                if not rearm.success:
+                    return MotionResult(
+                        success=False,
+                        error=(
+                            'Motion cancelled but failed to restore SwitchedOn: '
+                            f'{rearm.message}'
+                        ),
+                        cancelled=False,
+                    )
+                return MotionResult(
+                    success=False,
+                    error='Motion cancelled',
+                    cancelled=True,
+                )
+
+            if poll.error:
+                return MotionResult(success=False, error=poll.error)
+
+            if not start_result:
+                return MotionResult(success=False, error='Motion start did not return')
+
+            success, data = start_result[0]
+            if not success:
+                error = self._start_motion_error(data)
+                self.logger.error(f'Failed to start motion: {error}')
+                if not _is_failed_dependency(data):
+                    self._quick_stop()
+                return MotionResult(success=False, error=error)
+
+            stop_by = _motion_payload_label(data)
+            if stop_by != SpineMotion.Finished:
+                return MotionResult(
+                    success=False, stop_by=stop_by, error=f'Stopped by {stop_by}'
+                )
+            return MotionResult(success=True, stop_by=SpineMotion.Finished)
+
+    def _start_motion_error(self, data: Any) -> str:
+        """Turn a failed start_motion response into a user-facing error."""
+        current = self.get_state()
+        if current.success and current.state != SpineStatus.SwitchedOn:
+            return _not_ready_to_move(current.state)
+        if _is_failed_dependency(data):
+            return _not_ready_to_move()
+        return str(data)
+
+    def _quick_stop(self) -> CommandResult:
+        """POST motion:quick-stop. Does not re-arm."""
+        success, data = self.api.halt_motion()
+        if not success:
+            msg = f'Halt failed: {data}'
+            self.logger.error(msg)
+            return CommandResult(success=False, message=msg)
+        state = _state_from_payload(data)
+        return CommandResult(success=True, state=state, message='Quick-stop successful')
+
+    def _rearm_after_quick_stop(self) -> CommandResult:
+        """Wait for SwitchedOff after quick-stop, then switch on."""
+        reached, state = self._wait_for_state(SpineStatus.SwitchedOff)
+        if not reached:
+            msg = f'Halt did not reach SwitchedOff (state={state})'
+            self.logger.error(msg)
+            return CommandResult(success=False, state=state, message=msg)
+        return self.switch_on()
+
+    def _wait_for_state(self, expected: str) -> Tuple[bool, str]:
+        """Poll get_state until ``expected`` or timeout.
+
+        Returns (reached, last_state).
+        """
+        period = 1.0 / self.feedback_rate
+        deadline = time.monotonic() + self.api.timeout
+        last_state = ''
+        while time.monotonic() < deadline:
+            success, data = self.api.get_state()
+            if success:
+                last_state = _state_from_payload(data)
+                if last_state == expected:
+                    return True, last_state
+                if last_state in SpineStatus.FAULT_STATES:
+                    return False, last_state
+            time.sleep(period)
+        return False, last_state
 
     def _poll_position_until_done(
         self,
         is_cancelled: Callable[[], bool],
         on_feedback: Optional[Callable[[float], None]],
         is_active: Callable[[], bool],
-    ) -> bool:
+        motion_done: threading.Event,
+    ) -> _PollOutcome:
         """
-        Poll position until stable or cancelled.
+        Publish feedback and watch for cancel until motion-mm:start returns.
 
-        Returns True if cancelled.
+        Returns a ``_PollOutcome``. ``cancelled`` is True only after a cancel
+        request; ``error`` is set when halt failed or the spine faulted.
         """
         period = 1.0 / self.feedback_rate
-        position_stable_count = 0
-        last_position = None
 
         while is_active():
-            if is_cancelled():
+            if is_cancelled() and not motion_done.is_set():
                 self.logger.info('Motion cancelled, sending halt')
-                self.api.halt_motion()
-                return True
+                stop = self._quick_stop()
+                if not stop.success:
+                    return _PollOutcome(cancelled=True, error=stop.message)
+                return _PollOutcome(cancelled=True)
 
             success, data = self.api.get_position()
             if success:
                 current_position = data.get('position', 0.0)
                 if on_feedback:
                     on_feedback(current_position)
-
-                if last_position is not None and current_position == last_position:
-                    position_stable_count += 1
-                else:
-                    position_stable_count = 0
-                last_position = current_position
-
-                if position_stable_count >= 3:
-                    self.logger.info(f'Motion complete at position {current_position:.4f} m')
-                    return False
             else:
                 self.logger.warning(f'Failed to read position: {data}')
 
             state_success, state_data = self.api.get_state()
-            if state_success and isinstance(state_data, str):
-                if state_data in FAULT_STATES:
-                    self.logger.error(f'Spine entered fault state: {state_data}')
-                    return False
+            if state_success:
+                state = _state_from_payload(state_data)
+                if state in SpineStatus.FAULT_STATES:
+                    self.logger.error(f'Spine entered fault state: {state}')
+                    return _PollOutcome(error=f'Spine entered fault state: {state}')
+
+            if motion_done.is_set():
+                return _PollOutcome()
 
             time.sleep(period)
 
-        return False
+        return _PollOutcome()

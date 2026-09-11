@@ -18,7 +18,6 @@
 #include <optional>
 #include <stack>
 
-#include <realtime_tools/realtime_buffer.hpp>
 #include "rclcpp/logging.hpp"
 #include "sensor_msgs/msg/joint_state.hpp"
 #include "std_msgs/msg/header.hpp"
@@ -30,7 +29,26 @@ namespace {
 constexpr size_t kBaseLinkIndex = 0;
 constexpr size_t kFlangeLinkIndex = 8;
 constexpr size_t kLoadLinkIndex = 8;
+constexpr size_t kAccelerometerCount = 6;
 const std::string kTCPFrameName = "_hand_tcp";
+
+// franka::RobotMode and FrankaRobotState.robot_mode are intentionally isomorphic.
+// Keep the hot path as a single cast; fail the build if libfranka or the .msg drifts.
+static_assert(static_cast<uint8_t>(franka::RobotMode::kOther) ==
+              franka_msgs::msg::FrankaRobotState::ROBOT_MODE_OTHER);
+static_assert(static_cast<uint8_t>(franka::RobotMode::kIdle) ==
+              franka_msgs::msg::FrankaRobotState::ROBOT_MODE_IDLE);
+static_assert(static_cast<uint8_t>(franka::RobotMode::kMove) ==
+              franka_msgs::msg::FrankaRobotState::ROBOT_MODE_MOVE);
+static_assert(static_cast<uint8_t>(franka::RobotMode::kGuiding) ==
+              franka_msgs::msg::FrankaRobotState::ROBOT_MODE_GUIDING);
+static_assert(static_cast<uint8_t>(franka::RobotMode::kReflex) ==
+              franka_msgs::msg::FrankaRobotState::ROBOT_MODE_REFLEX);
+static_assert(static_cast<uint8_t>(franka::RobotMode::kUserStopped) ==
+              franka_msgs::msg::FrankaRobotState::ROBOT_MODE_USER_STOPPED);
+static_assert(static_cast<uint8_t>(franka::RobotMode::kAutomaticErrorRecovery) ==
+              franka_msgs::msg::FrankaRobotState::ROBOT_MODE_AUTOMATIC_ERROR_RECOVERY);
+static_assert(static_cast<uint8_t>(franka::RobotMode::kAutomaticErrorRecovery) == 6u);
 
 // Example implementation of bit_cast: https://en.cppreference.com/w/cpp/numeric/bit_cast
 template <class To, class From>
@@ -196,127 +214,166 @@ auto FrankaRobotState::initialize_robot_state_msg(franka_msgs::msg::FrankaRobotS
   message.tau_ext_hat_filtered.position.resize(joint_names.size(), 0.0);
   message.tau_ext_hat_filtered.velocity.resize(joint_names.size(), 0.0);
   message.tau_ext_hat_filtered.effort.resize(joint_names.size(), 0.0);
+
+  // libfranka's accelerometer index i belongs to joint i+1; a joint's sensors are mounted
+  // on its parent link and named "<parent link>_accelerometer_<side>" in the URDF.
+  for (size_t i = 0; i < kAccelerometerCount; ++i) {
+    const auto joint_name = robot_name_ + "_joint" + std::to_string(i + 1);
+    const auto joint_it = model_->joints_.find(joint_name);
+    if (joint_it == model_->joints_.end()) {
+      throw std::runtime_error("Joint '" + joint_name + "' not found in URDF.");
+    }
+    const auto top_frame = joint_it->second->parent_link_name + "_accelerometer_top";
+    const auto bottom_frame = joint_it->second->parent_link_name + "_accelerometer_bottom";
+    if (model_->links_.find(top_frame) == model_->links_.end()) {
+      throw std::runtime_error("Accelerometer frame '" + top_frame + "' not found in URDF.");
+    }
+    if (model_->links_.find(bottom_frame) == model_->links_.end()) {
+      throw std::runtime_error("Accelerometer frame '" + bottom_frame + "' not found in URDF.");
+    }
+    message.accelerometer_top[i].header.frame_id = top_frame;
+    message.accelerometer_bottom[i].header.frame_id = bottom_frame;
+  }
+}
+
+auto FrankaRobotState::assign_loaned_state_interfaces(
+    std::vector<hardware_interface::LoanedStateInterface>& state_interfaces) -> bool {
+  if (!Base::assign_loaned_state_interfaces(state_interfaces)) {
+    return false;
+  }
+  if (!initialize_state_buffer()) {
+    release_interfaces();
+    return false;
+  }
+  return true;
+}
+
+auto FrankaRobotState::release_interfaces() -> void {
+  robot_state_box_ = nullptr;
+  cached_robot_state_valid_ = false;
+  Base::release_interfaces();
+}
+
+auto FrankaRobotState::initialize_state_buffer() -> bool {
+  // assign_loaned_state_interfaces() claims the interfaces named in the constructor and
+  // orders them to match, so a complete claim leaves the robot state interface first.
+  if (state_interfaces_.size() != interface_names_.size()) {
+    RCLCPP_ERROR(rclcpp::get_logger("franka_robot_state_semantic_component"),
+                 "Franka state interface '%s' was not claimed! Did you assign the loaned state in "
+                 "the controller?",
+                 full_robot_state_interface_name_.c_str());
+    return false;
+  }
+
+  // The hardware hands over the address of its state box through the interface value.
+  // By default, the robot state interface is the first and only interface.
+  const auto interface_value = state_interfaces_.front().get().get_optional();
+  if (!interface_value.has_value()) {
+    RCLCPP_ERROR(rclcpp::get_logger("franka_robot_state_semantic_component"),
+                 "Could not read the Franka state interface.");
+    return false;
+  }
+
+  robot_state_box_ =
+      bit_cast<realtime_tools::RealtimeThreadSafeBox<franka::RobotState>*>(interface_value.value());
+  if (robot_state_box_ == nullptr) {
+    RCLCPP_ERROR(rclcpp::get_logger("franka_robot_state_semantic_component"),
+                 "The Franka state interface carries a null robot state box.");
+    return false;
+  }
+  return true;
 }
 
 auto FrankaRobotState::get_values_as_message(franka_msgs::msg::FrankaRobotState& message) -> bool {
-  auto franka_state_interface = std::find_if(
-      state_interfaces_.cbegin(), state_interfaces_.cend(), [&](const auto& interface) {
-        return interface.get().get_name() == full_robot_state_interface_name_;
-      });
-  if (franka_state_interface != state_interfaces_.end()) {
-    auto* buffer_ptr = bit_cast<realtime_tools::RealtimeBuffer<franka::RobotState>*>(
-        (*franka_state_interface).get().get_optional().value());
-    robot_state_ptr = buffer_ptr->readFromRT();
-  } else {
-    RCLCPP_ERROR(rclcpp::get_logger("franka_state_semantic_component"),
-                 "Franka state interface does not exist! Did you assign the loaned state in the "
-                 "controller?");
+  // Safety net if interfaces were claimed without going through our assign() wrapper.
+  if (robot_state_box_ == nullptr && !initialize_state_buffer()) {
     return false;
   }
+
+  // Robot state consumers are assuming this is reliable.
+  // Don't drop any robot state the hardware has written to the box.
+  // Warning: this blocks until the hardware releases the box!
+  robot_state_ = robot_state_box_->get();
+  cached_robot_state_valid_ = true;
 
   // Update the time stamps of the data
   translation::updateTimeStamps(message.header.stamp, message);
 
   // Collision and contact indicators
   message.collision_indicators = translation::toCollisionIndicators(
-      robot_state_ptr->cartesian_collision, robot_state_ptr->cartesian_contact,
-      robot_state_ptr->joint_collision, robot_state_ptr->joint_contact);
+      robot_state_.cartesian_collision, robot_state_.cartesian_contact,
+      robot_state_.joint_collision, robot_state_.joint_contact);
 
   // The joint states
   const auto n_joints = message.measured_joint_state.position.size();
-  std::copy_n(robot_state_ptr->q.cbegin(), n_joints, message.measured_joint_state.position.begin());
-  std::copy_n(robot_state_ptr->dq.cbegin(), n_joints,
-              message.measured_joint_state.velocity.begin());
-  std::copy_n(robot_state_ptr->tau_J.cbegin(), n_joints,
-              message.measured_joint_state.effort.begin());
+  std::copy_n(robot_state_.q.cbegin(), n_joints, message.measured_joint_state.position.begin());
+  std::copy_n(robot_state_.dq.cbegin(), n_joints, message.measured_joint_state.velocity.begin());
+  std::copy_n(robot_state_.tau_J.cbegin(), n_joints, message.measured_joint_state.effort.begin());
 
-  std::copy_n(robot_state_ptr->q_d.cbegin(), n_joints,
-              message.desired_joint_state.position.begin());
-  std::copy_n(robot_state_ptr->dq_d.cbegin(), n_joints,
-              message.desired_joint_state.velocity.begin());
-  std::copy_n(robot_state_ptr->tau_J_d.cbegin(), n_joints,
-              message.desired_joint_state.effort.begin());
+  std::copy_n(robot_state_.q_d.cbegin(), n_joints, message.desired_joint_state.position.begin());
+  std::copy_n(robot_state_.dq_d.cbegin(), n_joints, message.desired_joint_state.velocity.begin());
+  std::copy_n(robot_state_.tau_J_d.cbegin(), n_joints, message.desired_joint_state.effort.begin());
 
-  std::copy_n(robot_state_ptr->theta.cbegin(), n_joints,
+  std::copy_n(robot_state_.theta.cbegin(), n_joints,
               message.measured_joint_motor_state.position.begin());
-  std::copy_n(robot_state_ptr->dtheta.cbegin(), n_joints,
+  std::copy_n(robot_state_.dtheta.cbegin(), n_joints,
               message.measured_joint_motor_state.velocity.begin());
 
-  std::copy_n(robot_state_ptr->tau_ext_hat_filtered.cbegin(), n_joints,
+  std::copy_n(robot_state_.tau_ext_hat_filtered.cbegin(), n_joints,
               message.tau_ext_hat_filtered.effort.begin());
 
-  message.ddq_d = robot_state_ptr->ddq_d;
-  message.dtau_j = robot_state_ptr->dtau_J;
+  message.ddq_d = robot_state_.ddq_d;
+  message.dtau_j = robot_state_.dtau_J;
 
   // Output for the elbow
-  message.elbow = translation::toElbow(robot_state_ptr->elbow, robot_state_ptr->elbow_d,
-                                       robot_state_ptr->elbow_c, robot_state_ptr->delbow_c,
-                                       robot_state_ptr->ddelbow_c);
+  message.elbow =
+      translation::toElbow(robot_state_.elbow, robot_state_.elbow_d, robot_state_.elbow_c,
+                           robot_state_.delbow_c, robot_state_.ddelbow_c);
+
+  // Joint-mounted accelerometer data
+  for (size_t i = 0; i < message.accelerometer_top.size(); ++i) {
+    message.accelerometer_top[i].vector = translation::toVector3(robot_state_.accelerometer_top[i]);
+    message.accelerometer_bottom[i].vector =
+        translation::toVector3(robot_state_.accelerometer_bottom[i]);
+  }
 
   // Active wrenches on the stiffness frame
-  message.k_f_ext_hat_k.wrench = translation::toWrench(robot_state_ptr->K_F_ext_hat_K);
-  message.o_f_ext_hat_k.wrench = translation::toWrench(robot_state_ptr->O_F_ext_hat_K);
+  message.k_f_ext_hat_k.wrench = translation::toWrench(robot_state_.K_F_ext_hat_K);
+  message.o_f_ext_hat_k.wrench = translation::toWrench(robot_state_.O_F_ext_hat_K);
 
   // The transformations between different frames
-  message.o_t_ee.pose = translation::toPose(robot_state_ptr->O_T_EE);
-  message.o_t_ee_d.pose = translation::toPose(robot_state_ptr->O_T_EE_d);
-  message.o_t_ee_c.pose = translation::toPose(robot_state_ptr->O_T_EE_c);
+  message.o_t_ee.pose = translation::toPose(robot_state_.O_T_EE);
+  message.o_t_ee_d.pose = translation::toPose(robot_state_.O_T_EE_d);
+  message.o_t_ee_c.pose = translation::toPose(robot_state_.O_T_EE_c);
 
-  message.f_t_ee.pose = translation::toPose(robot_state_ptr->F_T_EE);
-  message.ee_t_k.pose = translation::toPose(robot_state_ptr->EE_T_K);
+  message.f_t_ee.pose = translation::toPose(robot_state_.F_T_EE);
+  message.ee_t_k.pose = translation::toPose(robot_state_.EE_T_K);
 
-  message.o_dp_ee_d.twist = translation::toTwist(robot_state_ptr->O_dP_EE_d);
-  message.o_dp_ee_c.twist = translation::toTwist(robot_state_ptr->O_dP_EE_c);
-  message.o_ddp_ee_c.accel = translation::toAccel(robot_state_ptr->O_ddP_EE_c);
+  message.o_dp_ee_d.twist = translation::toTwist(robot_state_.O_dP_EE_d);
+  message.o_dp_ee_c.twist = translation::toTwist(robot_state_.O_dP_EE_c);
+  message.o_ddp_ee_c.accel = translation::toAccel(robot_state_.O_ddP_EE_c);
 
   // The inertias of the robot
-  message.inertia_ee.inertia = translation::toInertia(
-      robot_state_ptr->m_ee, robot_state_ptr->F_x_Cee, robot_state_ptr->I_ee);
-  message.inertia_load.inertia = translation::toInertia(
-      robot_state_ptr->m_load, robot_state_ptr->F_x_Cload, robot_state_ptr->I_load);
-  message.inertia_total.inertia = translation::toInertia(
-      robot_state_ptr->m_total, robot_state_ptr->F_x_Ctotal, robot_state_ptr->I_total);
+  message.inertia_ee.inertia =
+      translation::toInertia(robot_state_.m_ee, robot_state_.F_x_Cee, robot_state_.I_ee);
+  message.inertia_load.inertia =
+      translation::toInertia(robot_state_.m_load, robot_state_.F_x_Cload, robot_state_.I_load);
+  message.inertia_total.inertia =
+      translation::toInertia(robot_state_.m_total, robot_state_.F_x_Ctotal, robot_state_.I_total);
 
   // Errors and more
-  message.time = robot_state_ptr->time.toSec();
-  message.control_command_success_rate = robot_state_ptr->control_command_success_rate;
-  message.current_errors = translation::errorsToMessage(robot_state_ptr->current_errors);
-  message.last_motion_errors = translation::errorsToMessage(robot_state_ptr->last_motion_errors);
+  message.time = robot_state_.time.toSec();
+  message.control_command_success_rate = robot_state_.control_command_success_rate;
+  message.current_errors = translation::errorsToMessage(robot_state_.current_errors);
+  message.last_motion_errors = translation::errorsToMessage(robot_state_.last_motion_errors);
 
-  switch (robot_state_ptr->robot_mode) {
-    case franka::RobotMode::kOther:
-      message.robot_mode = franka_msgs::msg::FrankaRobotState::ROBOT_MODE_OTHER;
-      break;
+  message.robot_mode = static_cast<uint8_t>(robot_state_.robot_mode);
 
-    case franka::RobotMode::kIdle:
-      message.robot_mode = franka_msgs::msg::FrankaRobotState::ROBOT_MODE_IDLE;
-      break;
-
-    case franka::RobotMode::kMove:
-      message.robot_mode = franka_msgs::msg::FrankaRobotState::ROBOT_MODE_MOVE;
-      break;
-
-    case franka::RobotMode::kGuiding:
-      message.robot_mode = franka_msgs::msg::FrankaRobotState::ROBOT_MODE_GUIDING;
-      break;
-
-    case franka::RobotMode::kReflex:
-      message.robot_mode = franka_msgs::msg::FrankaRobotState::ROBOT_MODE_REFLEX;
-      break;
-
-    case franka::RobotMode::kUserStopped:
-      message.robot_mode = franka_msgs::msg::FrankaRobotState::ROBOT_MODE_USER_STOPPED;
-      break;
-
-    case franka::RobotMode::kAutomaticErrorRecovery:
-      message.robot_mode = franka_msgs::msg::FrankaRobotState::ROBOT_MODE_AUTOMATIC_ERROR_RECOVERY;
-      break;
-  }
   return true;
 }
 
 auto FrankaRobotState::get_robot_state() -> franka::RobotState* {
-  return robot_state_ptr;
+  return cached_robot_state_valid_ ? &robot_state_ : nullptr;
 }
 
 }  // namespace franka_semantic_components

@@ -21,7 +21,7 @@ def get_robot_descriptions(robot_name, simulate_in_gazebo):
     robot_description = xacro.process_file(
         robot_description_file_path,
         mappings={
-            'gazebo': simulate_in_gazebo,
+            'simulate_in_gazebo': simulate_in_gazebo,
             'gazebo_effort': simulate_in_gazebo,
         },
     ).toxml()

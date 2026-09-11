@@ -20,6 +20,7 @@
 #include <vector>
 #include "urdf/model.h"
 
+#include <realtime_tools/realtime_thread_safe_box.hpp>
 #include "franka/robot_state.h"
 #include "franka_msgs/msg/franka_robot_state.hpp"
 #include "semantic_components/semantic_component_interface.hpp"
@@ -33,13 +34,29 @@ class FrankaRobotState
   virtual ~FrankaRobotState() = default;
 
   /**
+   * Assign loaned state interfaces and resolve the robot state box the hardware
+   * exports through them.
+   *
+   * \return true when the interfaces were claimed and the box was resolved.
+   */
+  auto assign_loaned_state_interfaces(
+      std::vector<hardware_interface::LoanedStateInterface>& state_interfaces) -> bool;
+
+  /**
+   * Drop the cached box pointer and release loaned interfaces.
+   */
+  auto release_interfaces() -> void;
+
+  /**
    * @param[in/out] message Initializes this message to contain the respective frame_id information
    */
   virtual auto initialize_robot_state_msg(franka_msgs::msg::FrankaRobotState& message) -> void;
 
   /**
    * Constructs and return a FrankaRobotState message from the current values.
-   * \return FrankaRobotState message from values;
+   * Lazily resolves the state box if it was not resolved during
+   * assign_loaned_state_interfaces() (e.g. when interfaces were claimed via the base API).
+   * \return true if the message was populated; false if the state box could not be resolved.
    */
   virtual auto get_values_as_message(franka_msgs::msg::FrankaRobotState& message) -> bool;
 
@@ -52,7 +69,17 @@ class FrankaRobotState
   auto get_robot_state() -> franka::RobotState*;
 
  private:
-  franka::RobotState* robot_state_ptr;
+  using Base = semantic_components::SemanticComponentInterface<franka_msgs::msg::FrankaRobotState>;
+
+  /**
+   * Resolves and caches the robot state box from the claimed state interface.
+   * \return true if the box was resolved.
+   */
+  auto initialize_state_buffer() -> bool;
+
+  franka::RobotState robot_state_;
+  bool cached_robot_state_valid_{false};
+  realtime_tools::RealtimeThreadSafeBox<franka::RobotState>* robot_state_box_{nullptr};
 
   std::string robot_description_;
   std::string robot_name_;

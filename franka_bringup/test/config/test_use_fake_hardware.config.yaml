@@ -1,4 +1,4 @@
-TEST_ROBOT_0:  
+TEST_ROBOT_0:
   robot_type: "fr3v2"
   arm_prefix: ""
   fake_sensor_commands: "false"

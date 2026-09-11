@@ -1,0 +1,12 @@
+# Mobile FR3 Duo fake hardware test configuration
+mobile_fr3_duo_robot:
+  robot_types: "['tmrv0_2', 'fr3v2', 'fr3v2']"
+  robot_ips: "['', '', '']"
+  robot_prefixes: "['', 'left', 'right']"
+  load_gripper: "false"
+  use_fake_hardware: "true"
+  fake_sensor_commands: "true"
+  namespace: ''
+  joint_state_rate: 30
+  thread_priority: 50
+  use_rviz: "false"

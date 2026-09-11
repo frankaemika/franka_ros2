@@ -25,6 +25,16 @@
 			</geometry>
 		</collision>
 	</link>
+	<link name="fr3_link0_accelerometer_top"/>
+	<joint name="fr3_link0_accelerometer_top_joint" type="fixed">
+		<parent link="fr3_link0"/>
+		<child link="fr3_link0_accelerometer_top"/>
+	</joint>
+	<link name="fr3_link0_accelerometer_bottom"/>
+	<joint name="fr3_link0_accelerometer_bottom_joint" type="fixed">
+		<parent link="fr3_link0"/>
+		<child link="fr3_link0_accelerometer_bottom"/>
+	</joint>
 	<link name="fr3_link1">
 		<visual>
 			<geometry>
@@ -50,6 +60,16 @@
 			</geometry>
 		</collision>
 	</link>
+	<link name="fr3_link1_accelerometer_top"/>
+	<joint name="fr3_link1_accelerometer_top_joint" type="fixed">
+		<parent link="fr3_link1"/>
+		<child link="fr3_link1_accelerometer_top"/>
+	</joint>
+	<link name="fr3_link1_accelerometer_bottom"/>
+	<joint name="fr3_link1_accelerometer_bottom_joint" type="fixed">
+		<parent link="fr3_link1"/>
+		<child link="fr3_link1_accelerometer_bottom"/>
+	</joint>
 	<joint name="fr3_joint1" type="revolute">
 		<safety_controller k_position="100.0" k_velocity="40.0" soft_lower_limit="-2.8973" soft_upper_limit="2.8973"/>
 		<origin rpy="0 0 0" xyz="0 0 0.333"/>
@@ -83,6 +103,16 @@
 			</geometry>
 		</collision>
 	</link>
+	<link name="fr3_link2_accelerometer_top"/>
+	<joint name="fr3_link2_accelerometer_top_joint" type="fixed">
+		<parent link="fr3_link2"/>
+		<child link="fr3_link2_accelerometer_top"/>
+	</joint>
+	<link name="fr3_link2_accelerometer_bottom"/>
+	<joint name="fr3_link2_accelerometer_bottom_joint" type="fixed">
+		<parent link="fr3_link2"/>
+		<child link="fr3_link2_accelerometer_bottom"/>
+	</joint>
 	<joint name="fr3_joint2" type="revolute">
 		<safety_controller k_position="100.0" k_velocity="40.0" soft_lower_limit="-1.7628" soft_upper_limit="1.7628"/>
 		<origin rpy="-1.5707963267948966 0 0" xyz="0 0 0"/>
@@ -116,6 +146,16 @@
 			</geometry>
 		</collision>
 	</link>
+	<link name="fr3_link3_accelerometer_top"/>
+	<joint name="fr3_link3_accelerometer_top_joint" type="fixed">
+		<parent link="fr3_link3"/>
+		<child link="fr3_link3_accelerometer_top"/>
+	</joint>
+	<link name="fr3_link3_accelerometer_bottom"/>
+	<joint name="fr3_link3_accelerometer_bottom_joint" type="fixed">
+		<parent link="fr3_link3"/>
+		<child link="fr3_link3_accelerometer_bottom"/>
+	</joint>
 	<joint name="fr3_joint3" type="revolute">
 		<safety_controller k_position="100.0" k_velocity="40.0" soft_lower_limit="-2.8973" soft_upper_limit="2.8973"/>
 		<origin rpy="1.5707963267948966 0 0" xyz="0 -0.316 0"/>
@@ -149,6 +189,16 @@
 			</geometry>
 		</collision>
 	</link>
+	<link name="fr3_link4_accelerometer_top"/>
+	<joint name="fr3_link4_accelerometer_top_joint" type="fixed">
+		<parent link="fr3_link4"/>
+		<child link="fr3_link4_accelerometer_top"/>
+	</joint>
+	<link name="fr3_link4_accelerometer_bottom"/>
+	<joint name="fr3_link4_accelerometer_bottom_joint" type="fixed">
+		<parent link="fr3_link4"/>
+		<child link="fr3_link4_accelerometer_bottom"/>
+	</joint>
 	<joint name="fr3_joint4" type="revolute">
 		<safety_controller k_position="100.0" k_velocity="40.0" soft_lower_limit="-3.0718" soft_upper_limit="-0.0698"/>
 		<origin rpy="1.5707963267948966 0 0" xyz="0.0825 0 0"/>
@@ -200,6 +250,16 @@
 			</geometry>
 		</collision>
 	</link>
+	<link name="fr3_link5_accelerometer_top"/>
+	<joint name="fr3_link5_accelerometer_top_joint" type="fixed">
+		<parent link="fr3_link5"/>
+		<child link="fr3_link5_accelerometer_top"/>
+	</joint>
+	<link name="fr3_link5_accelerometer_bottom"/>
+	<joint name="fr3_link5_accelerometer_bottom_joint" type="fixed">
+		<parent link="fr3_link5"/>
+		<child link="fr3_link5_accelerometer_bottom"/>
+	</joint>
 	<joint name="fr3_joint5" type="revolute">
 		<safety_controller k_position="100.0" k_velocity="40.0" soft_lower_limit="-2.8973" soft_upper_limit="2.8973"/>
 		<origin rpy="-1.5707963267948966 0 0" xyz="-0.0825 0.384 0"/>

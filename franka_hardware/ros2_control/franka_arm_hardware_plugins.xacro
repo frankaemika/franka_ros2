@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<!--
+  Hardware-plugin blocks for the single-arm ros2_control interface, owned by franka_hardware.
+
+  These macros emit only the <plugin> element plus its plugin-specific <param>s. They are
+  injected into the franka_arm_ros2_control macro via its **hardware_plugin block param, so
+  the plugin-selection knowledge lives alongside the ros2_control interface in franka_hardware.
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!-- Real robot: franka_hardware FrankaHardwareInterface driving the arm over robot_ip. -->
+  <xacro:macro name="franka_real_hardware_plugin" params="robot_ip:='' arm_prefix:=''">
+    <plugin>franka_hardware/FrankaHardwareInterface</plugin>
+    <param name="robot_ip">${robot_ip}</param>
+    <param name="arm_prefix">${arm_prefix}</param>
+  </xacro:macro>
+
+  <!-- Fake hardware: ros2_control generic mock system. -->
+  <xacro:macro name="franka_mock_hardware_plugin" params="fake_sensor_commands:=false">
+    <plugin>mock_components/GenericSystem</plugin>
+    <param name="mock_sensor_commands">${fake_sensor_commands}</param>
+    <param name="state_following_offset">0.0</param>
+  </xacro:macro>
+
+  <!-- Selects the mock or real single-arm plugin from use_fake_hardware, so call sites emit
+       one macro instead of a duplicated if/unless pair. -->
+  <xacro:macro name="franka_selected_arm_hardware_plugin"
+    params="use_fake_hardware robot_ip:='' arm_prefix:='' fake_sensor_commands:=false">
+    <xacro:if value="${use_fake_hardware}">
+      <xacro:franka_mock_hardware_plugin fake_sensor_commands="${fake_sensor_commands}"/>
+    </xacro:if>
+    <xacro:unless value="${use_fake_hardware}">
+      <xacro:franka_real_hardware_plugin robot_ip="${robot_ip}" arm_prefix="${arm_prefix}"/>
+    </xacro:unless>
+  </xacro:macro>
+
+</robot>

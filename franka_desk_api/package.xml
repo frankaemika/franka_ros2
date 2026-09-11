@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>franka_desk_api</name>
+  <version>3.5.3</version>
+  <description>
+    INTERNAL: shared HTTPS helper used by franka_mobile and franka_spine_server
+    to talk to Franka Desk device REST APIs. Not a public ROS 2 API. Do not
+    depend on this package from external code; it may be replaced or removed
+    without notice.
+  </description>
+  <maintainer email="support@franka.de">Franka Robotics GmbH</maintainer>
+  <license>Apache 2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>ament_cmake_python</buildtool_depend>
+
+  <exec_depend>python3-requests</exec_depend>
+
+  <test_depend>ament_lint_auto</test_depend>
+  <test_depend>ament_lint_common</test_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

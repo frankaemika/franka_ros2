@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>franka_bringup</name>
-  <version>3.4.1</version>
+  <version>3.5.3</version>
   <description>Package with launch files and run-time configurations for using Franka Robotics research robots with ros2_control</description>
   <maintainer email="support@franka.de">Franka Robotics GmbH</maintainer>
   <license>Apache 2.0</license>
@@ -34,15 +34,30 @@
   <test_depend>ament_cmake_lint_cmake</test_depend>
   <test_depend>ament_cmake_pep257</test_depend>
   <test_depend>ament_cmake_xmllint</test_depend>
+  <test_depend>builtin_interfaces</test_depend>
   <test_depend>launch</test_depend>
   <test_depend>launch_ros</test_depend>
   <test_depend>launch_testing</test_depend>
   <test_depend>launch_testing_ament_cmake</test_depend>
+  <test_depend>ament_index_python</test_depend>
+  <test_depend>python3-yaml</test_depend>
+  <test_depend>controller_manager_msgs</test_depend>
+  <test_depend>forward_command_controller</test_depend>
+  <test_depend>geometry_msgs</test_depend>
+  <test_depend>hardware_interface_testing</test_depend>
+  <test_depend>joy</test_depend>
+  <test_depend>lifecycle_msgs</test_depend>
   <test_depend>rclpy</test_depend>
   <test_depend>rcl_interfaces</test_depend>
   <test_depend>sensor_msgs</test_depend>
+  <test_depend>std_msgs</test_depend>
+  <test_depend>teleop_twist_joy</test_depend>
   <test_depend>franka_msgs</test_depend>
   <test_depend>franka_gazebo_bringup</test_depend>
+  <test_depend>franka_mobile_fr3_duo_moveit_config</test_depend>
+  <test_depend>franka_gripper</test_depend>
+  <test_depend>franka_mobile_sensors</test_depend>
+  <test_depend>franka_vision_and_manipulation_kit</test_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

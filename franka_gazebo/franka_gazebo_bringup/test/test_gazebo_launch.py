@@ -58,16 +58,15 @@ def ensure_gz_sim_not_running():
 # Each entry: (launch_file, {launch_arguments})
 params = [
     # --- Franka arm example controllers ---
-    # ToDo: Re-add after force interface exists for gazebo
-    # (
-    #     'gazebo_franka_arm_example_controller.launch.py',
-    #     {
-    #         'robot_type': 'fr3',
-    #         'controller': 'gravity_compensation_example_controller',
-    #         'gz_args': 'empty.sdf -r -s --headless-rendering',
-    #         'rviz': 'false',
-    #     },
-    # ),
+    (
+        'gazebo_franka_arm_example_controller.launch.py',
+        {
+            'robot_type': 'fr3',
+            'controller': 'gravity_compensation_example_controller',
+            'gz_args': 'empty.sdf -r -s --headless-rendering',
+            'rviz': 'false',
+        },
+    ),
     (
         'gazebo_franka_arm_example_controller.launch.py',
         {
@@ -106,6 +105,19 @@ params = [
     # --- Mobile FR3 duo example ---
     (
         'gazebo_mobile_fr3_duo_example.launch.py',
+        {
+            'gz_args': '-r -s --headless-rendering',
+            'rviz': 'false',
+        },
+    ),
+    # --- FR3 duo example ---
+    # Dual-arm fr3_duo has no single-arm 7-DOF franka::Model, so the plugin's
+    # graceful-degradation path runs (model build fails -> WARN, model/
+    # robot_state/force-torque interfaces not exported). Expect a benign WARN,
+    # no [ERROR]. The launch's get_gz_world prepends the world path, so gz_args
+    # must not include 'empty.sdf' (it defaults to that already).
+    (
+        'gazebo_fr3_duo_example.launch.py',
         {
             'gz_args': '-r -s --headless-rendering',
             'rviz': 'false',

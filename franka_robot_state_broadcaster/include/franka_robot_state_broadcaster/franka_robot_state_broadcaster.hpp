@@ -15,10 +15,11 @@
 #pragma once
 
 #include <atomic>
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <thread>
-#include <vector>
 
 #include <controller_interface/controller_interface.hpp>
 #include <rclcpp_lifecycle/lifecycle_publisher.hpp>
@@ -30,6 +31,19 @@
 #include "franka_semantic_components/franka_robot_state.hpp"
 
 namespace franka_robot_state_broadcaster {
+
+/**
+ * Publishes the full Franka robot state and a set of convenience topics.
+ *
+ * The controller update() path copies robot state from the hardware
+ * RealtimeThreadSafeBox, builds the ROS message into an AsyncBuffer slot, and
+ * returns. A dedicated publish thread drains that buffer and performs all DDS
+ * publishes, so the publish cost does not sit between robot state arrival
+ * and command egress.
+ *
+ * Keep this controller synchronous (is_async: false) so it shares the controller
+ * manager thread with model-based controllers that also read the state box.
+ */
 class FrankaRobotStateBroadcaster : public controller_interface::ControllerInterface {
  public:
   explicit FrankaRobotStateBroadcaster(
@@ -37,18 +51,10 @@ class FrankaRobotStateBroadcaster : public controller_interface::ControllerInter
 
   ~FrankaRobotStateBroadcaster() override;
 
-  // Controller update rate in Hz (must match controller_manager update_rate).
-  static constexpr int kUpdateRate = 1000;
-
-  // SCHED_FIFO priority for the publish thread.
-  // Must be below the ros2_control RT control loop (typically 70-80) so the RT thread
-  // is never preempted by publishing, and above 0 so the OS schedules it promptly.
-  static constexpr int kPublishThreadPriority = 50;
-
-  // How long the publish thread sleeps when no new data is ready.
-  // At 1kHz the update() loop fires every 1ms; sleeping 200µs means the thread
-  // wakes at most 200µs after data_ready_ is set, keeping latency well below 1ms.
-  static constexpr int kPublishThreadSleepUs = 200;
+  // SCHED_FIFO priority for the publish thread. Stay below the CM RT loop (97)
+  // and below typical PREEMPT_RT NIC IRQ threads (50) so publishing cannot delay
+  // packet delivery or control.
+  static constexpr int kPublishThreadPriority = 30;
 
   [[nodiscard]] controller_interface::InterfaceConfiguration command_interface_configuration()
       const override;
@@ -70,25 +76,23 @@ class FrankaRobotStateBroadcaster : public controller_interface::ControllerInter
       const rclcpp_lifecycle::State& previous_state) override;
 
  private:
-  std::shared_ptr<ParamListener> param_listener;
-  Params params;
+  std::shared_ptr<ParamListener> param_listener_;
+  Params params_;
 
-  std::string state_interface_name{"robot_state"};
-  std::shared_ptr<rclcpp::Publisher<franka_msgs::msg::FrankaRobotState>> franka_state_publisher;
-  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::PoseStamped>>
-      current_pose_stamped_publisher_;
-  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::PoseStamped>>
+  std::string state_interface_name_{"robot_state"};
+  rclcpp::Publisher<franka_msgs::msg::FrankaRobotState>::SharedPtr franka_state_publisher_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr current_pose_stamped_publisher_;
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr
       last_desired_pose_stamped_publisher_;
-  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::TwistStamped>>
+  rclcpp::Publisher<geometry_msgs::msg::TwistStamped>::SharedPtr
       desired_end_effector_twist_stamped_publisher_;
-  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>>
+  rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr
       external_wrench_in_base_frame_publisher_;
-  std::shared_ptr<rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>>
+  rclcpp::Publisher<geometry_msgs::msg::WrenchStamped>::SharedPtr
       external_wrench_in_stiffness_frame_publisher_;
-  std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::JointState>>
-      external_joint_torques_publisher_;
-  std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::JointState>> measured_joint_states_publisher_;
-  std::shared_ptr<rclcpp::Publisher<sensor_msgs::msg::JointState>> desired_joint_states_publisher_;
+  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr external_joint_torques_publisher_;
+  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr measured_joint_states_publisher_;
+  rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr desired_joint_states_publisher_;
 
   const std::string kCurrentPoseTopic = "~/current_pose";
   const std::string kLastDesiredPoseTopic = "~/last_desired_pose";
@@ -105,12 +109,12 @@ class FrankaRobotStateBroadcaster : public controller_interface::ControllerInter
 
   std::thread publish_thread_;
   std::atomic<bool> is_publish_thread_running_{false};
-
+  std::mutex publish_mutex_;
+  std::condition_variable publish_cv_;
   std::atomic<bool> data_ready_{false};
 
-  // Publish rate in Hz for convenience topics, loaded from the convenience_publish_rate parameter.
-  // Written in on_configure() before the publish thread starts; read in publishRunner().
-  int convenience_publish_rate_{1000};
+  // Convenience topics publish every N-th fresh sample on the publish thread.
+  int convenience_publish_skip_{1};
 
   void startPublishThread();
   void stopPublishThread();

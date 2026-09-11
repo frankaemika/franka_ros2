@@ -14,9 +14,13 @@
 
 #include "franka_robot_state_test.hpp"
 
+#include <array>
 #include <memory>
 #include <string>
 #include <vector>
+
+#include <research_interface/robot/error.h>
+#include <research_interface/robot/rbk_types.h>
 
 void FrankaRobotStateTest::TearDown() {
   franka_state_friend.reset(nullptr);
@@ -34,16 +38,16 @@ void FrankaRobotStateTest::SetUp() {
   robot_state.q_d = joint_velocities;
   robot_state.O_T_EE = end_effector_pose;
   robot_state.robot_mode = robot_mode;
-  robot_state_buffer.writeFromNonRT(robot_state);
+  robot_state_box.set(robot_state);
 
   hardware_interface::StateInterface franka_hw_state{
-      robot_name, franka_state_interface_name, reinterpret_cast<double*>(&robot_state_buffer_ptr)};
+      robot_name, franka_state_interface_name, reinterpret_cast<double*>(&robot_state_box_ptr)};
   std::vector<hardware_interface::LoanedStateInterface> temp_state_interfaces;
 
   temp_state_interfaces.reserve(size);
 
   temp_state_interfaces.emplace_back(franka_hw_state);
-  franka_state_friend->assign_loaned_state_interfaces(temp_state_interfaces);
+  ASSERT_TRUE(franka_state_friend->assign_loaned_state_interfaces(temp_state_interfaces));
   franka_state_friend->initialize_robot_state_msg(franka_robot_state_msg);
   ASSERT_TRUE(franka_state_friend->get_values_as_message(franka_robot_state_msg));
 }
@@ -90,6 +94,69 @@ TEST_F(FrankaRobotStateTest,
   ASSERT_EQ(franka_state_friend->state_interfaces_.size(), 0u);
 }
 
+TEST_F(FrankaRobotStateTest, a_released_buffer_stops_the_message_from_being_built) {
+  franka_state_friend->release_interfaces();
+
+  ASSERT_FALSE(franka_state_friend->get_values_as_message(franka_robot_state_msg));
+}
+
+TEST_F(FrankaRobotStateTest, a_null_state_box_fails_assignment) {
+  franka_state_friend->release_interfaces();
+
+  realtime_tools::RealtimeThreadSafeBox<franka::RobotState>* null_box_ptr = nullptr;
+  hardware_interface::StateInterface franka_hw_state{robot_name, franka_state_interface_name,
+                                                     reinterpret_cast<double*>(&null_box_ptr)};
+  std::vector<hardware_interface::LoanedStateInterface> temp_state_interfaces;
+  temp_state_interfaces.emplace_back(franka_hw_state);
+
+  ASSERT_FALSE(franka_state_friend->assign_loaned_state_interfaces(temp_state_interfaces));
+  ASSERT_EQ(franka_state_friend->state_interfaces_.size(), 0u);
+}
+
+TEST_F(FrankaRobotStateTest, the_cached_box_keeps_serving_fresh_state) {
+  // The interface is only consulted at assignment, so later writes have to reach the
+  // message through the cached box rather than through another lookup.
+  std::array<double, 7> moved_angles = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7};
+  robot_state.q = moved_angles;
+  robot_state_box.set(robot_state);
+
+  ASSERT_TRUE(franka_state_friend->get_values_as_message(franka_robot_state_msg));
+  ASSERT_THAT(moved_angles,
+              ::testing::ElementsAreArray(franka_robot_state_msg.measured_joint_state.position));
+}
+
+TEST_F(FrankaRobotStateTest,
+       givenReflexRobotStateWithErrors_whenMessageReturned_thenReflexModeAndErrorsArePublished) {
+  auto current_error_flags =
+      std::array<bool, sizeof(research_interface::robot::RobotState::errors)>{};
+  current_error_flags[static_cast<size_t>(research_interface::robot::Error::kJointReflex)] = true;
+  current_error_flags[static_cast<size_t>(
+      research_interface::robot::Error::kForceControlSafetyViolation)] = true;
+
+  auto last_motion_error_flags =
+      std::array<bool, sizeof(research_interface::robot::RobotState::errors)>{};
+  last_motion_error_flags[static_cast<size_t>(research_interface::robot::Error::kCartesianReflex)] =
+      true;
+  last_motion_error_flags[static_cast<size_t>(
+      research_interface::robot::Error::kControllerTorqueDiscontinuity)] = true;
+
+  robot_state.robot_mode = franka::RobotMode::kReflex;
+  robot_state.current_errors = franka::Errors(current_error_flags);
+  robot_state.last_motion_errors = franka::Errors(last_motion_error_flags);
+  robot_state_box.set(robot_state);
+
+  ASSERT_TRUE(franka_state_friend->get_values_as_message(franka_robot_state_msg));
+
+  EXPECT_EQ(franka_msgs::msg::FrankaRobotState::ROBOT_MODE_REFLEX,
+            franka_robot_state_msg.robot_mode);
+  EXPECT_TRUE(franka_robot_state_msg.current_errors.joint_reflex);
+  EXPECT_TRUE(franka_robot_state_msg.current_errors.force_control_safety_violation);
+  EXPECT_TRUE(franka_robot_state_msg.last_motion_errors.cartesian_reflex);
+  EXPECT_TRUE(franka_robot_state_msg.last_motion_errors.controller_torque_discontinuity);
+
+  franka_state_friend->release_interfaces();
+}
+
 TEST_F(FrankaRobotStateTest, givenInitializedRobotStateMsg_thenCorrectFrameIDs) {
   franka_state_friend->initialize_robot_state_msg(franka_robot_state_msg);
 
@@ -118,4 +185,59 @@ TEST_F(FrankaRobotStateTest, givenInitializedRobotStateMsg_thenCorrectlySizedDyn
   ASSERT_EQ(franka_robot_state_msg.tau_ext_hat_filtered.position.size(), expected_size);
   ASSERT_EQ(franka_robot_state_msg.tau_ext_hat_filtered.velocity.size(), expected_size);
   ASSERT_EQ(franka_robot_state_msg.tau_ext_hat_filtered.effort.size(), expected_size);
+}
+
+TEST_F(FrankaRobotStateTest,
+       givenAccelerometerRobotState_whenMessageReturned_thenOrderedValuesFramesAndStamps) {
+  constexpr size_t kSensorCount = 6;
+  constexpr size_t kAxisCount = 3;
+  std::array<std::array<float, kAxisCount>, kSensorCount> top_readings;
+  std::array<std::array<float, kAxisCount>, kSensorCount> bottom_readings;
+  for (size_t sensor = 0; sensor < kSensorCount; ++sensor) {
+    for (size_t axis = 0; axis < kAxisCount; ++axis) {
+      // Exact binary fractions keep the values distinct per sensor and axis while
+      // staying safe for exact-equality assertions.
+      top_readings[sensor][axis] = kAxisCount * sensor + axis + 0.125;
+      bottom_readings[sensor][axis] = -(kAxisCount * sensor + axis + 0.25);
+    }
+  }
+  robot_state.accelerometer_top = top_readings;
+  robot_state.accelerometer_bottom = bottom_readings;
+  robot_state_box.set(robot_state);
+
+  builtin_interfaces::msg::Time requested_stamp;
+  requested_stamp.sec = 123;
+  requested_stamp.nanosec = 456789;
+  franka_robot_state_msg.header.stamp = requested_stamp;
+
+  ASSERT_TRUE(franka_state_friend->get_values_as_message(franka_robot_state_msg));
+
+  ASSERT_EQ(franka_robot_state_msg.accelerometer_top.size(), kSensorCount);
+  ASSERT_EQ(franka_robot_state_msg.accelerometer_bottom.size(), kSensorCount);
+  for (size_t sensor = 0; sensor < kSensorCount; ++sensor) {
+    const auto expected_frame = robot_name + "_link" + std::to_string(sensor) + "_accelerometer_";
+    ASSERT_EQ(franka_robot_state_msg.accelerometer_top[sensor].header.frame_id,
+              expected_frame + "top");
+    ASSERT_EQ(franka_robot_state_msg.accelerometer_bottom[sensor].header.frame_id,
+              expected_frame + "bottom");
+
+    ASSERT_EQ(franka_robot_state_msg.accelerometer_top[sensor].header.stamp.sec,
+              requested_stamp.sec);
+    ASSERT_EQ(franka_robot_state_msg.accelerometer_top[sensor].header.stamp.nanosec,
+              requested_stamp.nanosec);
+    ASSERT_EQ(franka_robot_state_msg.accelerometer_bottom[sensor].header.stamp.sec,
+              requested_stamp.sec);
+    ASSERT_EQ(franka_robot_state_msg.accelerometer_bottom[sensor].header.stamp.nanosec,
+              requested_stamp.nanosec);
+
+    ASSERT_EQ(franka_robot_state_msg.accelerometer_top[sensor].vector.x, top_readings[sensor][0]);
+    ASSERT_EQ(franka_robot_state_msg.accelerometer_top[sensor].vector.y, top_readings[sensor][1]);
+    ASSERT_EQ(franka_robot_state_msg.accelerometer_top[sensor].vector.z, top_readings[sensor][2]);
+    ASSERT_EQ(franka_robot_state_msg.accelerometer_bottom[sensor].vector.x,
+              bottom_readings[sensor][0]);
+    ASSERT_EQ(franka_robot_state_msg.accelerometer_bottom[sensor].vector.y,
+              bottom_readings[sensor][1]);
+    ASSERT_EQ(franka_robot_state_msg.accelerometer_bottom[sensor].vector.z,
+              bottom_readings[sensor][2]);
+  }
 }

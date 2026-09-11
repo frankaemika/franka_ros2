@@ -60,6 +60,18 @@ auto toTwist(const std::array<double, 6>& input_twist) -> geometry_msgs::msg::Tw
 auto toAccel(const std::array<double, 6>& input_accel) -> geometry_msgs::msg::Accel;
 
 /**
+ * @param input_vector The 3D acceleration vector which should be translated
+ * @return geometry_msgs::msg::Vector3 The translated vector
+ */
+template<typename T>
+auto toVector3(const std::array<T, 3>& input_vector) -> geometry_msgs::msg::Vector3 {
+  return geometry_msgs::build<geometry_msgs::msg::Vector3>()
+      .x(static_cast<double>(input_vector[0]))
+      .y(static_cast<double>(input_vector[1]))
+      .z(static_cast<double>(input_vector[2]));
+}
+
+/**
  * @param input_pose The pose which should be translated
  * @return geometry_msgs::msg::Pose The translated pose
  */

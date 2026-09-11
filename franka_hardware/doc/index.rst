@@ -63,36 +63,65 @@ for all Franka robot configurations. The macros live in ``franka_hardware/ros2_c
   ``configure_finger_joint``, ``configure_steering_joint``, ``configure_driving_joint``,
   ``general_purpose_io``, ``cartesian_velocity_io``, ``cartesian_pose_loop``, etc.)
 * ``franka_arm.ros2_control.xacro`` — single-arm configuration
-* ``fr3_duo.ros2_control.xacro`` — dual-arm configuration
-* ``mobile_fr3_duo.ros2_control.xacro`` — mobile dual-arm (TMR base + 2 arms)
 * ``tmrv0_2.ros2_control.xacro`` — standalone TMR base
 
 These are composed with ``franka_description`` robot models via thin wrappers in
 ``franka_bringup/urdf/`` to produce complete robot descriptions with hardware interfaces.
 
+The gazebo-only dual-arm descriptions (``fr3_duo.ros2_control.xacro`` and
+``mobile_fr3_duo.ros2_control.xacro``) live in ``franka_gazebo_bringup/urdf/``, the package
+that owns and consumes them. They reuse the shared building blocks above via
+``$(find franka_hardware)/ros2_control/franka_ros2_control_macros.xacro``.
+
 Error Recovery
 --------------
 
-Previously, FCI errors caused the entire launch process to exit. Now, from
-versions v2.4.0+ and v3.3.0+, the hardware interface remains running and only
-deactivates itself and its controllers, allowing in-place recovery without restarting.
+Previously, FCI errors caused the entire launch process to exit. A
+``franka::ControlException`` can now be recovered in place without restarting
+the ``ros2_control_node`` process.
 
 Behavior on Error
 ^^^^^^^^^^^^^^^^^
 
-When a Franka Control Interface (FCI) error occurs (e.g. a reflex triggered by a
+When a ``franka::ControlException`` occurs (e.g. a reflex triggered by a
 collision or a violated joint limit), the hardware plugin:
 
-1. Logs the error.
-2. Stops the active control loop on the robot.
-3. Returns ``hardware_interface::return_type::ERROR`` to the ``controller_manager``.
+1. Logs and latches the fault.
+2. Returns ``OK`` from ``read()`` without refreshing the robot state
+   (exported interfaces keep the pre-fault / frozen sample).
+3. Returns ``DEACTIVATE`` from the next ``write()``.
 
-The ``controller_manager`` then:
+Observable sequence from that point:
 
-4. Transitions the hardware component to the **unconfigured** state.
-5. Deactivates all controllers that depend on that hardware component.
+4. One controller-manager update cycle may still publish that pre-fault /
+   frozen sample after ``read()`` latches (broadcasters remain lifecycle-active).
+5. The ``controller_manager`` then transitions the hardware component to the
+   **inactive** state and runs its deactivation callback inline in the
+   controller-manager update cycle. The stop blocks that update thread for
+   approximately two seconds; controller updates and topic publication pause
+   for that duration, and no new ``RobotState`` is produced or required.
+6. After the block, inactive-state reads resume and publish the live reflex
+   state.
+
+Cycle-overrun warnings from the controller manager are therefore expected during
+this one-time recovery step. Do not command the robot while it is transitioning.
+
+The ``robot_state_broadcaster`` and ``joint_state_broadcaster`` remain
+lifecycle-active across the reflex, so they do not need re-activation afterward.
+
+After the approximately two-second braking stop completes, the hardware component
+is inactive. The deactivation callback has cleared the fault latch and reset the
+active control interface. ``ros2_control`` continues calling ``read()`` for
+inactive hardware, so inactive-state reads resume and publish the live reflex
+state: ``franka_msgs/msg/FrankaRobotState`` reports ``ROBOT_MODE_REFLEX`` in
+``robot_mode`` and provides the active and motion-ending errors in
+``current_errors`` and ``last_motion_errors``.
 
 The ``ros2_control_node`` process **stays alive** — no restart is needed.
+
+This recovery path applies only to ``franka::ControlException``. A
+``franka::NetworkException`` still returns ``ERROR`` from the hardware component
+and deactivates the state broadcasters.
 
 Recovery Steps
 ^^^^^^^^^^^^^^
@@ -133,16 +162,21 @@ the control loop.
 
       ros2 control list_hardware_components
 
-**Step 3 — Re-activate your controllers**
+**Step 3 — Re-activate the command controller**
 
 .. code-block:: bash
 
    ros2 control switch_controllers --activate <controller_name>
 
+The ``robot_state_broadcaster`` and ``joint_state_broadcaster`` stay active across
+the reflex and do not need to be re-activated. Re-activate only the command
+controller that should resume commanding the robot.
+
 .. warning::
    The order matters. The robot error must be cleared (Step 1) before the
    hardware component can re-activate (Step 2), and the hardware component must
-   be active before controllers can be activated (Step 3).
+   be active before controllers can be activated (Step 3). Attempting Step 2
+   before Step 1 fails the activation and logs that the robot error must be cleared.
 
 Action Server Topics
 ^^^^^^^^^^^^^^^^^^^^

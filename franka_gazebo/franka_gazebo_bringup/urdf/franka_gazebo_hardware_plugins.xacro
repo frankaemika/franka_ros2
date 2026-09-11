@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<!--
+  Gazebo hardware-plugin block and gz_ros2_control system element for the single-arm
+  ros2_control interface, owned by franka_gazebo_bringup.
+
+  franka_gazebo_hardware_plugin emits only the <plugin> element (injected into the
+  franka_arm_ros2_control macro via its **hardware_plugin block param).
+  franka_gazebo_ros2_control_system emits the trailing <gazebo> system element, placed as a
+  sibling of <ros2_control> by the gazebo entry-point URDF. This keeps all gz_ros2_control /
+  franka_gazebo strings inside franka_gazebo_bringup.
+-->
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <!--
+    Gazebo system plugin. The default gz_ros2_control system handles position/velocity;
+    when gazebo_effort is set, the franka_gazebo_hardware gravity-compensation system is used
+    so effort-controlled joints are gravity-compensated in simulation.
+  -->
+  <xacro:macro name="franka_gazebo_hardware_plugin" params="gazebo_effort:=false">
+    <xacro:if value="${gazebo_effort}">
+      <plugin>franka_gazebo_hardware/FrankaGazeboHardwareInterface</plugin>
+    </xacro:if>
+    <xacro:unless value="${gazebo_effort}">
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </xacro:unless>
+  </xacro:macro>
+
+  <!-- gz_ros2_control system element wiring the controller config into the simulation. -->
+  <xacro:macro name="franka_gazebo_ros2_control_system">
+    <gazebo>
+      <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+        <parameters>$(find franka_gazebo_bringup)/config/franka_gazebo_controllers.yaml</parameters>
+      </plugin>
+    </gazebo>
+  </xacro:macro>
+
+</robot>

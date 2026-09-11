@@ -60,42 +60,34 @@ class FrankaActionServerTests
     executor.add_node(node);
 
     bool is_finished = false;
+    std::optional<rclcpp_action::ResultCode> received_code;
     auto goal_msg = typename action_client_type::Goal();
     if (goal_msg_opt.has_value()) {
       goal_msg = goal_msg_opt.value();
     }
 
     auto send_goal_options = typename rclcpp_action::Client<action_client_type>::SendGoalOptions();
-    send_goal_options.goal_response_callback = [&](const auto& future_result) {
+    send_goal_options.goal_response_callback = [](const auto& future_result) {
       auto goal_handle = future_result.get();
-      ASSERT_TRUE(goal_handle);
+      ASSERT_TRUE(goal_handle) << "Goal was rejected by the action server";
     };
-    send_goal_options.feedback_callback = [&](auto, auto) { ASSERT_TRUE(false); };
+    send_goal_options.feedback_callback = [](auto, auto) {};
     send_goal_options.result_callback = [&](const auto& result) {
-      ASSERT_EQ(result.code, result_code);
+      received_code = result.code;
       is_finished = true;
     };
 
-    auto action_accepted = client->async_send_goal(goal_msg);
-    auto start_point = std::chrono::system_clock::now();
-    auto end_point = start_point + 5s;
-    while (action_accepted.wait_for(0s) != std::future_status::ready) {
+    client->async_send_goal(goal_msg, send_goal_options);
+    constexpr auto kActionTimeout = 5s;
+    const auto end_point = std::chrono::system_clock::now() + kActionTimeout;
+    while (!is_finished && std::chrono::system_clock::now() <= end_point) {
       executor.spin_some();
-
-      ASSERT_LE(std::chrono::system_clock::now(), end_point);
     }
-    auto goal_handle = action_accepted.get();
+    ASSERT_TRUE(is_finished) << "Timed out waiting for action result after " << kActionTimeout.count()
+                             << "s";
 
-    auto result = client->async_get_result(goal_handle, send_goal_options.result_callback);
-    start_point = std::chrono::system_clock::now();
-    end_point = start_point + 5s;
-    while (!is_finished || result.wait_for(0s) != std::future_status::ready) {
-      executor.spin_some();
-
-      ASSERT_LE(std::chrono::system_clock::now(), end_point);
-    }
-
-    ASSERT_TRUE(is_finished);
+    ASSERT_TRUE(received_code.has_value());
+    ASSERT_EQ(received_code.value(), result_code);
   }
 };
 

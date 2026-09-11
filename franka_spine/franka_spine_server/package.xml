@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>franka_spine_server</name>
-  <version>3.4.1</version>
+  <version>3.5.3</version>
   <description>Action server for the Franka Spine, providing ROS 2 services and actions to control the spine via its
     REST API</description>
   <maintainer email="support@franka.de">Franka Robotics GmbH</maintainer>
@@ -13,9 +13,8 @@
 
   <depend>rclpy</depend>
   <depend>franka_spine_msgs</depend>
+  <depend>franka_desk_api</depend>
   <depend>std_msgs</depend>
-
-  <exec_depend>python3-requests</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>

@@ -329,6 +329,12 @@ auto updateTimeStamps(const builtin_interfaces::msg::Time& time_stamps,
   robot_state.inertia_ee.header.stamp = time_stamps;
   robot_state.inertia_load.header.stamp = time_stamps;
   robot_state.inertia_total.header.stamp = time_stamps;
+
+  // Joint-mounted accelerometers
+  for (size_t i = 0; i < robot_state.accelerometer_top.size(); ++i) {
+    robot_state.accelerometer_top[i].header.stamp = time_stamps;
+    robot_state.accelerometer_bottom[i].header.stamp = time_stamps;
+  }
 }
 
 }  // namespace franka_semantic_components::translation

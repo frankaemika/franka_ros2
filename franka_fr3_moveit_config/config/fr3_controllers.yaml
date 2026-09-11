@@ -1,6 +1,6 @@
 controller_names:
   - fr3_arm_controller
-  - fr3_gripper
+  - franka_gripper
 
 fr3_arm_controller:
   action_ns: follow_joint_trajectory
@@ -15,7 +15,7 @@ fr3_arm_controller:
     - fr3_joint6
     - fr3_joint7
 
-fr3_gripper:
+franka_gripper:
     action_ns: gripper_action
     type: GripperCommand
     default: true
